@@ -1,0 +1,9 @@
+{
+	"__default__": {
+		"gres": "lscratch:256",
+		"mem": "48g",
+		"partition": "norm", 
+		"threads": "2",
+		"time": "2-00:00:00"
+	}
+}

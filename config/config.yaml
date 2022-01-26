@@ -1,0 +1,9 @@
+## you probably need to change or comment/uncomment some of these
+#
+# The working dir... output will be in the results subfolder of the workdir
+workdir: "WORKDIR"
+#
+# tab delimited samples file ... should have the following 3 columns
+# sampleName	path_to_R1_fastq	path_to_R2_fastq
+#
+samples: "WORKDIR/samples.tsv"

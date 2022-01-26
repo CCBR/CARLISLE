@@ -1,0 +1,3 @@
+# conda environments needed for the workflow should be stored here.
+# An alternative to conda environments, is containers (singularity or docker)
+# Check https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html?highlight=conda#containerization-of-conda-based-workflows for details.

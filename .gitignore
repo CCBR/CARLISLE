@@ -1,0 +1,5 @@
+**/.koparde*
+!.editorconfig
+!.gitignore
+!.gitattributes
+site/

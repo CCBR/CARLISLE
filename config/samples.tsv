@@ -1,0 +1,3 @@
+sampleName	path_to_R1_fastq	path_to_R2_fastq
+Sample1	<path to sample1 R1 fastq>	<path to sample1 R2 fastq>
+Sample2	<path to sample2 R1 fastq>	<path to sample2 R2 fastq>
