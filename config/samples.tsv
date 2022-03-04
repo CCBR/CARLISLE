@@ -1,3 +1,7 @@
-sampleName	path_to_R1_fastq	path_to_R2_fastq
-Sample1	<path to sample1 R1 fastq>	<path to sample1 R2 fastq>
-Sample2	<path to sample2 R1 fastq>	<path to sample2 R2 fastq>
+sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_R1	path_to_R2
+sample1	1	N	igg1	1	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
+sample1	2	N	igg1	2	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
+sample2	1	N	igg2	1	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
+igg1	1	Y	-	-	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
+igg1	2	Y	-	-	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
+igg2	1	Y	-	-	<abs/path/to/R1.fastq.gz>	<abs/path/to/R2.fastq.gz>
