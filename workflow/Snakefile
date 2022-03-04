@@ -1,0 +1,19 @@
+from os.path import join
+
+include: "rules/init.smk"
+
+rule all:
+    input:
+        # bowtie2 index building
+        join(BOWTIE2_INDEX,"ref.1.bt2"),
+        join(BOWTIE2_INDEX,"ref.len"),
+        join(BOWTIE2_INDEX,"spikein.len"),
+        # trim fastqs
+        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
+        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
+        # bams
+        expand(join(RESULTSDIR,"bam","{replicate}.bam"),replicate=REPLICATES),
+
+
+include: "rules/align.smk"
+
