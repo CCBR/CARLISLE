@@ -1,0 +1,27 @@
+# cluster configuration
+###################################################################
+__default__:
+    gres: lscratch:96
+    mem: 40g
+    partition: ccr,norm
+    time: 00-02:00:00
+    threads: 2
+    name: "{rule}.{wildcards}"
+    output: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.out"
+    error: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.err"
+###################################################################
+align:
+    mem: 200g
+    time: 00-12:00:00
+    threads: 56
+###################################################################
+create_reference:
+    mem: 200g
+    time: 00-12:00:00
+    threads: 32
+###################################################################
+trim:
+    mem: 200g
+    time: 00-12:00:00
+    threads: 56
+###################################################################

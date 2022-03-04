@@ -1,29 +1,11 @@
-bowtie2:
- version: "bowtie/2-2.4.2"
-cutadapt:
- version: "cutadapt/1.18"
-fastqc:
- version: "fastqc/0.11.9"
-hisat:
- version: "hisat/2.2.1.0"
-multiqc:
- version: "multiqc/1.9"
-picard:
- version: "picard/2.25.0"
-python37:
- version: "python/3.7"
-salmon:
- version: "salmon/1.4.0"
-sambamba:
- version: "sambamba/0.8.0"
-R:
- version: "R/4.0.3"
-samtools:
- version: "samtools/1.11"
-star:
- version: "STAR/2.7.6a"
- alignTranscriptsPerReadNmax: "20000"
-stringtie:
- version: "stringtie/2.1.4"
-ucsc:
- version: "ucsc/407"
+bedtools: "bedtools/2.30.0"
+bowtie2: "bowtie/2-2.4.2"
+cutadapt: "cutadapt/1.18"
+fastqc: "fastqc/0.11.9"
+fastxtoolkit: "fastxtoolkit/0.0.14"
+multiqc: "multiqc/1.9"
+picard: "picard/2.25.0"
+python37: "python/3.7"
+R: "R/4.0.3"
+samtools: "samtools/1.11"
+ucsc: "ucsc/407"

@@ -3,7 +3,32 @@
 # The working dir... output will be in the results subfolder of the workdir
 workdir: "WORKDIR"
 #
-# tab delimited samples file ... should have the following 3 columns
-# sampleName	path_to_R1_fastq	path_to_R2_fastq
+# tab delimited samples file .. see samplefile for format details
 #
-samples: "WORKDIR/samples.tsv"
+samplemanifest: "WORKDIR/samples.tsv"
+
+# reference
+genome: "hg38"
+# spiking .. if this is changed then the reference bowtie2 index should be recreated
+spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
+spikein_genome: "ecoli" # ignored if spiked is set to N
+
+
+# user parameters
+bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
+fragment_len_filter: "1000"
+
+# references:
+reference:
+  hg38:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/hg38.fa"
+    blacklist: "PIPELINE_HOME/resources/blacklistbed/hg38.bed"
+  mm10:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
+    blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
+
+spikein_reference:
+  ecoli:
+    fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
+
+adapters: "PIPELINE_HOME/resources/other/adapters.fa"
