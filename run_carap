@@ -322,6 +322,7 @@ snakemake -s $SNAKEFILE \
 -j 500 \
 --rerun-incomplete \
 --keep-going \
+--restart-times 1 \
 --stats ${WORKDIR}/snakemake.stats \
 2>&1|tee ${WORKDIR}/snakemake.log
 
