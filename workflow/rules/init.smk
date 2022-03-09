@@ -181,6 +181,7 @@ print("# Sample Manifest :",config["samplemanifest"])
 print("# Cluster YAML :",CLUSTERYAML)
 
 GENOME = config["genome"]
+print("# Reference genome : ",GENOME)
 GENOMEFA = config["reference"][GENOME]["fa"]
 check_readaccess(GENOMEFA)
 
@@ -191,14 +192,20 @@ REMOVEDUP = config["remove_duplicates"]
 if REMOVEDUP != "Y":
     REMOVEDUP = "N"
 
+print("# Remove duplicates : ", REMOVEDUP)
+
 SPIKED = config["spiked"]
 
 if SPIKED == "Y":
     spikein_genome = config["spikein_genome"]
     SPIKED_GENOMEFA = config["spikein_reference"][spikein_genome]["fa"]
     check_readaccess(SPIKED_GENOMEFA)
+    print("# Spike-in : ",SPIKED)
+    print("# Spike-in genome : ",spikein_genome)
 else:
+    SPIKED = "N"
     SPIKED_GENOMEFA = ""
+    print("# Spike-in : ",SPIKED)
 
 CREATE_REFERENCE = "N"
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
