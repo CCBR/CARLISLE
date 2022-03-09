@@ -315,6 +315,7 @@ else
 
     # create len files
     cut -f1,2 {input.genomefa}.fai > {output.ref_len}
+    cut -f1,2 {input.spikein}.fai >> {output.ref_len}
     cut -f1,2 {input.spikein}.fai > {output.spikein_len}
 
 fi
