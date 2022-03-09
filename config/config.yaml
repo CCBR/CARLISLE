@@ -12,11 +12,16 @@ genome: "hg38"
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
 spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
 spikein_genome: "ecoli" # ignored if spiked is set to N
+spikein_scale: 1000000
 
 
-# user parameters
+# user parameters for alignment
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
 fragment_len_filter: "1000"
+remove_duplicates: "N"
+
+
+# you generally will not have to edit below this line
 
 # references:
 reference:
