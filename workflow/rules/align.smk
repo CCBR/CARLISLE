@@ -178,6 +178,7 @@ if [[ "{input.spikein}" == "" ]];then
 else
     spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
     spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+fi
 
 
 bedtools bamtobed -bedpe -i {input.bam} > ${{TMPDIR}}/{params.replicate}.bed
