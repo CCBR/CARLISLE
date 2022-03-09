@@ -71,12 +71,19 @@ for f in ["samplemanifest"]:
 # each line in the samplemanifest is a replicate
 # multiple replicates belong to a sample
 # currently only 1,2,3 or 4 replicates per sample is supported
+SAMPLE2REPLICATES = dict()
+REPLICATE2SAMPLE = dict()
 df=pd.read_csv(config["samplemanifest"],sep="\t",header=0)
 df['replicateName']=df.apply(lambda row:row['sampleName']+"_"+str(row['replicateNumber']),axis=1)
 REPLICATES = list(df.replicateName.unique())
 replicateName2R1 = dict()
 replicateName2R2 = dict()
 for r in REPLICATES:
+    sn=df[df['replicateName']==r].iloc[0].sampleName
+    if not sn in SAMPLE2REPLICATES:
+        SAMPLE2REPLICATES[sn]=[]
+    SAMPLE2REPLICATES[sn].append(r)
+    REPLICATE2SAMPLE[r]=sn
     r1=df[df['replicateName']==r].iloc[0].path_to_R1
     check_readaccess(r1)
     r1new=join(WORKDIR,"fastqs",r+".R1.fastq.gz")
@@ -93,8 +100,16 @@ for r in REPLICATES:
 
 print("#"*100)
 print("# Checking Sample Manifest...")
+
+print("# Samples and their replicates")
+print("# SampleName        Replicates")
+for k,v in SAMPLE2REPLICATES.items():
+    print("# "+k+"         "+",".join(v))
+
 print("# Treatment Control combinations:")
-process_replicates=[]
+process_replicates = []
+TREATMENTS = []
+CONTROLS = []
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
     c=crow.controlName+"_"+str(crow.controlReplicateNumber)
@@ -104,6 +119,8 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
         exit()        
     print("## "+str(i+1)+") "+t+"        "+c)
     process_replicates.extend([t,c])
+    TREATMENTS.append(t)
+    CONTROLS.append(c)
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
     not_to_process = set(REPLICATES) - set(process_replicates)
@@ -112,6 +129,7 @@ if len(process_replicates)!=len(REPLICATES):
         print("# "+i)
     REPLICATES = process_replicates
 print("# Read access to all fastq files in confirmed!")
+
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
@@ -169,6 +187,10 @@ check_readaccess(GENOMEFA)
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
+REMOVEDUP = config["remove_duplicates"]
+if REMOVEDUP != "Y":
+    REMOVEDUP = "N"
+
 SPIKED = config["spiked"]
 
 if SPIKED == "Y":
@@ -218,88 +240,6 @@ else:
     SPIKED_GENOMEFA = ""
 
 
-
-# print("# Bowtie index dir:",INDEXDIR)
-
-# GENOMEFILE=join(INDEXDIR,GENOME+".genome") # genome file is required by macs2 peak calling
-# check_readaccess(GENOMEFILE)
-# print("# Genome :",GENOME)
-# print("# .genome :",GENOMEFILE)
-
-# GENOMEFA=join(INDEXDIR,GENOME+".fa") # genome file is required by motif enrichment rule
-# check_readaccess(GENOMEFA)
-# print("# Genome fasta:",GENOMEFA)
-
-# BLACKLISTFA=config[GENOME]['blacklistFa']
-# check_readaccess(BLACKLISTFA)
-# print("# Blacklist fasta:",BLACKLISTFA)
-
-# QCDIR=join(RESULTSDIR,"QC")
-
-# TSSBED=config[GENOME]["tssBed"]
-# check_readaccess(TSSBED)
-# print("# TSS BEDs :",TSSBED)
-
-# HOMERMOTIF=config[GENOME]["homermotif"]
-# check_readaccess(HOMERMOTIF)
-# print("# HOMER motifs :",HOMERMOTIF)
-
-# MEMEMOTIF=config[GENOME]["mememotif"]
-# check_readaccess(MEMEMOTIF)
-# print("# MEME motifs :",MEMEMOTIF)
-
-# FASTQ_SCREEN_CONFIG=config["fastqscreen_config"]
-# check_readaccess(FASTQ_SCREEN_CONFIG)
-# print("# FQscreen config  :",FASTQ_SCREEN_CONFIG)
-
-# try:
-#     JACCARD_MIN_PEAKS=int(config["jaccard_min_peaks"])
-# except KeyError:
-#     JACCARD_MIN_PEAKS=100
-
-
-# # FRIPEXTRA ... do you calculate extra Fraction of reads in blahblahblah
-# FRIPEXTRA=True
-
-# try:
-#     DHSBED=config[GENOME]["fripextra"]["dhsbed"]
-#     check_readaccess(DHSBED)
-#     print("# DHS motifs :",DHSBED)
-# except KeyError:
-#     FRIPEXTRA=False
-#     DHSBED=""
-#     PROMOTERBED=""
-#     ENHANCERBED=""
-
-# try:
-#     PROMOTERBED=config[GENOME]["fripextra"]["promoterbed"]
-#     check_readaccess(PROMOTERBED)
-#     print("# Promoter Bed:",PROMOTERBED)
-# except KeyError:
-#     FRIPEXTRA=False
-#     DHSBED=""
-#     PROMOTERBED=""
-#     ENHANCERBED=""
-
-# try:
-#     ENHANCERBED=config[GENOME]["fripextra"]["enhancerbed"]
-#     check_readaccess(ENHANCERBED)
-#     print("# Enhancer Bed:",ENHANCERBED)
-# except KeyError:
-#     FRIPEXTRA=False
-#     DHSBED=""
-#     PROMOTERBED=""
-#     ENHANCERBED=""
-
-# try:
-#     MULTIQCCONFIG=config['multiqc']['configfile']
-#     check_readaccess(MULTIQCCONFIG)
-#     print("# MultiQC configfile:",MULTIQCCONFIG)
-#     MULTIQCEXTRAPARAMS=config['multiqc']['extraparams']   
-# except KeyError:
-#     MULTIQCCONFIG=""
-#     MULTIQCEXTRAPARAMS=""
-# print("#"*100)
 
 #########################################################
 
