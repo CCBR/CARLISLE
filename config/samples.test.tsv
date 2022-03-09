@@ -1,7 +1,7 @@
 sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_R1	path_to_R2
-MOC1_siNC_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_1.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_1.1m.R2.fastq.gz
-MOC1_siSmyd3_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R2.fastq.gz
-MOC1_siSmyd3_2m_25_HCHO	2	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R2.fastq.gz
-MOC1_siNC_2m_25_HCHO	2	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_2.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_2.1m.R2.fastq.gz
-MOC1_siNC_2m_25_HCHO	3	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_3.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_3.1m.R2.fastq.gz
-MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	Y	-	-	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_IgG_Ctrl_1.1m.R1.fastq.gz	/data/CCBR/rawdata/ccbr1155/CS030586/fastq/test/MOC1_siNC_2m_25_HCHO_IgG_Ctrl_1.1m.R2.fastq.gz
+MOC1_siNC_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_1.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_1.1m.R2.fastq.gz
+MOC1_siSmyd3_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R2.fastq.gz
+MOC1_siSmyd3_2m_25_HCHO	2	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R2.fastq.gz
+MOC1_siNC_2m_25_HCHO	2	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_2.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_2.1m.R2.fastq.gz
+MOC1_siNC_2m_25_HCHO	3	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_3.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_3.1m.R2.fastq.gz
+MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	Y	-	-	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_IgG_Ctrl_1.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_IgG_Ctrl_1.1m.R2.fastq.gz

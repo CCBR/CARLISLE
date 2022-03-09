@@ -64,6 +64,7 @@ Required Arguments:
     *) dryrun : dry run snakemake to generate DAG
     *) unlock : unlock workdir if locked by snakemake
     *) runlocal : run without submitting to sbatch
+    *) testrun: run on cluster with included test dataset
 2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
 EOF
 }
@@ -216,6 +217,13 @@ function runlocal() {
   if [ "$SLURM_JOB_ID" == "" ];then err "runlocal can only be done on an interactive node"; fi
   module load $SINGULARITY_VERSION
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
+}
+
+function testrun() {
+  check_essential_files
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/config/samples.test.tsv > $WORKDIR/samples.tsv
+  check_essential_files
+  runslurm
 }
 
 function runslurm() {
@@ -407,6 +415,7 @@ function main(){
     run) runslurm && exit 0;;
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
+    testrun) testrun && exit 0;;
     dry) dryrun && exit 0;;                      # hidden option
     local) runlocal && exit 0;;                  # hidden option
     reconfig) reconfig && exit 0;;               # hidden option for debugging
