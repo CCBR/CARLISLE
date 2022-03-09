@@ -180,8 +180,8 @@ else
     spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
 fi
 
-
-bedtools bamtobed -bedpe -i {input.bam} > ${{TMPDIR}}/{params.replicate}.bed
+samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.bam {input.bam}
+bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.bam > ${{TMPDIR}}/{params.replicate}.bed
 awk -v fl={params.fragment_len_filter}' {{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.bed > ${{TMPDIR}}/{params.replicate}.clean.bed
 cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.clean.bed | \\
     LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > ${{TMPDIR}}/{params.replicate}.fragments.bed
