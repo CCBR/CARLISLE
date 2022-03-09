@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
- Author: Vishal Koparde, PhD
+# Author: Vishal Koparde, PhD
 # Date: Jan 2022
 # This script take raw alignments, presorted and indexed and filtered them for reads
 # aligning as proper pairs with a set fragment size.
@@ -12,12 +12,14 @@ import pysam
 import argparse
 
 parser = argparse.ArgumentParser(description='Filter BAM by readids')
-parser.add_argument('--inputBAM', dest='inputBAM', type=str, required=True,
+parser.add_argument('--inputBAM', type=str, required=True,
                     help='input BAM file')
-parser.add_argument('--outputBAM', dest='outputBAM', type=str, required=True,
+parser.add_argument('--outputBAM', type=str, required=True,
                     help='filtered output BAM file')
-parser.add_argument('--fragmentlength', dest='fl', type=int, required=False, default=1000,
+parser.add_argument('--fragmentlength',  type=int, required=False, default=1000,
                     help='discard flagment lengths larger than this integer')
+parser.add_argument('--removemarkedduplicates', action='store_true',
+                    help='removed marked and optical duplicates')
 args = parser.parse_args()
 
 inBAM = pysam.AlignmentFile(args.inputBAM, "rb")
@@ -31,6 +33,8 @@ for read in inBAM.fetch():
     if not read.is_proper_pair or read.is_unmapped:
         continue
     if read.template_length > args.fragmentlength:
+        continue
+    if args.removemarkedduplicates and read.is_duplicate:
         continue
     outBAM.write(read)
 inBAM.close()
