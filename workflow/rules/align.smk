@@ -180,8 +180,8 @@ else
 
 
 bn=$(basename {input.bam})
-bedtools bamtobed -bedpe -i {input.bam} > ${{TMPDIR}}/${{bn%.*}}.bed
-awk -v fl={params.fragment_len_filter}' {{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/${{bn%.*}}.bed > ${{TMPDIR}}/${{bn%.*}}.clean.bed
-cut -f 1,2,6 ${{TMPDIR}}/${{bn%.*}}.clean.bed | sort -k1,1 -k2,2n -k3,3n > ${{TMPDIR}}/${{bn%.*}}.fragments.bed
-bedtools genomecov -bg -scale $spikein_scale -i ${{TMPDIR}}/${{bn%.*}}.fragments.bed -g {input.genomefile} > {output.bg}
+bedtools bamtobed -bedpe -i {input.bam} > ${{TMPDIR}}/{params.replicate}.bed
+awk -v fl={params.fragment_len_filter}' {{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.bed > ${{TMPDIR}}/{params.replicate}.clean.bed
+cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.clean.bed | sort -k1,1 -k2,2n -k3,3n > ${{TMPDIR}}/{params.replicate}.fragments.bed
+bedtools genomecov -bg -scale $spikein_scale -i ${{TMPDIR}}/{params.replicate}.fragments.bed -g {input.genomefile} > {output.bg}
 """
