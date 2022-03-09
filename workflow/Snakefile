@@ -13,7 +13,12 @@ rule all:
         expand(join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
         # bams
         expand(join(RESULTSDIR,"bam","{replicate}.bam"),replicate=REPLICATES),
-
+        # bedgraphs
+        expand(join(RESULTSDIR,"bedgraph","{replicate}.bedgraph"),replicate=REPLICATES),
+        # peaks
+        expand([join(RESULTSDIR,"peaks","{treament}_vs_{control}","{treament}_vs_{control}.norm.stringent.bed")],zip,treament=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","{treament}_vs_{control}","{treament}_vs_{control}.norm.relaxed.bed")],zip,treament=TREATMENTS,control=CONTROLS),
 
 include: "rules/align.smk"
+include: "rules/peakcalls.smk"
 
