@@ -141,6 +141,7 @@ else
 fi
 
 samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam} ${{TMPDIR}}/${{outbam_bn%.*}}.filtered.bam
+samtools index -@{threads} {output.bam}
 samtools flagstat {output.bam} > {output.bamflagstat}
 samtools idxstats {output.bam} > {output.bamidxstats}
 """
