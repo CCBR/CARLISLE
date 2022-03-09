@@ -8,7 +8,7 @@ workdir: "WORKDIR"
 samplemanifest: "WORKDIR/samples.tsv"
 
 # reference
-genome: "hg38"
+genome: "mm10"    # currently supports hg38 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
 spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
 spikein_genome: "ecoli" # ignored if spiked is set to N

@@ -202,6 +202,13 @@ else:
 
 CREATE_REFERENCE = "N"
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
+# assume that reference index does not exist
+# if reference index exists then ensure that the following identical at the time of creation of the index
+# 1. genome eg. mm10
+# 2. genomefa 
+# 3. blacklistedbed ... this is used for masking the genomefa
+# 4. spiked ... if spike-in was used or not ... Y or N
+# 5. spikein_genome ... eg full path to ecoli
 if not os.path.exists(BOWTIE2_INDEX):
     CREATE_REFERENCE = "Y"
 else:
