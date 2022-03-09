@@ -144,7 +144,7 @@ samtools flagstat {output.bam} > {output.bamflagstat}
 samtools idxstats {output.bam} > {output.bamidxstats}
 """
 
-rule create_bam2bg:
+rule bam2bg:
     input:
         bam = join(RESULTSDIR,"bam","{replicate}.bam"),
         bai = join(RESULTSDIR,"bam","{replicate}.bam.bai"),
@@ -158,7 +158,7 @@ rule create_bam2bg:
         replicate = "{replicate}",
         fragment_len_filter = config["fragment_len_filter"],
         spikein_scale = config["spikein_scale"]
-    threads: getthreads("create_bam2bg")
+    threads: getthreads("bam2bg")
     envmodules:
         TOOLS["bedtools"],
     shell:"""
@@ -179,7 +179,6 @@ else
     spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
 
 
-bn=$(basename {input.bam})
 bedtools bamtobed -bedpe -i {input.bam} > ${{TMPDIR}}/{params.replicate}.bed
 awk -v fl={params.fragment_len_filter}' {{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.bed > ${{TMPDIR}}/{params.replicate}.clean.bed
 cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.clean.bed | sort -k1,1 -k2,2n -k3,3n > ${{TMPDIR}}/{params.replicate}.fragments.bed
