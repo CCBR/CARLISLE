@@ -115,15 +115,17 @@ else
     mkdir -p $TMPDIR
 fi
 outbam_bn=$(basename {output.bam})
+outdir=$(dirname {output.bam})
 if [[ "{params.remove_duplicates}" == "Y" ]];then
     mkdir -p ${{TMPDIR}}/${{outbam_bn%.*}}_picardtmp
 
     java -Xmx100g -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-    --INPUT={input.bam} \\
-    --OUTPUT=${{TMPDIR}}/${{outbam_bn%.*}}.filtered.tmp1.bam \\
-    --ASSUME_SORT_ORDER=coordinate \\
-    --TMP_DIR=${{TMPDIR}}/${{outbam_bn%.*}}_picardtmp \\
-    --CREATE_INDEX=true
+    --INPUT {input.bam} \\
+    --OUTPUT ${{TMPDIR}}/${{outbam_bn%.*}}.filtered.tmp1.bam \\
+    --ASSUME_SORT_ORDER coordinate \\
+    --TMP_DIR ${{TMPDIR}}/${{outbam_bn%.*}}_picardtmp \\
+    --CREATE_INDEX true \\
+    --METRICS_FILE ${{outdir}}/${{output_bn}}.dupmetrics
     
     python {params.pyscript} --inputBAM ${{TMPDIR}}/${{outbam_bn%.*}}.filtered.tmp1.bam \\
     --outputBAM ${{TMPDIR}}/${{outbam_bn%.*}}.filtered.bam \\
