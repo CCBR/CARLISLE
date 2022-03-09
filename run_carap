@@ -104,7 +104,7 @@ done
 
 # copy essential folders
 for f in $ESSENTIAL_FOLDERS;do
-  rsync -avz --no-perms --no-owner --no-group --progress $f $WORKDIR/
+  rsync -avz --no-perms --no-owner --no-group --progress $PIPELINE_HOME/$f $WORKDIR/
 done
 
 #create log and stats folders
