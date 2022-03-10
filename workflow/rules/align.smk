@@ -182,7 +182,7 @@ else
     spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
 fi
 
-samtools view -@{threads} {input.bam} {params.regions} | \\
+samtools view -b -@{threads} {input.bam} {params.regions} | \\
 samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.bam -
 bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.bam > ${{TMPDIR}}/{params.replicate}.bed
 awk -v fl={params.fragment_len_filter} '{{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.bed > ${{TMPDIR}}/{params.replicate}.clean.bed
