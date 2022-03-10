@@ -32,26 +32,26 @@ cd {params.outdir}
 
 SEACR.sh --bedgraph {input.treatment_bedgraph} \\
     --control {input.control_bedgraph} \\
-    --normalize norm
-    --mode stringent
+    --normalize norm \\
+    --mode stringent \\
     --output {params.treatment}_vs_{params.control}.norm
 
 SEACR.sh --bedgraph {input.treatment_bedgraph} \\
     --control {input.control_bedgraph} \\
-    --normalize norm
-    --mode relaxed
+    --normalize norm \\
+    --mode relaxed \\
     --output {params.treatment}_vs_{params.control}.norm
 
 SEACR.sh --bedgraph {input.treatment_bedgraph} \\
     --control {input.control_bedgraph} \\
-    --normalize non
-    --mode stringent
+    --normalize non \\
+    --mode stringent \\
     --output {params.treatment}_vs_{params.control}.non
 
 SEACR.sh --bedgraph {input.treatment_bedgraph} \\
     --control {input.control_bedgraph} \\
-    --normalize non
-    --mode relaxed
+    --normalize non \\
+    --mode relaxed \\
     --output {params.treatment}_vs_{params.control}.non
 
 """

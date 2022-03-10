@@ -184,6 +184,7 @@ GENOME = config["genome"]
 print("# Reference genome : ",GENOME)
 GENOMEFA = config["reference"][GENOME]["fa"]
 check_readaccess(GENOMEFA)
+REGIONS = config["reference"][GENOME]["regions"]
 
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
