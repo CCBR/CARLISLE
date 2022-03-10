@@ -162,6 +162,7 @@ rule bam2bg:
     threads: getthreads("bam2bg")
     envmodules:
         TOOLS["bedtools"],
+        TOOLS["samtools"]
     shell:"""
 
 set -exo pipefail
