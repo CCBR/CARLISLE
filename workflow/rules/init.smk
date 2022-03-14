@@ -189,11 +189,7 @@ REGIONS = config["reference"][GENOME]["regions"]
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
-REMOVEDUP = config["remove_duplicates"]
-if REMOVEDUP != "Y":
-    REMOVEDUP = "N"
-
-print("# Remove duplicates : ", REMOVEDUP)
+DUPSTATUS=["dedup","no_dedup"]
 
 SPIKED = config["spiked"]
 
@@ -220,10 +216,10 @@ BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
 if not os.path.exists(BOWTIE2_INDEX):
     CREATE_REFERENCE = "Y"
 else:
-    if not os.path.exists(join(BOWTIE2_INDEX,"ref.json")):
+    if not os.path.exists(join(BOWTIE2_INDEX,"ref.yaml")):
         CREATE_REFERENCE = "Y"
     else:
-        with open(join(BOWTIE2_INDEX,"ref.json")) as f:
+        with open(join(BOWTIE2_INDEX,"ref.yaml")) as f:
             oldrefdata = yaml.safe_load(f)
         if oldrefdata["genome"] != GENOME or oldrefdata["genomefa"] != GENOMEFA or oldrefdata["blacklistbed"] != GENOMEBLACKLIST or oldrefdata["spiked"] != SPIKED or oldrefdata["spikein_genome"] != SPIKED_GENOMEFA :
             CREATE_REFERENCE = "Y"
@@ -244,7 +240,7 @@ if CREATE_REFERENCE == "Y":
     refdata["spikein_genome"] = SPIKED_GENOMEFA
 # create json file and store in "tmp" until the reference is built
     os.mkdir(join(BOWTIE2_INDEX,"tmp"))
-    with open(join(BOWTIE2_INDEX,"tmp","ref.json"), 'w') as file:
+    with open(join(BOWTIE2_INDEX,"tmp","ref.yaml"), 'w') as file:
         dumped = yaml.dump(refdata, file)
 
 GENOMEFA = join(BOWTIE2_INDEX,"genome.fa")
@@ -265,9 +261,10 @@ rule create_reference:
         spikein = SPIKED_GENOMEFA
     output:
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2"),
+        genome_len = join(BOWTIE2_INDEX,"genome.len"),
         ref_len = join(BOWTIE2_INDEX,"ref.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
-        refjson = join(BOWTIE2_INDEX,"ref.json")
+        refjson = join(BOWTIE2_INDEX,"ref.yaml")
     params:
         bt2_base=join(BOWTIE2_INDEX,"ref")
     envmodules: 
@@ -299,6 +296,7 @@ if [[ "{input.spikein}" == "" ]];then
 
     # create len files
     cut -f1,2 {input.genomefa}.fai > {output.ref_len}
+    cp {output.ref_len} {output.genome_len}
     touch {output.spikein_len}
 
 else
@@ -316,14 +314,15 @@ else
 
     # create len files
     cut -f1,2 {input.genomefa}.fai > {output.ref_len}
+    cp {output.ref_len} {output.genome_len}
     cut -f1,2 {input.spikein}.fai >> {output.ref_len}
     cut -f1,2 {input.spikein}.fai > {output.spikein_len}
 
 fi
 
-# copy ref.json only after successfully finishing ref index building
+# copy ref.yaml only after successfully finishing ref index building
 if [[ -f {output.bt2} ]];then
-    mv $(dirname {output.bt2})/tmp/ref.json {output.refjson}
+    mv $(dirname {output.bt2})/tmp/ref.yaml {output.refjson}
 fi
 
 """
