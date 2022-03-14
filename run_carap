@@ -193,7 +193,7 @@ function dryrun() {
     modtime=$(stat ${WORKDIR}/dryrun.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/dryrun.log ${WORKDIR}/logs/dryrun.${modtime}.log
   fi
-  run "--dry-run" | tee ${WORKDIR}/dryrun.log
+  run "--dry-run -r" | tee ${WORKDIR}/dryrun.log
 }
 
 function unlock() {
