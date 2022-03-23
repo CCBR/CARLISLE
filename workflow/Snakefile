@@ -20,13 +20,20 @@ rule all:
         expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # # peaks
+        # peaks
         expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treament}_vs_{control}","{treament}_vs_{control}.dedup.norm.stringent.bed")],zip,treament=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treament}_vs_{control}","{treament}_vs_{control}.dedup.norm.relaxed.bed")],zip,treament=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treament}_vs_{control}","{treament}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treament=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treament}_vs_{control}","{treament}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treament=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        # peaks as bigbed
+        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
 
 include: "rules/align.smk"
 include: "rules/peakcalls.smk"

@@ -116,3 +116,82 @@ SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
 
 """
 
+localrules: peak2bb
+
+rule peak2bb:
+    input:
+        narrowPeak = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),
+        broadPeak = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),
+        genome_len = join(BOWTIE2_INDEX,"genome.len"),
+    output:
+        narrowbb = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),
+        broadbb = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),
+    params:
+        replicate="{replicate}",
+        dupstatus="{dupstatus}",
+        memG = getmemG("peak2bb"),
+    threads: getthreads("peak2bb")
+    envmodules:
+        TOOLS["ucsc"]
+    shell:"""
+set -exo pipefail
+if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+    TMPDIR="/lscratch/$SLURM_JOB_ID"
+else
+    dirname=$(basename $(mktemp))
+    TMPDIR="/dev/shm/$dirname"
+    mkdir -p $TMPDIR
+fi
+cut -f1-3 {input.narrowPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed
+bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed {input.genome_len} {output.narrowbb}
+cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed
+bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
+""" 
+
+localrules: bed2bb
+
+rule bed2bb:
+    input:
+        normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed"),
+        normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed"),
+        nonStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.stringent.bed"),
+        nonRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.relaxed.bed"),
+        normStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed"),
+        normRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed"),
+        nonStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bed"),
+        nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bed"),
+        genome_len = join(BOWTIE2_INDEX,"genome.len"),
+    output:
+        normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bigbed"),
+        normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bigbed"),
+        nonStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.stringent.bigbed"),
+        nonRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.relaxed.bigbed"),
+        normStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bigbed"),
+        normRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed"),
+        nonStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed"),
+        nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed"),
+    params:
+        outdir = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}"),
+        memG = getmemG("bed2bb")
+    threads: getthreads("bed2bb")
+    envmodules:
+        TOOLS["ucsc"]
+    shell:"""
+set -exo pipefail
+if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+    TMPDIR="/lscratch/$SLURM_JOB_ID"
+else
+    dirname=$(basename $(mktemp))
+    TMPDIR="/dev/shm/$dirname"
+    mkdir -p $TMPDIR
+fi
+for fullpath in {input};do
+    filename=$(basename -- "$fullpath") 
+    extension="${{filename##*.}}" 
+    bn="${{filename%.*}}"
+    if [[ "$extension" == "bed" ]];then
+        cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
+        bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
+    fi
+done
+""" 
