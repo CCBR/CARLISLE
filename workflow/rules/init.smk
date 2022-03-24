@@ -7,6 +7,7 @@ import pandas as pd
 import yaml
 import pprint
 import shutil
+import uuid
 # import glob
 # import shutil
 pp = pprint.PrettyPrinter(indent=4)
@@ -19,16 +20,19 @@ pp = pprint.PrettyPrinter(indent=4)
 def check_existence(filename):
   if not os.path.exists(filename):
     exit("# File: %s does not exists!"%(filename))
+  return True
 
 def check_readaccess(filename):
   check_existence(filename)
   if not os.access(filename,os.R_OK):
     exit("# File: %s exists, but cannot be read!"%(filename))
+  return True
 
 def check_writeaccess(filename):
   check_existence(filename)
   if not os.access(filename,os.W_OK):
     exit("# File: %s exists, but cannot be read!"%(filename))
+  return True
 
 def get_file_size(filename):
     filename=filename.strip()
@@ -48,6 +52,8 @@ MEMORYG="100G"
 # read in various dirs from config file
 WORKDIR=config['workdir']
 RESULTSDIR=join(WORKDIR,"results")
+
+RANDOMSTR=uuid.uuid4()
 
 # get scripts folder
 try:
@@ -130,6 +136,72 @@ if len(process_replicates)!=len(REPLICATES):
     REPLICATES = process_replicates
 print("# Read access to all fastq files in confirmed!")
 
+# DUPSTATUS=["dedup","no_dedup"]
+# PEAKTYPE=["narrowPeak","broadPeak","norm.stringent.bed","norm.relaxed.bed"]
+DUPSTATUS=config["dupstatus"]
+PEAKTYPE=config["peaktype"]
+DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
+PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
+
+if config["run_contrasts"] == "Y":
+    print("# Checking constrasts to run...")
+    FDRCUTOFF = config["contrasts_fdr_cutoff"]
+    LFCCUTOFF = config["contrasts_lfc_cutoff"]
+    contrasts_table = config["contrasts"]
+    check_readaccess(contrasts_table)
+    contrasts_df=pd.read_csv(contrasts_table,sep="\t",header=0)
+    # contrasts_df = contrasts_df.reset_index()  # make sure indexes pair with number of rows
+    # print(contrasts_df)
+    CONTRASTS=dict()
+    C1s=[]
+    C2s=[]
+    DS=[]
+    PT=[]
+    SAMPLESINCONTRAST=list()
+    for index, row in contrasts_df.iterrows():
+        c1 = row['condition1']
+        c2 = row['condition2']
+        if not c1 in SAMPLE2REPLICATES:
+            print(" # %s condition1 in %s has no samples/replicates!"%(c1,contrasts_table))
+            exit()
+        if not c2 in SAMPLE2REPLICATES:
+            print(" # %s condition2 in %s has no samples/replicates!"%(c2,contrasts_table))
+            exit()
+        for ds in DUPSTATUS:
+            for pt in PEAKTYPE:
+                C1s.append(c1)
+                C2s.append(c2)
+                DS.append(ds)
+                PT.append(pt)
+                contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
+                CONTRASTS[contrast_name]=[c1,c2,ds,pt]
+        SAMPLESINCONTRAST.append(c1)
+        SAMPLESINCONTRAST.append(c2)
+    SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
+    print("# Will run the following contrasts:")
+    print("# CONDITION1\tCONDITION2\tDUPSTATUS\tPEAKTYPE")
+    i=0
+    for k,v in CONTRASTS.items():
+        i+=1
+        print("# %d) %s\t%s\t%s\t%s"%(i,v[0],v[1],v[2],v[3]))
+    rg_file = join(RESULTSDIR,"replicate_sample.tsv")
+    replicates_in_file = []
+
+    if os.path.exists(rg_file) and get_file_size(rg_file) != 0:
+        rg_df = pd.read_csv(rg_file,sep="\t",header=None)
+        rg_df.columns = ["replicateName","sampleName"]
+        replicates_in_file = list(rg_df["replicateName"].unique())
+
+    replicates = []
+    for sample in SAMPLESINCONTRAST:
+        replicates.extend(SAMPLE2REPLICATES[sample])
+
+    if set(replicates) & set(replicates_in_file) != set(replicates):
+        # rg_file needs to be recreated to match the new setting from contrasts.tab .. may you added a new contrast
+        if os.path.exists(rg_file): os.remove(rg_file)
+        # once file is removed it will be recreated by rule create_replicate_sample_table
+
+    
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
@@ -188,8 +260,6 @@ REGIONS = config["reference"][GENOME]["regions"]
 
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
-
-DUPSTATUS=["dedup","no_dedup"]
 
 SPIKED = config["spiked"]
 
@@ -253,6 +323,24 @@ else:
 
 
 #########################################################
+
+localrules: create_replicate_sample_table
+
+rule create_replicate_sample_table:
+    input:
+    output:
+        rg_file = join(RESULTSDIR,"replicate_sample.tsv")
+    run:
+        rg_file = output.rg_file
+
+        replicates = []
+        for sample in SAMPLESINCONTRAST:
+            replicates.extend(SAMPLE2REPLICATES[sample])
+        rg = open(rg_file,'w')
+        for r in replicates:
+            rg.write("%s\t%s\n"%(r,REPLICATE2SAMPLE[r]))
+        rg.close()
+        print("# %s file created!"%(rg_file))
 
 rule create_reference:
     input: 

@@ -1,5 +1,20 @@
 from os.path import join
 
+def run_contrasts(wildcards):
+    files=[]
+    if config["run_contrasts"] == "Y":
+        files.append(join(RESULTSDIR,"replicate_sample.tsv"))
+        files.append(join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"))
+        inputs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(inputs)
+        cms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(cms)
+        results=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(results)
+        bbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(bbs)
+    return files
+
 include: "rules/init.smk"
 
 rule all:
@@ -34,7 +49,9 @@ rule all:
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        unpack(run_contrasts),
 
 include: "rules/align.smk"
 include: "rules/peakcalls.smk"
+include: "rules/diff.smk"
 
