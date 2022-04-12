@@ -5,14 +5,21 @@ output:
     # toc: true
     # toc_float: true
 params:
-  rawcountsmatrix: "~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/counts_matrix.txt"
-  coldata: "~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/sample_info.txt"
-  dupstatus: "dedup" # dedup or no_dedup
+  rawcountsmatrix: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentscountsmatrix.txt"
+  coldata: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_sampleinfo.txt"
+  dupstatus: "no_dedup" # dedup or no_dedup
   condition1: "siSmyd3_2m_Smyd3_0.25HCHO_500K"
   condition2: "siNC_2m_Smyd3_0.25HCHO_500K" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
   cpm_cutoff: 1
-  results: "~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/results.txt"
+  fdr_cutoff: "0.05"
+  log2fc_cutoff: "0.59" # |FC| of 1.5
+  results: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
+  spiked: "Y"
+  rawcountsprescaled: "N"
+  scalesfbymean: "Y"
+  bbpaths: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/bed_bedgraph_paths.tsv"
+  elbowlimits: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffanalysis_elbowlimits.tmp.yaml"
 ---
 
 ```{r setup, include=FALSE}
@@ -29,6 +36,7 @@ suppressPackageStartupMessages(library("ggplot2"))
 suppressPackageStartupMessages(library("ggfortify"))
 suppressPackageStartupMessages(library("ggrepel"))
 suppressPackageStartupMessages(library("ELBOW"))
+suppressPackageStartupMessages(library("yaml"))
 # suppressPackageStartupMessages(library("vsn"))
 suppressPackageStartupMessages(library("EnhancedVolcano"))
 suppressPackageStartupMessages(library("RUVSeq"))
@@ -78,12 +86,19 @@ pander(sampleinfodf,style="rmarkdown")
 rawcounts_logcpm = log2(cpm(rawcounts))
 cpm_melt=reshape2::melt(rawcounts_logcpm)
 colnames(cpm_melt)=c("peakID","samplename","log2cpm")
+fdr_cutoff=as.double(params$fdr_cutoff)
+log2fc_cutoff=as.double(params$log2fc_cutoff)
 ```
 
 Total Peaks: `r nrow(rawcounts)` 
 
 
 Total Samples: `r ncol(rawcounts)`
+
+```{r fdr_check}
+print(fdr_cutoff)
+print(log2fc_cutoff)
+```
 
 
 ```{r cpmplots, echo=FALSE}
@@ -100,24 +115,59 @@ ggplot(cpm_melt,aes(x=samplename,y=log2cpm)) +
 dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
                                 colData = sampleinfo[,c("samplename","group")],
                                 design = ~ group)
+
+if (params$spiked=="Y" & !is.null(params$bbpaths)) {
+  bbpaths_df = read.csv(params$bbpaths,
+                      header = FALSE,sep="\t",
+                      comment.char = "#", 
+                      strip.white = TRUE)
+  colnames(bbpaths_df)=c("replicate",
+                        "sample",
+                        "dupstatus",
+                        "peaktype",
+                        "peakfile",
+                        "bedgraph",
+                        "scalingfactor")
+  # bbpaths_df$cm_col_names=gsub(pattern = ".bedgraph",replacement = "", basename(bbpaths_df$bedgraph))
+  sf_df=unique(bbpaths_df[,c("replicate","scalingfactor")])
+  dds_cols=colnames(dds)
+  sfs=c()
+  for (i in dds_cols){
+    if (i %in% sf_df$replicate){
+      sfs=c(sfs,sf_df[sf_df$replicate==i,"scalingfactor"])
+    }
+  }
+  if (length(sfs)==length(dds_cols)){
+# scaling factor magnitudes are variable and depend on the constant used while scaling using spiked-in reads
+# DESeq2 size factors are generally hovering around 1
+# we try to rescale the scaling factors by dividing them by mean of all scaling factors ... this way they also 
+# start hovering around 1 ... based on suggestion from Sohyoung.
+    if (params$scalesfbymean == "Y") {
+      sfs = sfs/mean(sfs)
+    }
+# AUC-based counts are prescaled, but fragmentbased counts are not prescaled
+    if (params$rawcountsprescaled == "N") {
+      rawcounts=round(t(t(rawcounts) * sfs))
+      dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
+                                  colData = sampleinfo[,c("samplename","group")],
+                                  design = ~ group)
+    }
+    DESeq2::sizeFactors(dds)=sfs
+  } else {
+    print("Samples are spiked, but DESeq2 scaling factors used!!")
+  }
+}                               
+                               
 dds <- DESeq(dds)
 results <- results(dds)
 results_df <- as.data.frame(results)
 results_df %>% rownames_to_column(var="peakID") -> results_df
 ```
-### DESeq sizefactors
 
-```{r sizeFactors,echo=FALSE}
-dds <- estimateSizeFactors( dds )
-pander(as.data.frame(sizeFactors(dds)) %>% rownames_to_column(var="sample"))
-# plot(sizeFactors(dds), colSums(counts(dds)))
-# abline(lm(colSums(counts(dds)) ~ sizeFactors(dds) + 0))
-x=data.frame(sf=sizeFactors(dds),cs=colSums(counts(dds)))
-ggplot(x,aes(x=sf,y=cs,label=rownames(x)))+geom_point(aes(col=as.factor(sampleinfo$group)))+geom_text_repel(max.overlaps = 10)+theme_light()+ theme(legend.title = element_blank()) -> p
-reg=lm(colSums(counts(dds)) ~ sizeFactors(dds) + 0)
-p <- p + geom_abline(intercept = 0, slope=reg$coefficients[[1]], color="green", size=1, linetype="dashed")
-p <- p + xlab("SizeFactors") + ylab("ColSums")
-print(p)
+### DESeq MAplot
+
+```{r maplot,include=TRUE,echo=FALSE}
+DESeq2::plotMA(results)
 ```
 
 ### DESeq PCA
@@ -130,6 +180,9 @@ assayrld = arrange(assayrld,desc(row_variance))
 zero_variance_rows=assayrld$row_variance<1e-5
 assayrld$row_variance = NULL
 assayrld = assayrld[!zero_variance_rows,]
+if (nrow(assayrld) > 500){
+  assayrld=assayrld[1:500,]
+}
 
 pca=prcomp(t(assayrld),scale. = T)
 m.pc1 = round(pca$sdev[1]^2/sum(pca$sdev^2)*100,2)
@@ -150,6 +203,7 @@ ggplot(pca$x,aes(x=PC1,y=PC2,label=rownames(pca$x)))+geom_point(col=as.factor(as
 ```{r elbow,include=TRUE,echo=FALSE}
 limits=ELBOW::do_elbow_rnaseq(results)
 ELBOW::plot_dataset(results, "log2FoldChange", limits$up_limit, limits$low_limit)
+write_yaml(limits,file=params$elbowlimits)
 ```
 
 ```{r elbow2,include=TRUE,echo=FALSE}
@@ -161,6 +215,7 @@ lim$FC=2^lim$log2FC
 lim["DownLimit","FC"]=-1/lim["DownLimit","FC"]
 lim %>% rownames_to_column(var="Limit") -> lim
 pander(lim)
+
 
 # DT::datatable(lim) %>% formatSignif(columns=colnames(lim),digits=4)
 ```
@@ -189,10 +244,16 @@ pa$shortAnno[pa$shortAnno=="3'"]="3'UTR"
 pa$peakID = paste0(pa$seqnames,":",pa$start,"-",pa$end)
 results_df = merge(results_df,pa,by=c("peakID"))
 write.table(results_df,file=params$results,quote=FALSE,sep="\t",row.names = FALSE,col.names = TRUE)
-fdr_cutoff=0.05
-log2fc_cutoff=0.59
+# fdr_cutoff=0.05
+# log2fc_cutoff=0.59
 up=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange > log2fc_cutoff,]$shortAnno))
 down=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange < -1*log2fc_cutoff,]$shortAnno))
+if(nrow(up)==0){
+  up <- data.frame(matrix(ncol = 2, nrow = 0))
+}
+if(nrow(down)==0){
+  down <- data.frame(matrix(ncol = 2, nrow = 0))
+}
 colnames(up)=c("shortAnno","UP")
 colnames(down)=c("shortAnno","DOWN")
 deg=as.data.frame(merge(up,down,by=c("shortAnno"),all=TRUE))
