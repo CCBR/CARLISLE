@@ -56,7 +56,6 @@ if (debug){
   condition1="siSmyd3_2m_Smyd3_0.25HCHO_500K"
   condition2="siNC_2m_Smyd3_0.25HCHO_500K"
   indexcols="peakID"
-  cpm_cutoff=1
   fdr_cutoff=0.05
   log2fc_cutoff=0.59
   results="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/results.txt"
@@ -73,7 +72,6 @@ if (debug){
   dupstatus=args$dupstatus
   condition1=args$condition1
   condition2=args$condition2
-  cpm_cutoff=args$cpm_cutoff
   fdr_cutoff=args$fdr_cutoff
   log2fc_cutoff=args$fdr_cutoff
   indexcols="peakID"
@@ -99,7 +97,7 @@ parameters=list(rawcountsmatrix=rawcountsmatrix,
             condition1=condition1,
             condition2=condition2,
             indexcols=indexcols,
-            cpm_cutoff=cpm_cutoff,
+            htsfilter=htsfilter,
             fdr_cutoff=fdr_cutoff,
             log2fc_cutoff=log2fc_cutoff,
             results=results,
