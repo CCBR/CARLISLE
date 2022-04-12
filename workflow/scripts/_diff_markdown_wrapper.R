@@ -19,6 +19,8 @@ parser$add_argument("--rawcountsprescaled", action='store_true',
                     help="if counts are scaled by spike-in already ... Y (for AUC-based method) or N (for fragments-based method)")
 parser$add_argument("--scalesfbymean", action='store_true',
                     help="DESeq2 scaling factors are around 1. To ensure that spike-in scaling factors are also around 1 divide each scaling factor by mean of all scaling factors.")
+parser$add_argument("--htsfilter", action='store_true',
+                    help="Use HTSFilter")
 parser$add_argument("--bbpaths", type="character", required=FALSE, default=NULL,
                     help="bedbedgraph inputs file")
 parser$add_argument("--countsmatrix", type="character", required=TRUE,
@@ -27,8 +29,6 @@ parser$add_argument("--sampleinfo", type="character", required=TRUE,
                     help="sample info as TSV")
 parser$add_argument("--dupstatus", type="character", required=TRUE,
                     help="either dedup or no_dedup")
-parser$add_argument("--cpm_cutoff", type="double", default=1, required=FALSE,
-                    help="cpm cutoff [default %(default)s]")
 parser$add_argument("--fdr_cutoff", type="double", default=0.05, required=FALSE,
                     help="FDR cutoff [default %(default)s]")
 parser$add_argument("--log2fc_cutoff", type="double", default=0.59, required=FALSE,
@@ -64,6 +64,7 @@ if (debug){
   spiked="N"
   rawcountsprescaled="N"
   scalesfbymean="N"
+  htsfilter="Y"
   elbowlimits="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/elbow.yaml"
   tmpdir="/dev/shm"
 } else {
@@ -84,6 +85,7 @@ if (debug){
   if (args$rawcountsprescaled) {rawcountsprescaled="Y"} else {rawcountsprescaled="N"}
   if (args$scalesfbymean) {scalesfbymean="Y"} else {scalesfbymean="N"}
   tmpdir=args$tmpdir
+  if (args$htsfilter) {htsfilter="Y"} else {htsfilter="N"}
 }
 
 
