@@ -11,7 +11,7 @@ params:
   condition1: "siSmyd3_2m_Smyd3_0.25HCHO_500K"
   condition2: "siNC_2m_Smyd3_0.25HCHO_500K" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
-  cpm_cutoff: 1
+  htsfilter: "Y" # Use HTSFilter (CPM filter does not work well for this type of data)
   fdr_cutoff: "0.05"
   log2fc_cutoff: "0.59" # |FC| of 1.5
   results: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
@@ -45,6 +45,7 @@ suppressPackageStartupMessages(library("TxDb.Mmusculus.UCSC.mm10.knownGene"))
 suppressPackageStartupMessages(library("org.Mm.eg.db"))
 suppressPackageStartupMessages(library("stringr"))
 suppressPackageStartupMessages(library("RColorBrewer"))
+suppressPackageStartupMessages(library("HTSFilter"))
 # suppressPackageStartupMessages(library("umap"))
 ```
 
@@ -159,6 +160,9 @@ if (params$spiked=="Y" & !is.null(params$bbpaths)) {
 }                               
                                
 dds <- DESeq(dds)
+if ( params$htsfilter == "Y" ){
+  dds <- HTSFilter::HTSFilter(dds,s.len=50, plot=TRUE)$filteredData
+}
 results <- results(dds)
 results_df <- as.data.frame(results)
 results_df %>% rownames_to_column(var="peakID") -> results_df
