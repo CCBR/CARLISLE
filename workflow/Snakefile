@@ -23,6 +23,8 @@ def run_contrasts(wildcards):
         files.extend(fhtmls)
         fbbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(fbbs)
+        venns=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(venns)
     return files
 
 include: "rules/init.smk"
