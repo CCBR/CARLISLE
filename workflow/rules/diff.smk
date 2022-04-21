@@ -138,7 +138,6 @@ Rscript {params.rscript} \\
     --spiked {params.spiked} \\
     --rawcountsprescaled \\
     --scalesfbymean \\
-    --htsfilter \\
     --bbpaths {input.bbpaths} \\
     --tmpdir $TMPDIR
 """
@@ -191,7 +190,6 @@ Rscript {params.rscript} \\
     --elbowlimits {output.elbowlimits} \\
     --spiked {params.spiked} \\
     --scalesfbymean \\
-    --htsfilter \\
     --bbpaths {input.bbpaths} \\
     --tmpdir $TMPDIR
 """
@@ -245,3 +243,37 @@ python {params.script} \\
 bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
 """
 
+localrules: venn
+
+rule venn:
+    input:
+        results=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
+        fresults=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
+    output:
+        pdf=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")
+    params:
+        rscript=join(SCRIPTSDIR,"_plot_results_venn.R"),
+        condition1 = "{c1}",
+        condition2 = "{c2}",
+        ds = "{ds}",
+        pt = "{pt}",
+        fdr_cutoff = FDRCUTOFF,
+        log2fc_cutoff = LFCCUTOFF,
+    envmodules:
+        TOOLS["R"]
+    shell:"""
+set -exo pipefail
+dirname=$(basename $(mktemp))
+if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+    TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+else
+    TMPDIR="/dev/shm/$dirname"
+fi
+mkdir -p $TMPDIR
+cd $TMPDIR
+Rscript {params.rscript} \\
+    --aucresults {input.results} \\
+    --fragmentsresults {input.fresults} \\
+    --pdf {output.pdf} \\
+    --title "{params.condition1}_vs_{params.condition2}__{params.ds}__{params.pt}"
+"""
