@@ -72,5 +72,6 @@ ggvenn(x,
        stroke_size = 0.4, 
        set_name_size = 3,
        fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF")) +
-  ggtitle(args$title)
+  ggtitle(args$title) +
+  theme(plot.title = element_text(size = 8))
 dev.off()
