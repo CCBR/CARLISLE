@@ -11,7 +11,7 @@ params:
   condition1: "siSmyd3_2m_Smyd3_0.25HCHO_500K"
   condition2: "siNC_2m_Smyd3_0.25HCHO_500K" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
-  htsfilter: "Y" # Use HTSFilter (CPM filter does not work well for this type of data)
+  htsfilter: "N" # Use HTSFilter (CPM filter does not work well for this type of data)
   fdr_cutoff: "0.05"
   log2fc_cutoff: "0.59" # |FC| of 1.5
   results: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
@@ -144,20 +144,22 @@ if (params$spiked=="Y" & !is.null(params$bbpaths)) {
 # we try to rescale the scaling factors by dividing them by mean of all scaling factors ... this way they also 
 # start hovering around 1 ... based on suggestion from Sohyoung.
     if (params$scalesfbymean == "Y") {
-      sfs = sfs/mean(sfs)
+      adjusted_sfs = sfs/mean(sfs)
     }
 # AUC-based counts are prescaled, but fragmentbased counts are not prescaled
-    if (params$rawcountsprescaled == "N") {
-      rawcounts=round(t(t(rawcounts) * sfs))
-      dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
+# DESeq2 should ingest rawcounts ... prescaled counts need to be divided by sfs
+# to convert them back to rawcounts
+    if (params$rawcountsprescaled == "Y") {
+      rawrawcounts=round(t(t(rawcounts) / sfs))
+      dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawrawcounts),
                                   colData = sampleinfo[,c("samplename","group")],
                                   design = ~ group)
     }
-    DESeq2::sizeFactors(dds)=sfs
+    DESeq2::sizeFactors(dds)= 1/adjusted_sfs
   } else {
     print("Samples are spiked, but DESeq2 scaling factors used!!")
   }
-}                               
+}                                
                                
 dds <- DESeq(dds)
 if ( params$htsfilter == "Y" ){
