@@ -41,8 +41,9 @@ rule all:
         # bams
         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # alignment stats yaml files
+        # alignment stats yaml files and stats table
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
         # bedgraphs and bigwigs
         expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),

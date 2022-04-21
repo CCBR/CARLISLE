@@ -233,6 +233,29 @@ python {params.pyscript} \\
 
 """
 
+localrules: gather_alignstats
+rule gather_alignstats:
+    input:
+        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
+    output:
+        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+    params:
+        rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
+        spikein_scale = config["spikein_scale"],
+    envmodules:
+        TOOLS["R"]
+    shell:"""
+set -exo pipefail
+file1=$(cat {input} | awk '{{print $1}}')
+dir=$(dirname $file1)
+Rscript {params.rscript} \\
+  --yamlDir $dir \\
+  --excludeFromName ".alignment_stats.yaml" \\
+  --scaleConstant {params.spikein_scale}
+  --outTable {output}
+"""
+
+
 rule bam2bg:
 # """
 # Converted filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
