@@ -52,7 +52,8 @@ function usage() {
 
     cat << EOF
 ${SCRIPTBASENAME}
---> run CARAP
+--> run CARLISLE
+Cut And Run anaLysIS pipeLinE
 
 USAGE:
   bash ${SCRIPTNAME} -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
