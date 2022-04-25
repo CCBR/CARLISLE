@@ -246,12 +246,12 @@ rule gather_alignstats:
         TOOLS["R"]
     shell:"""
 set -exo pipefail
-file1=$(cat {input} | awk '{{print $1}}')
+file1=$(echo {input} | awk '{{print $1}}')
 dir=$(dirname $file1)
 Rscript {params.rscript} \\
   --yamlDir $dir \\
   --excludeFromName ".alignment_stats.yaml" \\
-  --scaleConstant {params.spikein_scale}
+  --scaleConstant {params.spikein_scale} \\
   --outTable {output}
 """
 

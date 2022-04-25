@@ -19,16 +19,16 @@ parser$add_argument("--outTable", type="character", required=TRUE,
                     help="absolute path to output table TSV file.")
 
 args <- parser$parse_args()
-
-if (debug){
+debug=0
+if (debug==1){
   yaml_dir="/home/kopardevn/CCBR/projects/ccbr1155/CS030586_CARAP/results/alignment_stats"
   exclude_from_name = ".alignment_stats.yaml"
   scale_constant = 1e6
   out_table = "test.tsv"
 } else {
   yaml_dir=args$yamlDir
-  exclude_from_name=args$yamlDir
-  scale_constant=arg$scaleConstant
+  exclude_from_name=args$excludeFromName
+  scale_constant=args$scaleConstant
   out_table=args$outTable
 }
 setwd(yaml_dir)
