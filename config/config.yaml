@@ -29,7 +29,7 @@ fragment_len_filter: "1000"
 # you generally will not have to edit below this line
 
 # dupstatus and peaktypes
-dupstatus: "dedup, nodedup" # means run both deduplicated and non-deduplicated analysis
+dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
 peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed"
 peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed"
 # which peaktypes to consider for differential analysis:
