@@ -370,6 +370,8 @@ else
     mkdir -p $TMPDIR
 fi
 
+if [[ ! -d {params.bt2_base} ]]; then mkdir {params.bt2_base}; fi
+
 if [[ "{input.spikein}" == "" ]];then
 # there is NO SPIKEIN
 
