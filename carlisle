@@ -186,10 +186,26 @@ function runcheck(){
 
 }
 
+function controlcheck(){
+  # check controls are not listed in comparisons
+  control_list=`awk '$3 ~ /Y/' samples.tsv | awk '{print $1}'`
+  check1=`awk '{print $1}' ${WORKDIR}/contrasts.tsv`
+  check2=`awk '{print $2}' ${WORKDIR}/contrasts.tsv`
+  
+  for sample_id in ${control_list[@]}; do
+    if [[ $check1 =~ $sample_id || $check2 =~ $sample_id ]]; then 
+      echo "Controls ($sample_id) cannot be listed in contrast.csv - update and re-run"
+      exit 0
+    fi
+  done
+}
+
 function dryrun() {
 # Dry-run
 
   runcheck
+  controlcheck
+  
   if [ -f ${WORKDIR}/dryrun.log ]; then
     modtime=$(stat ${WORKDIR}/dryrun.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/dryrun.log ${WORKDIR}/logs/dryrun.${modtime}.log
