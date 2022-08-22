@@ -300,7 +300,17 @@ if [[ "{input.spikein}" == "" ]];then
     spikein_scale=1
 else
     spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
-    spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+    
+    # if the spikein_readcount is below threshold, then there is not enough of the spikein control to use
+    total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
+    spikein_percent=`echo "scale=2 ; $spikein_readcount / $total_count" | bc`
+
+    if [[ $spikein_percent < 0.001 ]]; then 
+        echo "The spikein percentage of this sample was below the threshold (0.001)"
+        spikein_scale=1
+    else
+        spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+    fi
 fi
 
 samtools view -b -@{threads} {input.bam} {params.regions} | \\
