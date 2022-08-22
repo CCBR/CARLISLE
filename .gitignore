@@ -5,3 +5,5 @@
 site/
 **/*.swp
 **/test.*
+
+*DS_Store
