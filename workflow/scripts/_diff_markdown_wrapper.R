@@ -45,7 +45,8 @@ parser$add_argument("--elbowlimits", type="character", required=TRUE,
                     help = "YAML ELBOW limits")
 parser$add_argument("--tmpdir", type="character", required=FALSE, default="/tmp",
                     help = "tmpdir")
-
+parser$add_argument("--species", type="character", required=TRUE,
+                    help = "species")
 
 args <- parser$parse_args()
 
@@ -84,6 +85,7 @@ if (debug){
   if (args$scalesfbymean) {scalesfbymean="Y"} else {scalesfbymean="N"}
   tmpdir=args$tmpdir
   if (args$htsfilter) {htsfilter="Y"} else {htsfilter="N"}
+  species=args$species
 }
 
 
@@ -101,7 +103,8 @@ parameters=list(rawcountsmatrix=rawcountsmatrix,
             fdr_cutoff=fdr_cutoff,
             log2fc_cutoff=log2fc_cutoff,
             results=results,
-            elbowlimits=elbowlimits)
+            elbowlimits=elbowlimits,
+            species=species)
 
 rmarkdown::render(args$rmd,
   params=parameters,

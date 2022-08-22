@@ -5,45 +5,47 @@ output:
     # toc: true
     # toc_float: true
 params:
-  rawcountsmatrix: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentscountsmatrix.txt"
-  coldata: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_sampleinfo.txt"
-  dupstatus: "no_dedup" # dedup or no_dedup
-  condition1: "siSmyd3_2m_Smyd3_0.25HCHO_500K"
-  condition2: "siNC_2m_Smyd3_0.25HCHO_500K" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
+  rawcountsmatrix: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentscountsmatrix.txt"
+  coldata: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_sampleinfo.txt"
+  dupstatus: "dedup" # dedup or no_dedup
+  condition1: "HN6_H3K4me3"
+  condition2: "5-3_H3K4me3" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
   htsfilter: "N" # Use HTSFilter (CPM filter does not work well for this type of data)
   fdr_cutoff: "0.05"
   log2fc_cutoff: "0.59" # |FC| of 1.5
-  results: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
+  results: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
   spiked: "Y"
   rawcountsprescaled: "N"
   scalesfbymean: "Y"
-  bbpaths: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/bed_bedgraph_paths.tsv"
-  elbowlimits: "~/CCBR/projects/ccbr1155/CS030586_CARAP/results/peaks/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__no_dedup__norm.relaxed.bed_fragmentsbased_diffanalysis_elbowlimits.tmp.yaml"
+  bbpaths: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
+  elbowlimits: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentsbased_diff_elbowlimits.tmp.yaml"
+  species: "hg38"
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # list packages
-list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "RUVSeq", "ChIPseeker", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "stringr","RColorBrewer","HTSFilter")
+list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db")
 
 #install as needed
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) BiocManager::install(new.packages)
-
+if(length(new.packages)) {
+  print(new.packages)
+  BiocManager::install(new.packages)
+}
 # load packages
 invisible(lapply(list.of.packages, library, character.only = TRUE))
 ```
 
 ## Loading SampleInfo and Counts
-
-
 ```{r sampleinfo, include=TRUE, echo=FALSE}
 sampleinfo = read.csv(params$coldata,header = TRUE,sep="\t",strip.white = TRUE,check.names = FALSE,colClasses = "character")
 # filter based off of params
 sampleinfo = sampleinfo[sampleinfo$group == params$condition1 | sampleinfo$group == params$condition2,]
 sampleinfo$group = relevel(as.factor(sampleinfo$group),params$condition2)
-
 rawcounts = read.csv(params$rawcountsmatrix,
                      header = TRUE,sep="\t",
                      comment.char = "#", 
@@ -52,6 +54,7 @@ rawcounts = read.csv(params$rawcountsmatrix,
                      colClasses = "character")
 rawcounts = as.data.frame(rawcounts)
 rawcounts %>% column_to_rownames(var="peakID") -> rawcounts
+
 # filter based off of sampleinfo
 rawcounts = rawcounts[,colnames(rawcounts)==sampleinfo$samplename]
 
@@ -62,14 +65,22 @@ x = as.data.frame(x)
 colnames(x) = colnames(rawcounts)
 rownames(x) = rownames(rawcounts)
 rawcounts = x
-
 sampleinfo=sampleinfo[sampleinfo$samplename==colnames(rawcounts),]
-sampleinfo$library_size=colSums(rawcounts)/1e6
+
+#determine lib reduction factor
+if (mean(colSums(rawcounts))>10000000){
+  lib_factor=1e6
+} else if (mean(colSums(rawcounts))>1000000){
+    lib_factor=1e5
+} else if (mean(colSums(rawcounts))>100000){
+      lib_factor=1e4
+}
+
+sampleinfo$library_size=colSums(rawcounts)/lib_factor
 sampleinfodf = as.data.frame(sampleinfo)
 sampleinfodf$dupstatus = params$dupstatus
 rownames(sampleinfo) = sampleinfo$samplename
 pander(sampleinfodf,style="rmarkdown")
-
 rawcounts_logcpm = log2(cpm(rawcounts))
 cpm_melt=reshape2::melt(rawcounts_logcpm)
 colnames(cpm_melt)=c("peakID","samplename","log2cpm")
@@ -102,7 +113,6 @@ ggplot(cpm_melt,aes(x=samplename,y=log2cpm)) +
 dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
                                 colData = sampleinfo[,c("samplename","group")],
                                 design = ~ group)
-
 if (params$spiked=="Y" & !is.null(params$bbpaths)) {
   bbpaths_df = read.csv(params$bbpaths,
                       header = FALSE,sep="\t",
@@ -175,7 +185,6 @@ assayrld = assayrld[!zero_variance_rows,]
 if (nrow(assayrld) > 500){
   assayrld=assayrld[1:500,]
 }
-
 pca=prcomp(t(assayrld),scale. = T)
 m.pc1 = round(pca$sdev[1]^2/sum(pca$sdev^2)*100,2)
 m.pc2 = round(pca$sdev[2]^2/sum(pca$sdev^2)*100,2)
@@ -207,8 +216,6 @@ lim$FC=2^lim$log2FC
 lim["DownLimit","FC"]=-1/lim["DownLimit","FC"]
 lim %>% rownames_to_column(var="Limit") -> lim
 pander(lim)
-
-
 # DT::datatable(lim) %>% formatSignif(columns=colnames(lim),digits=4)
 ```
 
@@ -222,13 +229,20 @@ colnames(x) = c("peakID")
 x %>% separate(col = c("peakID"),into = c("chrom","coord"),sep = ":") %>% 
   separate(col = c("coord"),into = c("start","end"),sep = "-") -> x
 peaks <- GenomicRanges::makeGRangesFromDataFrame(x)
-txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
+
+if (params$species=="mm10"){
+  txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
+  anno_db<-"org.Mm.eg.db"
+} else if (params$species=="hg38"){
+  txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+  anno_db<-"org.Hs.eg.db"
+}
 peakAnno <- ChIPseeker::annotatePeak(peaks,
                                      tssRegion = c(-2000,200),
                                      TxDb = txdb,
                                      level = "gene",
                                      overlap = "all",
-                                     annoDb = "org.Mm.eg.db")
+                                     annoDb = anno_db)
 pa <- as.data.frame(peakAnno)
 pa$shortAnno=stringr::word(pa$annotation,1)
 pa$shortAnno[pa$shortAnno=="5'"]="5'UTR"
@@ -236,8 +250,7 @@ pa$shortAnno[pa$shortAnno=="3'"]="3'UTR"
 pa$peakID = paste0(pa$seqnames,":",pa$start,"-",pa$end)
 results_df = merge(results_df,pa,by=c("peakID"))
 write.table(results_df,file=params$results,quote=FALSE,sep="\t",row.names = FALSE,col.names = TRUE)
-# fdr_cutoff=0.05
-# log2fc_cutoff=0.59
+
 up=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange > log2fc_cutoff,]$shortAnno))
 down=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange < -1*log2fc_cutoff,]$shortAnno))
 if(nrow(up)==0){
@@ -262,7 +275,6 @@ pander(deg)
 ### DESeq Volcano
 
 ```{r volcano,fig.width=8, fig.height=10,include=TRUE,echo=FALSE}
-
 colors=brewer.pal(7,"Set1")
 anno_types=levels(as.factor(results_df$shortAnno))
 keyvals=rep("grey",times=nrow(results_df))
