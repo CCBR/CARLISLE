@@ -109,6 +109,7 @@ rule DESeq:
         spiked = SPIKED, # "Y" for spiked
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
+        species = config["genome"],
     envmodules:
         TOOLS["R"]
     shell:"""
@@ -139,7 +140,8 @@ Rscript {params.rscript} \\
     --rawcountsprescaled \\
     --scalesfbymean \\
     --bbpaths {input.bbpaths} \\
-    --tmpdir $TMPDIR
+    --tmpdir $TMPDIR \\
+    --species {params.species}
 """
 
 rule DESeq2:
@@ -161,6 +163,7 @@ rule DESeq2:
         spiked = SPIKED, # "Y" for spiked
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
+        species = config["genome"],
     envmodules:
         TOOLS["R"]
     shell:"""
@@ -191,7 +194,8 @@ Rscript {params.rscript} \\
     --spiked {params.spiked} \\
     --scalesfbymean \\
     --bbpaths {input.bbpaths} \\
-    --tmpdir $TMPDIR
+    --tmpdir $TMPDIR \\
+    --species {params.species}
 """
 
 rule diffbb:
