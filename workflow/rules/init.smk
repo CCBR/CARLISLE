@@ -270,56 +270,16 @@ if SPIKED == "Y":
     print("# Spike-in : ",SPIKED)
     print("# Spike-in genome : ",spikein_genome)
 else:
-    SPIKED = "N"
-    SPIKED_GENOMEFA = ""
-    print("# Spike-in : ",SPIKED)
+    SPIKED_GENOMEFA=""
+    print("# Spike-in : ")
 
-CREATE_REFERENCE = "N"
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
-# assume that reference index does not exist
-# if reference index exists then ensure that the following identical at the time of creation of the index
-# 1. genome eg. mm10
-# 2. genomefa 
-# 3. blacklistedbed ... this is used for masking the genomefa
-# 4. spiked ... if spike-in was used or not ... Y or N
-# 5. spikein_genome ... eg full path to ecoli
-if not os.path.exists(BOWTIE2_INDEX):
-    CREATE_REFERENCE = "Y"
-else:
-    if not os.path.exists(join(BOWTIE2_INDEX,"ref.yaml")):
-        CREATE_REFERENCE = "Y"
-    else:
-        with open(join(BOWTIE2_INDEX,"ref.yaml")) as f:
-            oldrefdata = yaml.safe_load(f)
-        if oldrefdata["genome"] != GENOME or oldrefdata["genomefa"] != GENOMEFA or oldrefdata["blacklistbed"] != GENOMEBLACKLIST or oldrefdata["spiked"] != SPIKED or oldrefdata["spikein_genome"] != SPIKED_GENOMEFA :
-            CREATE_REFERENCE = "Y"
-
-if CREATE_REFERENCE == "Y":
-    if os.path.exists(BOWTIE2_INDEX):
-        shutil.rmtree(BOWTIE2_INDEX)
-    os.mkdir(BOWTIE2_INDEX)
-    os.symlink(GENOMEFA,join(BOWTIE2_INDEX,"genome.fa"))
-    os.symlink(GENOMEBLACKLIST,join(BOWTIE2_INDEX,"genome.blacklist.bed"))
-    if SPIKED == "Y":
-        os.symlink(SPIKED_GENOMEFA,join(BOWTIE2_INDEX,"spikein.fa"))
-    refdata = dict()
-    refdata["genome"] = GENOME
-    refdata["genomefa"] = GENOMEFA
-    refdata["blacklistbed"] = GENOMEBLACKLIST
-    refdata["spiked"] = SPIKED
-    refdata["spikein_genome"] = SPIKED_GENOMEFA
-# create json file and store in "tmp" until the reference is built
-    os.mkdir(join(BOWTIE2_INDEX,"tmp"))
-    with open(join(BOWTIE2_INDEX,"tmp","ref.yaml"), 'w') as file:
-        dumped = yaml.dump(refdata, file)
-
-GENOMEFA = join(BOWTIE2_INDEX,"genome.fa")
-GENOMEBLACKLIST = join(BOWTIE2_INDEX,"genome.blacklist.bed")
-if SPIKED == "Y":
-    SPIKED_GENOMEFA = join(BOWTIE2_INDEX,"spikein.fa")
-else:
-    SPIKED_GENOMEFA = ""
-
+refdata = dict()
+refdata["genome"] = GENOME
+refdata["genomefa"] = GENOMEFA
+refdata["blacklistbed"] = GENOMEBLACKLIST
+refdata["spiked"] = SPIKED
+refdata["spikein_genome"] = SPIKED_GENOMEFA
 
 
 #########################################################
@@ -344,77 +304,93 @@ rule create_replicate_sample_table:
 
 rule create_reference:
     input: 
-        genomefa = GENOMEFA,
-        blacklist = GENOMEBLACKLIST,
-        spikein = SPIKED_GENOMEFA
+        genomefa_source=GENOMEFA,
+        blacklist_source=GENOMEBLACKLIST,
     output:
+        genomefa = join(BOWTIE2_INDEX,"genome.fa"),
+        blacklist = join(BOWTIE2_INDEX,"genome.blacklist.bed"),
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         ref_len = join(BOWTIE2_INDEX,"ref.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
         refjson = join(BOWTIE2_INDEX,"ref.yaml")
     params:
-        bt2_base=join(BOWTIE2_INDEX,"ref")
+        bt2_base=join(BOWTIE2_INDEX,"ref"),
+        bowtie2_dir=BOWTIE2_INDEX,
+        use_spikein=SPIKED,
+        spiked_source=SPIKED_GENOMEFA,
+        spiked_output=join(BOWTIE2_INDEX,"spikein.fa"),
+        refdata=refdata,
     envmodules: 
         TOOLS["bowtie2"],
         TOOLS["samtools"],
         TOOLS["bedtools"],
     threads: getthreads("create_reference")
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
 
-if [[ ! -d {params.bt2_base} ]]; then mkdir {params.bt2_base}; fi
+        # create dir and links
+        if [[ -d {params.bowtie2_dir} ]]; then rm -r {params.bowtie2_dir}; fi 
+        mkdir -p {params.bowtie2_dir}/ref
+        ln -s {input.genomefa_source} {output.genomefa}
+        ln -s {input.blacklist_source} {output.blacklist}
+        if [[ {params.use_spikein} == "Y" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
 
-if [[ "{input.spikein}" == "" ]];then
-# there is NO SPIKEIN
+        # create json file and store in "tmp" until the reference is built
+        mkdir -p {params.bowtie2_dir}/tmp
+        echo {params.refdata} > {params.bowtie2_dir}/tmp/ref.yaml
 
-    # create faidx for genome and spike fasta
-    samtools faidx {input.genomefa}
+        if [[ "{params.spiked_output}" == "" ]];then
+        # there is NO SPIKEIN
 
-    # mask genome fa with genome blacklist
-    bedtools maskfasta -fi {input.genomefa} -bed {input.blacklist} -fo ${{TMPDIR}}/masked_genome.fa
+            # create faidx for genome and spike fasta
+            samtools faidx {output.genomefa}
 
-    # build bowtie index
-    bowtie2-build --threads {threads} ${{TMPDIR}}/masked_genome.fa {params.bt2_base}
+            # mask genome fa with genome blacklist
+            bedtools maskfasta -fi {output.genomefa} -bed {output.blacklist} -fo ${{TMPDIR}}/masked_genome.fa
 
-    # create len files
-    cut -f1,2 {input.genomefa}.fai > {output.ref_len}
-    cp {output.ref_len} {output.genome_len}
-    touch {output.spikein_len}
+            # build bowtie index
+            bowtie2-build --threads {threads} ${{TMPDIR}}/masked_genome.fa {params.bt2_base}
 
-else
-# THERE is SPIKEIN
+            # create len files
+            cut -f1,2 {output.genomefa}.fai > {output.ref_len}
+            cp {output.ref_len} {output.genome_len}
+            touch {output.spikein_len}
 
-    # create faidx for genome and spike fasta
-    samtools faidx {input.genomefa}
-    samtools faidx {input.spikein}
+        else
+        # THERE is SPIKEIN
 
-    # mask genome fa with genome blacklist
-    bedtools maskfasta -fi {input.genomefa} -bed {input.blacklist} -fo ${{TMPDIR}}/masked_genome.fa
+            # create faidx for genome and spike fasta
+            samtools faidx {output.genomefa}
+            samtools faidx {params.spiked_output}
 
-    # build bowtie index
-    bowtie2-build --threads {threads} ${{TMPDIR}}/masked_genome.fa,{input.spikein} {params.bt2_base}
+            # mask genome fa with genome blacklist
+            bedtools maskfasta -fi {output.genomefa} -bed {output.blacklist} -fo ${{TMPDIR}}/masked_genome.fa
 
-    # create len files
-    cut -f1,2 {input.genomefa}.fai > {output.ref_len}
-    cp {output.ref_len} {output.genome_len}
-    cut -f1,2 {input.spikein}.fai >> {output.ref_len}
-    cut -f1,2 {input.spikein}.fai > {output.spikein_len}
+            # build bowtie index
+            bowtie2-build --threads {threads} ${{TMPDIR}}/masked_genome.fa,{params.spiked_output} {params.bt2_base}
 
-fi
+            # create len files
+            cut -f1,2 {output.genomefa}.fai > {output.ref_len}
+            cp {output.ref_len} {output.genome_len}
+            cut -f1,2 {params.spiked_output}.fai >> {output.ref_len}
+            cut -f1,2 {params.spiked_output}.fai > {output.spikein_len}
 
-# copy ref.yaml only after successfully finishing ref index building
-if [[ -f {output.bt2} ]];then
-    mv $(dirname {output.bt2})/tmp/ref.yaml {output.refjson}
-fi
+        fi
 
-"""
+        # copy ref.yaml only after successfully finishing ref index building
+        if [[ -f {output.bt2} ]];then
+            mv $(dirname {output.bt2})/tmp/ref.yaml {output.refjson}
+        fi
+
+        """
 
         
