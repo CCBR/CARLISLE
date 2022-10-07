@@ -237,6 +237,7 @@ if (params$species=="mm10"){
   txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
   anno_db<-"org.Hs.eg.db"
 }
+options(ChIPseeker.downstreamDistance = 0)
 peakAnno <- ChIPseeker::annotatePeak(peaks,
                                      tssRegion = c(-2000,200),
                                      TxDb = txdb,
