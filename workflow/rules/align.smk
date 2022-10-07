@@ -24,75 +24,76 @@ rule trim:
     threads: getthreads("trim")
     envmodules:
         TOOLS["cutadapt"],
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-cutadapt \\
---pair-filter=any \\
---nextseq-trim=2 \\
---trim-n \\
--n 5 -O 5 \\
--q 10,10 \\
--m 35:35 \\
--b file:{params.adapters} \\
--B file:{params.adapters} \\
--j {threads} \\
--o {output.R1} \\
--p {output.R2} \\
-{input.R1} {input.R2}
-"""
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        cutadapt \\
+        --pair-filter=any \\
+        --nextseq-trim=2 \\
+        --trim-n \\
+        -n 5 -O 5 \\
+        -q 10,10 \\
+        -m 35:35 \\
+        -b file:{params.adapters} \\
+        -B file:{params.adapters} \\
+        -j {threads} \\
+        -o {output.R1} \\
+        -p {output.R2} \\
+        {input.R1} {input.R2}
+        """
 
-rule align:
-# """
-# Align using bowtie:
-# * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
-# Cut and Run where overlapping R1 and R2 alignments are expected
-# BAM is sorted and indexed, and stats are collected using flagstat and idxstats
-# """
-    input:
-        R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
-        R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
-        bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
-    output:
-        bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
-        bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
-        bamflagstat=join(RESULTSDIR,"tmp","bam","{replicate}.bam.flagstat"),
-        bamidxstats=join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
-    params:
-        replicate = "{replicate}",
-        bowtie2_parameters = config["bowtie2_parameters"],
-        bt2_base = join(BOWTIE2_INDEX,"ref"),
-        pyscript = join(SCRIPTSDIR,"_filter_bam.py")
-    threads: getthreads("align")
-    envmodules:
-        TOOLS["bowtie2"],
-        TOOLS["samtools"],
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-bowtie2 \\
-    -p {threads} \\
-    {params.bowtie2_parameters} \\
-    -x {params.bt2_base}  \\
-    -1 {input.R1} -2 {input.R2}  | \\
-    samtools view -bS - |  \\
-    samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam}
-samtools index {output.bam}
-samtools flagstat {output.bam} > {output.bamflagstat}
-samtools idxstats {output.bam} > {output.bamidxstats}
-"""
+        rule align:
+        # """
+        # Align using bowtie:
+        # * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
+        # Cut and Run where overlapping R1 and R2 alignments are expected
+        # BAM is sorted and indexed, and stats are collected using flagstat and idxstats
+        # """
+            input:
+                R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
+                R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
+                bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
+            output:
+                bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
+                bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
+                bamflagstat=join(RESULTSDIR,"tmp","bam","{replicate}.bam.flagstat"),
+                bamidxstats=join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
+            params:
+                replicate = "{replicate}",
+                bowtie2_parameters = config["bowtie2_parameters"],
+                bt2_base = join(BOWTIE2_INDEX,"ref"),
+                pyscript = join(SCRIPTSDIR,"_filter_bam.py")
+            threads: getthreads("align")
+            envmodules:
+                TOOLS["bowtie2"],
+                TOOLS["samtools"],
+            shell:"""
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        bowtie2 \\
+            -p {threads} \\
+            {params.bowtie2_parameters} \\
+            -x {params.bt2_base}  \\
+            -1 {input.R1} -2 {input.R2}  | \\
+            samtools view -bS - |  \\
+            samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam}
+        samtools index {output.bam}
+        samtools flagstat {output.bam} > {output.bamflagstat}
+        samtools idxstats {output.bam} > {output.bamidxstats}
+        """
 
 rule filter:
 # """
@@ -125,67 +126,68 @@ rule filter:
         TOOLS["python37"],
         TOOLS["picard"],
         TOOLS["ucsc"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-if [[ "{params.dupstatus}" == "dedup" ]];then
-    mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        if [[ "{params.dupstatus}" == "dedup" ]];then
+            mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
 
-    java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-    --INPUT {input.bam} \\
-    --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
-    --ASSUME_SORT_ORDER coordinate \\
-    --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
-    --CREATE_INDEX true \\
-    --METRICS_FILE {output.bam}.dupmetrics
-    
-    python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
-    --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
-    --fragmentlength {params.fragment_len_filter} \\
-    --removemarkedduplicates
+            java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
+            --INPUT {input.bam} \\
+            --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
+            --ASSUME_SORT_ORDER coordinate \\
+            --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
+            --CREATE_INDEX true \\
+            --METRICS_FILE {output.bam}.dupmetrics
+            
+            python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
+            --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
+            --fragmentlength {params.fragment_len_filter} \\
+            --removemarkedduplicates
 
-else
+        else
 
-# deduplicate only the spikeins
+        # deduplicate only the spikeins
 
-    genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
-    samtools view -@{threads} -b {input.bam} $genome_regions | \\
-        samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -    
+            genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
+            samtools view -@{threads} -b {input.bam} $genome_regions | \\
+                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -    
 
-    spikein_regions=$(cut -f1 {input.spikein_len} | tr '\\n' ' ')
-    samtools view -@{threads} -b {input.bam} $spikein_regions | \\
-        samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam 
-    
-    mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
-    java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-    --INPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam \\
-    --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
-    --ASSUME_SORT_ORDER coordinate \\
-    --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
-    --CREATE_INDEX true \\
-    --METRICS_FILE {output.bam}.spikeinonly.dupmetrics
+            spikein_regions=$(cut -f1 {input.spikein_len} | tr '\\n' ' ')
+            samtools view -@{threads} -b {input.bam} $spikein_regions | \\
+                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam 
+            
+            mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
+            java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
+            --INPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam \\
+            --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
+            --ASSUME_SORT_ORDER coordinate \\
+            --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
+            --CREATE_INDEX true \\
+            --METRICS_FILE {output.bam}.spikeinonly.dupmetrics
 
-    python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
-    --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam \\
-    --fragmentlength 1000000 --removemarkedduplicates
+            python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
+            --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam \\
+            --fragmentlength 1000000 --removemarkedduplicates
 
-    samtools merge -@{threads} -O BAM -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
-        ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam \\
-        ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam
+            samtools merge -@{threads} -O BAM -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
+                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam \\
+                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam
 
-fi
+        fi
 
-samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam} ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam
-samtools index -@{threads} {output.bam}
-samtools flagstat {output.bam} > {output.bamflagstat}
-samtools idxstats {output.bam} > {output.bamidxstats}
-"""
+        samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam} ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam
+        samtools index -@{threads} {output.bam}
+        samtools flagstat {output.bam} > {output.bamflagstat}
+        samtools idxstats {output.bam} > {output.bamidxstats}
+        """
 
 rule alignstats:
 # """
@@ -210,50 +212,51 @@ rule alignstats:
     threads: getthreads("alignstats")
     envmodules:
         TOOLS["python37"],
-    shell:"""
-set -exo pipefail
+    shell:
+        """
+        set -exo pipefail
 
-# _get_nreads_stats parameters:
-# @param1 = R1 fastq file
-# @param2 = spike-in len file
-# @param3 = genome len file
-# @param4 = raw idx stats file
-# @param5 = filtered idx stats file - no_dedup
-# @param6 = filtered idx stats file - dedup
-# @param7 = out yaml file
+        # _get_nreads_stats parameters:
+        # @param1 = R1 fastq file
+        # @param2 = spike-in len file
+        # @param3 = genome len file
+        # @param4 = raw idx stats file
+        # @param5 = filtered idx stats file - no_dedup
+        # @param6 = filtered idx stats file - dedup
+        # @param7 = out yaml file
 
-python {params.pyscript} \\
-    {input.R1} \\
-    {input.spikein_len} \\
-    {input.genome_len} \\
-    {input.raw_alignment_idxstats} \\
-    {input.filtered_no_dedup_alignment_idxstats} \\
-    {input.filtered_dedup_alignment_idxstats} \\
-    {output.outyaml}
+        python {params.pyscript} \\
+            {input.R1} \\
+            {input.spikein_len} \\
+            {input.genome_len} \\
+            {input.raw_alignment_idxstats} \\
+            {input.filtered_no_dedup_alignment_idxstats} \\
+            {input.filtered_dedup_alignment_idxstats} \\
+            {output.outyaml}
 
-"""
+        """
 
-localrules: gather_alignstats
-rule gather_alignstats:
-    input:
-        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
-    output:
-        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
-    params:
-        rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
-        spikein_scale = config["spikein_scale"],
-    envmodules:
-        TOOLS["R"]
-    shell:"""
-set -exo pipefail
-file1=$(echo {input} | awk '{{print $1}}')
-dir=$(dirname $file1)
-Rscript {params.rscript} \\
-  --yamlDir $dir \\
-  --excludeFromName ".alignment_stats.yaml" \\
-  --scaleConstant {params.spikein_scale} \\
-  --outTable {output}
-"""
+        localrules: gather_alignstats
+        rule gather_alignstats:
+            input:
+                expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
+            output:
+                join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+            params:
+                rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
+                spikein_scale = config["spikein_scale"],
+            envmodules:
+                TOOLS["R"]
+            shell:"""
+        set -exo pipefail
+        file1=$(echo {input} | awk '{{print $1}}')
+        dir=$(dirname $file1)
+        Rscript {params.rscript} \\
+        --yamlDir $dir \\
+        --excludeFromName ".alignment_stats.yaml" \\
+        --scaleConstant {params.spikein_scale} \\
+        --outTable {output}
+        """
 
 
 rule bam2bg:
@@ -286,42 +289,43 @@ rule bam2bg:
         TOOLS["bedtools"],
         TOOLS["samtools"],
         TOOLS["ucsc"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
 
-if [[ "{input.spikein}" == "" ]];then
-    spikein_scale=1
-else
-    spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
-    
-    # if the spikein_readcount is below threshold, then there is not enough of the spikein control to use
-    total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
-    spikein_percent=`echo "scale=2 ; $spikein_readcount / $total_count" | bc`
+        if [[ "{input.spikein}" == "" ]];then
+            spikein_scale=1
+        else
+            spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
+            
+            # if the spikein_readcount is below threshold, then there is not enough of the spikein control to use
+            total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
+            spikein_percent=`echo "scale=6 ; $spikein_readcount / $total_count * 100" | bc`;\
 
-    if [[ $spikein_percent < 0.001 ]]; then 
-        echo "The spikein percentage of this sample was below the threshold (0.001)"
-        spikein_scale=1
-    else
-        spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
-    fi
-fi
+            if [[ $spikein_percent < 0.001 ]]; then 
+                echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The spikein_scale was set to 1."
+                spikein_scale=1
+            else
+                spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+            fi
+        fi
 
-samtools view -b -@{threads} {input.bam} {params.regions} | \\
-samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
-bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed
-awk -v fl={params.fragment_len_filter} '{{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed
-cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed | \\
-    LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
-bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
+        samtools view -b -@{threads} {input.bam} {params.regions} | \\
+        samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
+        bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed
+        awk -v fl={params.fragment_len_filter} '{{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed
+        cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed | \\
+            LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
+        bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
 
-bedGraphToBigWig {output.bg} {input.genome_len} {output.bw}
+        bedGraphToBigWig {output.bg} {input.genome_len} {output.bw}
 
-echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
-"""
+        echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
+        """
