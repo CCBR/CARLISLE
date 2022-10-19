@@ -1,12 +1,15 @@
-## you probably need to change or comment/uncomment some of these
-#
+#####################################################################################
+# Folders / Paths
+#####################################################################################
 # The working dir... output will be in the results subfolder of the workdir
 workdir: "WORKDIR"
-#
+
 # tab delimited samples file .. see samplefile for format details
-#
 samplemanifest: "WORKDIR/samples.tsv"
 
+#####################################################################################
+# User parameters
+#####################################################################################
 # run sample contrasts
 run_contrasts: "Y" # Y or N
 contrasts: "WORKDIR/contrasts.tsv"  # run_contrasts needs to be "Y"
@@ -20,18 +23,13 @@ spiked: "Y" # are the samples spiked or not. If Y, then normalization will be pe
 spikein_genome: "ecoli" # ignored if spiked is set to N
 spikein_scale: 1000000
 
-
 # user parameters for alignment
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
 fragment_len_filter: "1000"
 
-
-# you generally will not have to edit below this line
-
-# dupstatus and peaktypes
-dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
-peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed"
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed"
+#####################################################################################
+# Advanced parameters
+#####################################################################################
 # which peaktypes to consider for differential analysis:
 # macs2_narrow: narrowPeak
 # macs2_broad: broadPeak --> DESeq step generally fails for this... also, generally has too many calls.
@@ -40,6 +38,14 @@ peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed"
 # seacr normalized relaxed: norm.relaxed.bed
 # seacr unnormalized relaxed: non.relaxed.bed
 
+# dupstatus and peaktypes
+dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
+peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed"
+
+#####################################################################################
+# References
+#####################################################################################
 # references:
 reference:
   hg38:
