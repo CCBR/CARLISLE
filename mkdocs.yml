@@ -6,7 +6,7 @@ site_description: >-
 # Repository
 repo_name: CCBR/CARLISLE
 repo_url: https://github.com/CCBR/CARLISLE
-edit_uri: https://github.com/CCBR/CARLISLE
+edit_uri: https://github.com/CCBR/CARLISLE/edit/main/docs/
 
 # Copyright
 copyright: Copyright &copy; 2022 CCBR
@@ -94,12 +94,3 @@ markdown_extensions:
 # Page Tree
 nav:
   - Background : index.md
-  - Usage: 
-    - 1. Getting Started : CARLISLE/getting-started.md
-    - 2. Preparing Files: CARLISLE/preparing-files.md
-    - 3. Running the Pipeline: CARLISLE/run.md
-    - 4. Expected Output: CARLISLE/output.md
-    - 5. Running Example Data: CARLISLE/test.md
-  - FAQ:
-    - Troubleshooting: CARLISLE/troubleshooting.md
-    - Contributions: CARLISLE/contributions.md
