@@ -49,32 +49,33 @@ rule trim:
         {input.R1} {input.R2}
         """
 
-        rule align:
-        # """
-        # Align using bowtie:
-        # * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
-        # Cut and Run where overlapping R1 and R2 alignments are expected
-        # BAM is sorted and indexed, and stats are collected using flagstat and idxstats
-        # """
-            input:
-                R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
-                R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
-                bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
-            output:
-                bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
-                bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
-                bamflagstat=join(RESULTSDIR,"tmp","bam","{replicate}.bam.flagstat"),
-                bamidxstats=join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
-            params:
-                replicate = "{replicate}",
-                bowtie2_parameters = config["bowtie2_parameters"],
-                bt2_base = join(BOWTIE2_INDEX,"ref"),
-                pyscript = join(SCRIPTSDIR,"_filter_bam.py")
-            threads: getthreads("align")
-            envmodules:
-                TOOLS["bowtie2"],
-                TOOLS["samtools"],
-            shell:"""
+rule align:
+# """
+# Align using bowtie:
+# * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
+# Cut and Run where overlapping R1 and R2 alignments are expected
+# BAM is sorted and indexed, and stats are collected using flagstat and idxstats
+# """
+    input:
+        R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
+        R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
+        bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
+    output:
+        bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
+        bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
+        bamflagstat=join(RESULTSDIR,"tmp","bam","{replicate}.bam.flagstat"),
+        bamidxstats=join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
+    params:
+        replicate = "{replicate}",
+        bowtie2_parameters = config["bowtie2_parameters"],
+        bt2_base = join(BOWTIE2_INDEX,"ref"),
+        pyscript = join(SCRIPTSDIR,"_filter_bam.py")
+    threads: getthreads("align")
+    envmodules:
+        TOOLS["bowtie2"],
+        TOOLS["samtools"],
+    shell:
+        """
         set -exo pipefail
         if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
             TMPDIR="/lscratch/$SLURM_JOB_ID"
@@ -153,9 +154,7 @@ rule filter:
             --removemarkedduplicates
 
         else
-
-        # deduplicate only the spikeins
-
+            # deduplicate only the spikeins
             genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $genome_regions | \\
                 samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -    
@@ -236,18 +235,19 @@ rule alignstats:
 
         """
 
-        localrules: gather_alignstats
-        rule gather_alignstats:
-            input:
-                expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
-            output:
-                join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
-            params:
-                rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
-                spikein_scale = config["spikein_scale"],
-            envmodules:
-                TOOLS["R"]
-            shell:"""
+localrules: gather_alignstats
+rule gather_alignstats:
+    input:
+        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
+    output:
+        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+    params:
+        rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
+        spikein_scale = config["spikein_scale"],
+    envmodules:
+        TOOLS["R"]
+    shell:
+        """
         set -exo pipefail
         file1=$(echo {input} | awk '{{print $1}}')
         dir=$(dirname $file1)
@@ -271,19 +271,20 @@ rule bam2bg:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
         bamidxstats = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),
-        spikein = SPIKED_GENOMEFA
     output:
         fragments_bed = join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")
     params:
+        spikein = SPIKED_GENOMEFA,
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         fragment_len_filter = config["fragment_len_filter"],
         spikein_scale = config["spikein_scale"],
         regions = REGIONS,
-        memG = getmemG("bam2bg")
+        memG = getmemG("bam2bg"),
+        library_file=LIBRARY_FILE
     threads: getthreads("bam2bg")
     envmodules:
         TOOLS["bedtools"],
@@ -300,8 +301,12 @@ rule bam2bg:
             mkdir -p $TMPDIR
         fi
 
-        if [[ "{input.spikein}" == "" ]];then
+        if [[ "{params.spikein}" == "" ]];then
             spikein_scale=1
+        elif [[ "{params.spikein}" == "LIBRARY" ]];then
+            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f3 -d","`
+            spikein_scale=$(echo "$library_size / {params.spikein_scale}" | bc -l)
+            echo "The spikein is generated from the library size $spikein_scale"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
             
@@ -316,16 +321,21 @@ rule bam2bg:
                 spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
             fi
         fi
-
-        samtools view -b -@{threads} {input.bam} {params.regions} | \\
-        samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
+        # create fragments file
+        samtools view -b -@{threads} {input.bam} {params.regions} | samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
         bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed
+        
         awk -v fl={params.fragment_len_filter} '{{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed
+        
         cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed | \\
             LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
+        
+        # run bedtools
         bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
 
+        # create bigwig
         bedGraphToBigWig {output.bg} {input.genome_len} {output.bw}
 
+        # add to YAML
         echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
         """
