@@ -262,6 +262,8 @@ GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
 SPIKED = config["spiked"]
+LIBRARY_FILE=""
+SPIKED_GENOMEFA=""
 
 if SPIKED == "Y":
     spikein_genome = config["spikein_genome"]
@@ -269,8 +271,13 @@ if SPIKED == "Y":
     check_readaccess(SPIKED_GENOMEFA)
     print("# Spike-in : ",SPIKED)
     print("# Spike-in genome : ",spikein_genome)
+elif SPIKED == "LIBRARY":
+    SPIKED_GENOMEFA="LIBRARY"
+    LIBRARY_FILE=join(WORKDIR,"clean_library_size.csv")
+    check_readaccess(LIBRARY_FILE)
+    print("# Spike-in : using LIBRARY SIZE (DEPTH OF SEQ)")
+    print("# Spike-in library file : ",LIBRARY_FILE)
 else:
-    SPIKED_GENOMEFA=""
     print("# Spike-in : ")
 
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")

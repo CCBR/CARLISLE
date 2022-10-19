@@ -377,8 +377,8 @@ snakemake $1 -s $SNAKEFILE \
 -j 500 \
 --rerun-incomplete \
 --keep-going \
+--touch \
 --stats ${WORKDIR}/snakemake.stats
-
   fi
 
 }
