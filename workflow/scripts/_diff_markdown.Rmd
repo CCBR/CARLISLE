@@ -74,6 +74,14 @@ if (mean(colSums(rawcounts))>10000000){
     lib_factor=1e5
 } else if (mean(colSums(rawcounts))>100000){
       lib_factor=1e4
+} else if (mean(colSums(rawcounts))>10000){
+      lib_factor=1e3
+} else if (mean(colSums(rawcounts))>1000){
+      lib_factor=1e2
+} else if (mean(colSums(rawcounts))>100){
+      lib_factor=1e1
+} else {
+  lib_factor=1e1
 }
 
 sampleinfo$library_size=colSums(rawcounts)/lib_factor
