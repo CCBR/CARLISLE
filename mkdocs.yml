@@ -95,11 +95,11 @@ markdown_extensions:
 nav:
   - Background : index.md
   - Usage: 
-    - 1. Getting Started : CARLISLE/getting-started.md
-    - 2. Preparing Files: CARLISLE/preparing-files.md
-    - 3. Running the Pipeline: CARLISLE/run.md
-    - 4. Expected Output: CARLISLE/output.md
-    - 5. Running Example Data: CARLISLE/test.md
+    - 1. Getting Started : user-guide/getting-started.md
+    - 2. Preparing Files: user-guide/preparing-files.md
+    - 3. Running the Pipeline: user-guide/run.md
+    - 4. Expected Output: user-guide/output.md
+    - 5. Running Example Data: user-guide/test.md
   - FAQ:
-    - Troubleshooting: CARLISLE/troubleshooting.md
-    - Contributions: CARLISLE/contributions.md
+    - Troubleshooting: user-guide/troubleshooting.md
+    - Contributions: user-guide/contributions.md
