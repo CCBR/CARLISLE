@@ -1,0 +1,1 @@
+The CARLISLE pipeline was developed in support NIH [Dr Saloura's laboratory](https://irp.nih.gov/pi/vassiliki-saloura). It has been developed and tested solely on NIH [HPC Biowulf](https://hpc.nih.gov/). This pipeline analyzes Cut&Run sequencing data from alignment through differential peak calling. 
