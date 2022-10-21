@@ -62,5 +62,7 @@ reference:
 spikein_reference:
   ecoli:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
+  drosophila:
+    fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
