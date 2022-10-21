@@ -2,7 +2,8 @@
 The CARLISLE github repository is stored locally, and will be used for project deployment. Multiple projects can be deployed from this one point simultaneously, without concern.
 
 ## 1. Getting Started
-1.1 Introduction
+
+## 1.1 Introduction
 The CARLISLE Pipelie beings with raw FASTQ files and performs trimming followed by alignment using [BOWTIE2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml). Data is then normalized through either the use of an user-species species (IE E.Coli) spike-in control or through the determined library size. Peaks are then called using [SEACR](https://github.com/FredHutch/SEACR) and [MACS2](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html), with various options selected by the user. Peaks are then annotated, and summarized into reports. If designated, differential analysis is performed using [DESEQ2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html). QC reports are also generated with each project.
 
 The following are sub-commands used within CARLISLE:
