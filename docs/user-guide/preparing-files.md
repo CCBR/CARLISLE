@@ -26,6 +26,32 @@ There are several groups of parameters that are editable for the user to control
 - References
   - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
 
+The pipeline allows for the use of a species specific spike-in control, or the use of normalization via library size. The parameter `spikein_genome` should be set to the species term used in `spikein_reference`.
+
+For example for ecoli spike-in:
+```
+run_contrasts: "Y"
+
+spikein_genome: "ecoli"
+
+spikein_reference:
+  ecoli:
+    fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
+
+```
+
+For example for drosophila spike-in:
+```
+run_contrasts: "Y"
+
+spikein_genome: "drosophila"
+
+spikein_reference:
+  drosophila:
+    fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
+
+```
+
 ## 2.2 Preparing Manifests
 There are two manifests, one which required for all pipeliens and one that is only required if running a differential analysis. These files describe information on the samples and desired contrasts. The paths of these files are defined in the snakemake_config.yaml file. These files are:
 
