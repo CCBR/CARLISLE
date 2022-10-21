@@ -22,7 +22,7 @@ SCRIPTBASENAME=$(readlink -f $(basename $0))
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv resources/cluster.yaml resources/tools.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv resources/cluster.yaml resources/tools.yaml"
 ESSENTIAL_FOLDERS="workflow/scripts"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -239,6 +239,7 @@ function runlocal() {
 function testrun() {
   check_essential_files
   sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/config/samples.test.tsv > $WORKDIR/samples.tsv
+  cp ${PIPELINE_HOME}/config/contrasts.test.tsv $WORKDIR/contrasts.tsv
   check_essential_files
   runslurm
 }
