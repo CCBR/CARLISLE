@@ -1,5 +1,5 @@
 # 2. Preparing Files
-The pipeline is controlled through editing configuration and manifest files. Defaults are found in the /output/dir/config and /output/dir/manifest directories, after initialization.
+The pipeline is controlled through editing configuration and manifest files. Defaults are found in the /WORKDIR/config and /WORKDIR/manifest directories, after initialization.
 
 ## 2.1 Configs
 The configuration files control parameters and software of the pipeline. These files are listed below:
@@ -18,13 +18,13 @@ The tools configuration file dictates the version of each software or program th
 There are several groups of parameters that are editable for the user to control the various aspects of the pipeline. These are :
 
 - Folders and Paths
-  - These parameters will include the input and ouput files of the pipeline, as well as list all manifest names.
+    - These parameters will include the input and ouput files of the pipeline, as well as list all manifest names.
 - User parameters
-  - These parameters will control the pipeline features. These include thresholds and whether to perform processes.
+    - These parameters will control the pipeline features. These include thresholds and whether to perform processes.
 - Advanced parameters
-  - These parameters generally do not need to be edited, as they control the outputs to peak calling and duplication type.
+    - These parameters generally do not need to be edited, as they control the outputs to peak calling and duplication type.
 - References
-  - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
+    - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
 
 The pipeline allows for the use of a species specific spike-in control, or the use of normalization via library size. The parameter `spikein_genome` should be set to the species term used in `spikein_reference`.
 

@@ -22,8 +22,8 @@ The following explains each of the command options:
     - init (REQUIRED): This must be performed before any Snakemake run (dry, local, cluster) can be performed. This will copy the necessary config, manifest and Snakefiles needed to run the pipeline to the provided output directory.
     - dryrun (OPTIONAL): This is an optional step, to be performed before any Snakemake run (local, cluster). This will check for errors within the pipeline, and ensure that you have read/write access to the files needed to run the full pipeline.
 - Processing Commands
-    - local - This will run the pipeline on a local node. NOTE: This should only be performed on an interactive node.
-    - run - This will submit a master job to the cluster, and subsequent sub-jobs as needed to complete the workflow. An email will be sent when the pipeline begins, if there are any errors, and when it completes.
+    - local: This will run the pipeline on a local node. NOTE: This should only be performed on an interactive node.
+    - run: This will submit a master job to the cluster, and subsequent sub-jobs as needed to complete the workflow. An email will be sent when the pipeline begins, if there are any errors, and when it completes.
 - Other Commands (All optional)
     - unlock: This will unlock the pipeline if an error caused it to stop in the middle of a run.
     - testrun: This will run a test of the pipeline with test data
