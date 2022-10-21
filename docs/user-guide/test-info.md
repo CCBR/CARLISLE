@@ -47,5 +47,5 @@ venn                                 6              1              1
 total                              117              1             56
 ```
 
-## 5.5 Review outputs
+## 5.3 Review outputs
 Review the expected outputs on the [Output](https://ccbr.github.io/CARLISLE/user-guide/output/) page. If there are errors, review and performing stesp described on the [Troubleshooting](https://ccbr.github.io/CARLISLE/user-guide/troubleshooting/) page as needed.
