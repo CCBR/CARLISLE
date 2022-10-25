@@ -25,7 +25,7 @@ rule contrast_init:
                 bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
                 fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
                 sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
-                for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed;do
+                for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed narrowGo broadGo;do
                     if [[ $dupstatus == "dedup" ]];then
                         bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
                     else
