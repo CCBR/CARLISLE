@@ -55,8 +55,8 @@ rule all:
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         # peaks as bigbed
         expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
@@ -64,8 +64,8 @@ rule all:
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         unpack(run_contrasts),
 
 include: "rules/align.smk"

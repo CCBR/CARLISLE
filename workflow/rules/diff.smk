@@ -9,8 +9,8 @@ rule contrast_init:
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         join(RESULTSDIR,"replicate_sample.tsv"),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     output:

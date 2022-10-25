@@ -41,7 +41,7 @@ fragment_len_filter: "1000"
 # dupstatus and peaktypes
 dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
 peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed"
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGoPeak, broadGoPeak"
 
 #####################################################################################
 # References

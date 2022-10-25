@@ -31,12 +31,12 @@ rule gopeaks:
     threads:
         getthreads("gopeaks")
     output:
-        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bed"),
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed"),
         broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
     shell:
         """
-            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrow
-            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broad --broad
+            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrowGo
+            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broadGo --broad
         """
 
 rule macs2:
@@ -238,8 +238,8 @@ rule bed2bb_gopeaks:
         broadPeaks=rules.gopeaks.output.broadPeaks,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bigbed"),
-        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bigbed"),
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed"),
     params:
         outdir = join(RESULTSDIR,"peaks","gopeaks"),
         memG = getmemG("bed2bb_gopeaks")
