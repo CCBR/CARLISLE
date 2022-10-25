@@ -16,23 +16,24 @@ rule contrast_init:
     params:
         resultsdir = RESULTSDIR,
         bedgraphdir = join(RESULTSDIR,"bedgraph")
-    shell:"""
-while read replicate sample;do
-    for dupstatus in dedup no_dedup;do
-        bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
-        fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
-        sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
-        for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed;do
-            if [[ $dupstatus == "dedup" ]];then
-                bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
-            else
-                bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
-            fi
-            echo -ne "$replicate\\t$sample\\t$dupstatus\\t$peaktype\\t$bed\\t$bedgraph\\t$sf\\t$fragment_bed\\n"
-        done
-    done
-done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}    
-"""
+    shell:
+        """
+        while read replicate sample;do
+            for dupstatus in dedup no_dedup;do
+                bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
+                fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
+                sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
+                for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed;do
+                    if [[ $dupstatus == "dedup" ]];then
+                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
+                    else
+                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
+                    fi
+                    echo -ne "$replicate\\t$sample\\t$dupstatus\\t$peaktype\\t$bed\\t$bedgraph\\t$sf\\t$fragment_bed\\n"
+                done
+            done
+        done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}    
+        """
 
 localrules:make_inputs
 
@@ -46,20 +47,21 @@ rule make_inputs:
         condition2 = "{c2}",
         ds = "{ds}",
         pt = "{pt}",
-    shell:"""
-for condition in {params.condition1} {params.condition2}
-do
-    while read s g d p bed bg sf fbed;do
-        if [[ "$g" == "$condition" ]];then
-            if [[ "$d" == "{params.ds}" ]];then
-                if [[ "$p" == "{params.pt}" ]];then
-                    echo -ne "$g\\t$s\\t$bed\\t$bg\\t$sf\\t$fbed\\n"
+    shell:
+        """
+        for condition in {params.condition1} {params.condition2}
+        do
+            while read s g d p bed bg sf fbed;do
+                if [[ "$g" == "$condition" ]];then
+                    if [[ "$d" == "{params.ds}" ]];then
+                        if [[ "$p" == "{params.pt}" ]];then
+                            echo -ne "$g\\t$s\\t$bed\\t$bg\\t$sf\\t$fbed\\n"
+                        fi
+                    fi
                 fi
-            fi
-        fi
-    done < {input}
-done > {output.inputs}
-"""
+            done < {input}
+        done > {output.inputs}
+        """
 
 rule make_counts_matrix:
     input:
@@ -78,17 +80,18 @@ rule make_counts_matrix:
         TOOLS["python37"],
         TOOLS["bedtools"],
         TOOLS["bedops"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-python {params.pyscript} --bedbedgraph {input.inputs} --tmpdir $TMPDIR --countsmatrix {output.cm} --fragmentscountsmatrix {output.fcm} --sampleinfo {output.si}
-"""
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        python {params.pyscript} --bedbedgraph {input.inputs} --tmpdir $TMPDIR --countsmatrix {output.cm} --fragmentscountsmatrix {output.fcm} --sampleinfo {output.si}
+        """
 
 rule DESeq:
     input:
@@ -112,37 +115,38 @@ rule DESeq:
         species = config["genome"],
     envmodules:
         TOOLS["R"]
-    shell:"""
-set -exo pipefail
-dirname=$(basename $(mktemp))
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
-else
-    TMPDIR="/dev/shm/$dirname"
-fi
-mkdir -p $TMPDIR
-mkdir -p ${{TMPDIR}}/intermediates_dir
-mkdir -p ${{TMPDIR}}/knit_root_dir
-cd $TMPDIR
-Rscript {params.rscript} \\
-    --rmd {params.rmd} \\
-    --countsmatrix {input.cm} \\
-    --sampleinfo {input.si} \\
-    --dupstatus {params.ds} \\
-    --condition1 {params.condition1} \\
-    --condition2 {params.condition2} \\
-    --fdr_cutoff {params.fdr_cutoff} \\
-    --log2fc_cutoff {params.log2fc_cutoff} \\
-    --results {output.results} \\
-    --report {output.html} \\
-    --elbowlimits {output.elbowlimits} \\
-    --spiked {params.spiked} \\
-    --rawcountsprescaled \\
-    --scalesfbymean \\
-    --bbpaths {input.bbpaths} \\
-    --tmpdir $TMPDIR \\
-    --species {params.species}
-"""
+    shell:
+        """
+        set -exo pipefail
+        dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+            TMPDIR="/dev/shm/$dirname"
+        fi
+        mkdir -p $TMPDIR
+        mkdir -p ${{TMPDIR}}/intermediates_dir
+        mkdir -p ${{TMPDIR}}/knit_root_dir
+        cd $TMPDIR
+        Rscript {params.rscript} \\
+            --rmd {params.rmd} \\
+            --countsmatrix {input.cm} \\
+            --sampleinfo {input.si} \\
+            --dupstatus {params.ds} \\
+            --condition1 {params.condition1} \\
+            --condition2 {params.condition2} \\
+            --fdr_cutoff {params.fdr_cutoff} \\
+            --log2fc_cutoff {params.log2fc_cutoff} \\
+            --results {output.results} \\
+            --report {output.html} \\
+            --elbowlimits {output.elbowlimits} \\
+            --spiked {params.spiked} \\
+            --rawcountsprescaled \\
+            --scalesfbymean \\
+            --bbpaths {input.bbpaths} \\
+            --tmpdir $TMPDIR \\
+            --species {params.species}
+        """
 
 rule DESeq2:
     input:
@@ -166,37 +170,38 @@ rule DESeq2:
         species = config["genome"],
     envmodules:
         TOOLS["R"]
-    shell:"""
-set -exo pipefail
-dirname=$(basename $(mktemp))
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
-else
-    TMPDIR="/dev/shm/$dirname"
-fi
-mkdir -p $TMPDIR
-mkdir -p ${{TMPDIR}}/intermediates_dir
-mkdir -p ${{TMPDIR}}/knit_root_dir
-cd $TMPDIR
-# Do not use --rawcountsprescaled as these counts are not prescaled!
-Rscript {params.rscript} \\
-    --rmd {params.rmd} \\
-    --countsmatrix {input.cm} \\
-    --sampleinfo {input.si} \\
-    --dupstatus {params.ds} \\
-    --condition1 {params.condition1} \\
-    --condition2 {params.condition2} \\
-    --fdr_cutoff {params.fdr_cutoff} \\
-    --log2fc_cutoff {params.log2fc_cutoff} \\
-    --results {output.results} \\
-    --report {output.html} \\
-    --elbowlimits {output.elbowlimits} \\
-    --spiked {params.spiked} \\
-    --scalesfbymean \\
-    --bbpaths {input.bbpaths} \\
-    --tmpdir $TMPDIR \\
-    --species {params.species}
-"""
+    shell:
+        """
+        set -exo pipefail
+        dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+            TMPDIR="/dev/shm/$dirname"
+        fi
+        mkdir -p $TMPDIR
+        mkdir -p ${{TMPDIR}}/intermediates_dir
+        mkdir -p ${{TMPDIR}}/knit_root_dir
+        cd $TMPDIR
+        # Do not use --rawcountsprescaled as these counts are not prescaled!
+        Rscript {params.rscript} \\
+            --rmd {params.rmd} \\
+            --countsmatrix {input.cm} \\
+            --sampleinfo {input.si} \\
+            --dupstatus {params.ds} \\
+            --condition1 {params.condition1} \\
+            --condition2 {params.condition2} \\
+            --fdr_cutoff {params.fdr_cutoff} \\
+            --log2fc_cutoff {params.log2fc_cutoff} \\
+            --results {output.results} \\
+            --report {output.html} \\
+            --elbowlimits {output.elbowlimits} \\
+            --spiked {params.spiked} \\
+            --scalesfbymean \\
+            --bbpaths {input.bbpaths} \\
+            --tmpdir $TMPDIR \\
+            --species {params.species}
+        """
 
 rule diffbb:
     input:
@@ -218,34 +223,35 @@ rule diffbb:
     envmodules:
         TOOLS["ucsc"],
         TOOLS["python37"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
 
-python {params.script} \\
-    --results {input.results} \\
-    --fdr_cutoff {params.fdr} \\
-    --log2FC_cutoff {params.lfc} \\
-    --elbowyaml {input.elbowlimits} \\
-    --bed {output.bed}
+        python {params.script} \\
+            --results {input.results} \\
+            --fdr_cutoff {params.fdr} \\
+            --log2FC_cutoff {params.lfc} \\
+            --elbowyaml {input.elbowlimits} \\
+            --bed {output.bed}
 
-bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
+        bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
 
-python {params.script} \\
-    --results {input.fresults} \\
-    --fdr_cutoff {params.fdr} \\
-    --log2FC_cutoff {params.lfc} \\
-    --elbowyaml {input.felbowlimits} \\
-    --bed {output.fbed}
+        python {params.script} \\
+            --results {input.fresults} \\
+            --fdr_cutoff {params.fdr} \\
+            --log2FC_cutoff {params.lfc} \\
+            --elbowyaml {input.felbowlimits} \\
+            --bed {output.fbed}
 
-bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
-"""
+        bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
+        """
 
 localrules: venn
 
@@ -265,19 +271,20 @@ rule venn:
         log2fc_cutoff = LFCCUTOFF,
     envmodules:
         TOOLS["R"]
-    shell:"""
-set -exo pipefail
-dirname=$(basename $(mktemp))
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
-else
-    TMPDIR="/dev/shm/$dirname"
-fi
-mkdir -p $TMPDIR
-cd $TMPDIR
-Rscript {params.rscript} \\
-    --aucresults {input.results} \\
-    --fragmentsresults {input.fresults} \\
-    --pdf {output.pdf} \\
-    --title "{params.condition1}_vs_{params.condition2}__{params.ds}__{params.pt}"
-"""
+    shell:
+        """
+        set -exo pipefail
+        dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+            TMPDIR="/dev/shm/$dirname"
+        fi
+        mkdir -p $TMPDIR
+        cd $TMPDIR
+        Rscript {params.rscript} \\
+            --aucresults {input.results} \\
+            --fragmentsresults {input.fresults} \\
+            --pdf {output.pdf} \\
+            --title "{params.condition1}_vs_{params.condition2}__{params.ds}__{params.pt}"
+        """
