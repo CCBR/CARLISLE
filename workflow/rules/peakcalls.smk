@@ -7,6 +7,38 @@ def get_input_bedgraphs(wildcards):
         d[c] = join(RESULTSDIR,"bedgraph",wildcards.control+"."+dupstatus+".bedgraph")
     return d
 
+def get_input_bams(wildcards):
+    d=dict()
+    for dupstatus in DUPSTATUS:
+        t="treatment_bam_"+dupstatus
+        c="control_bam_"+dupstatus
+        d[t] = join(RESULTSDIR,"bam",wildcards.treatment+"."+dupstatus+".bam")
+        d[c] = join(RESULTSDIR,"bam",wildcards.control+"."+dupstatus+".bam")
+    return d
+
+rule gopeaks:
+    '''
+    ./gopeaks -b /data/CCBR/projects/ccbr1155/CS031014/carlisle_220920/results/bam/53_H3K4me3_1.dedup.bam 
+        -c /data/CCBR/projects/ccbr1155/CS031014/carlisle_220920/results/bam/igG_1.dedup.bam -o /data/CCBR/projects/ccbr1155/CS031014/gopeaks/53_H3K4me3_1
+    '''
+    input:
+        unpack(get_input_bams)
+    params:
+        gopeaks=TOOLS["gopeaks"],
+        treatment = "{treatment}",
+        control = "{control}",
+        prefix = join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup")
+    threads:
+        getthreads("gopeaks")
+    output:
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bed"),
+        braodPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
+    shell:
+        """
+            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrow
+            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broad --broad
+        """
+
 rule macs2:
     input:
         fragments_bed = join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed")
@@ -21,20 +53,21 @@ rule macs2:
     threads: getthreads("macs2")
     envmodules:
         TOOLS["macs2"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-if [[ ! -d {params.outdir} ]];then mkdir -p {params.outdir};fi
-cd {params.outdir}
-macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -p 1e-5 -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -p 1e-5 -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
-"""
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        if [[ ! -d {params.outdir} ]];then mkdir -p {params.outdir};fi
+        cd {params.outdir}
+        macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -p 1e-5 -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
+        macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -p 1e-5 -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+        """
 
 rule seacr:
     input:
@@ -55,66 +88,66 @@ rule seacr:
     threads: getthreads("seacr")
     envmodules:
         TOOLS["seacr"],
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-cd {params.outdir}
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        cd {params.outdir}
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-    --control {input.control_bedgraph_dedup} \\
-    --normalize norm \\
-    --mode stringent \\
-    --output {params.treatment}_vs_{params.control}.dedup.norm
+        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
+            --control {input.control_bedgraph_dedup} \\
+            --normalize norm \\
+            --mode stringent \\
+            --output {params.treatment}_vs_{params.control}.dedup.norm
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-    --control {input.control_bedgraph_dedup} \\
-    --normalize norm \\
-    --mode relaxed \\
-    --output {params.treatment}_vs_{params.control}.dedup.norm
+        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
+            --control {input.control_bedgraph_dedup} \\
+            --normalize norm \\
+            --mode relaxed \\
+            --output {params.treatment}_vs_{params.control}.dedup.norm
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-    --control {input.control_bedgraph_dedup} \\
-    --normalize non \\
-    --mode stringent \\
-    --output {params.treatment}_vs_{params.control}.dedup.non
+        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
+            --control {input.control_bedgraph_dedup} \\
+            --normalize non \\
+            --mode stringent \\
+            --output {params.treatment}_vs_{params.control}.dedup.non
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-    --control {input.control_bedgraph_dedup} \\
-    --normalize non \\
-    --mode relaxed \\
-    --output {params.treatment}_vs_{params.control}.dedup.non
+        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
+            --control {input.control_bedgraph_dedup} \\
+            --normalize non \\
+            --mode relaxed \\
+            --output {params.treatment}_vs_{params.control}.dedup.non
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-    --control {input.control_bedgraph_no_dedup} \\
-    --normalize norm \\
-    --mode stringent \\
-    --output {params.treatment}_vs_{params.control}.no_dedup.norm
+        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
+            --control {input.control_bedgraph_no_dedup} \\
+            --normalize norm \\
+            --mode stringent \\
+            --output {params.treatment}_vs_{params.control}.no_dedup.norm
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-    --control {input.control_bedgraph_no_dedup} \\
-    --normalize norm \\
-    --mode relaxed \\
-    --output {params.treatment}_vs_{params.control}.no_dedup.norm
+        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
+            --control {input.control_bedgraph_no_dedup} \\
+            --normalize norm \\
+            --mode relaxed \\
+            --output {params.treatment}_vs_{params.control}.no_dedup.norm
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-    --control {input.control_bedgraph_no_dedup} \\
-    --normalize non \\
-    --mode stringent \\
-    --output {params.treatment}_vs_{params.control}.no_dedup.non
+        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
+            --control {input.control_bedgraph_no_dedup} \\
+            --normalize non \\
+            --mode stringent \\
+            --output {params.treatment}_vs_{params.control}.no_dedup.non
 
-SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-    --control {input.control_bedgraph_no_dedup} \\
-    --normalize non \\
-    --mode relaxed \\
-    --output {params.treatment}_vs_{params.control}.no_dedup.non
-
-"""
+        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
+            --control {input.control_bedgraph_no_dedup} \\
+            --normalize non \\
+            --mode relaxed \\
+            --output {params.treatment}_vs_{params.control}.no_dedup.non
+        """
 
 localrules: peak2bb
 
