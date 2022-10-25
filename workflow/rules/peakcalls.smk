@@ -32,7 +32,7 @@ rule gopeaks:
         getthreads("gopeaks")
     output:
         narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bed"),
-        braodPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
     shell:
         """
             {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrow
@@ -181,9 +181,9 @@ cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parall
 bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
 """ 
 
-localrules: bed2bb
+localrules: bed2bb_seacr
 
-rule bed2bb:
+rule bed2bb_seacr:
     input:
         normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed"),
         normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed"),
@@ -205,26 +205,65 @@ rule bed2bb:
         nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed"),
     params:
         outdir = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}"),
-        memG = getmemG("bed2bb")
-    threads: getthreads("bed2bb")
+        memG = getmemG("bed2bb_seacr")
+    threads: getthreads("bed2bb_seacr")
     envmodules:
         TOOLS["ucsc"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-for fullpath in {input};do
-    filename=$(basename -- "$fullpath") 
-    extension="${{filename##*.}}" 
-    bn="${{filename%.*}}"
-    if [[ "$extension" == "bed" ]];then
-        cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
-        bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
-    fi
-done
-""" 
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        for fullpath in {input};do
+            filename=$(basename -- "$fullpath") 
+            extension="${{filename##*.}}" 
+            bn="${{filename%.*}}"
+            if [[ "$extension" == "bed" ]];then
+                cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
+                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
+            fi
+        done
+        """
+
+localrules: bed2bb_gopeaks
+
+rule bed2bb_gopeaks:
+    input:
+        narrowPeaks=rules.gopeaks.output.narrowPeaks,
+        broadPeaks=rules.gopeaks.output.broadPeaks,
+        genome_len = join(BOWTIE2_INDEX,"genome.len"),
+    output:
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bigbed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bigbed"),
+    params:
+        outdir = join(RESULTSDIR,"peaks","gopeaks"),
+        memG = getmemG("bed2bb_gopeaks")
+    threads: 
+        getthreads("bed2bb_gopeaks")
+    envmodules:
+        TOOLS["ucsc"]
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        for fullpath in {input};do
+            filename=$(basename -- "$fullpath") 
+            extension="${{filename##*.}}" 
+            bn="${{filename%.*}}"
+            if [[ "$extension" == "bed" ]];then
+                cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
+                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
+            fi
+        done
+        """

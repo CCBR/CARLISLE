@@ -64,6 +64,8 @@ rule all:
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrow_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         unpack(run_contrasts),
 
 include: "rules/align.smk"
