@@ -17,15 +17,17 @@ rule contrast_init:
         outtsv=join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"),
     params:
         resultsdir = RESULTSDIR,
-        bedgraphdir = join(RESULTSDIR,"bedgraph")
+        bedgraphdir = join(RESULTSDIR,"bedgraph"),
+        dedup_list=DUPSTATUS,
+        peak_list=PEAKTYPE
     shell:
         """
         while read replicate sample;do
-            for dupstatus in dedup no_dedup;do
+            for dupstatus in {params.dedup_list};do
                 bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
                 fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
                 sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
-                for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed narrowGo broadGo;do
+                for peaktype in {params.peak_list}; do
                     if [[ $dupstatus == "dedup" ]];then
                         bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
                     else
