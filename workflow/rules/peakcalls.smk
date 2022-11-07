@@ -32,7 +32,7 @@ rule gopeaks:
         getthreads("gopeaks")
     output:
         narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed"),
-        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed"),
     shell:
         """
             {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrowGo
