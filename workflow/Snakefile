@@ -35,9 +35,9 @@ rule all:
         join(BOWTIE2_INDEX,"ref.1.bt2"),
         join(BOWTIE2_INDEX,"ref.len"),
         join(BOWTIE2_INDEX,"spikein.len"),
-        # trim fastqs
-        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
+        # # trim fastqs
+        # expand(join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
+        # expand(join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
         # bams
         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
@@ -45,7 +45,7 @@ rule all:
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
         # bedgraphs and bigwigs
-        expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # peaks
