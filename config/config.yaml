@@ -31,17 +31,19 @@ fragment_len_filter: "1000"
 # Advanced parameters
 #####################################################################################
 # which peaktypes to consider for differential analysis:
+#### peaktype: "narrowPeak,broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 # macs2_narrow: narrowPeak
 # macs2_broad: broadPeak --> DESeq step generally fails for this... also, generally has too many calls.
 # seacr normalized stringent: norm.stringent.bed
 # seacr unnormalized stringent: non.stringent.bed
 # seacr normalized relaxed: norm.relaxed.bed
 # seacr unnormalized relaxed: non.relaxed.bed
+# goPeaks broad parameters: H4K20,H3K9,H3K27
+# goPeaks narrow parameters: H3K4
 
 # dupstatus and peaktypes
 dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
-peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed"
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGoPeak, broadGoPeak"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
 #####################################################################################
 # References
