@@ -2,25 +2,23 @@
 title: "DifferentialCutAndRun"
 output:
   html_document:
-    # toc: true
-    # toc_float: true
 params:
-  rawcountsmatrix: "~/../../../Volumes/data/test_carl/results/peaks/contrasts/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak_countsmatrix.txt"
-  coldata: "~/../../../Volumes/data/test_carl/results/peaks/contrasts/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak_sampleinfo.txt"
+  rawcountsmatrix: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_countsmatrix.txt"
+  coldata: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_sampleinfo.txt"
   dupstatus: "dedup" # dedup or no_dedup
-  condition1: "MOC1_siSmyd3_2m_25_HCHO"
-  condition2: "MOC1_siNC_2m_25_HCHO" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
+  condition1: "siNC_H4K20me3"
+  condition2: "siSmyd3_H4K20me3" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
   htsfilter: "N" # Use HTSFilter (CPM filter does not work well for this type of data)
   fdr_cutoff: "0.05"
   log2fc_cutoff: "0.59" # |FC| of 1.5
-  results: "~/../../../Volumes/data/test_carl/results/peaks/contrasts/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak_AUCbased_diffresults.txt"
+  results: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffresults.txt"
   spiked: "Y"
   rawcountsprescaled: "N"
   scalesfbymean: "Y"
-  bbpaths: "~/../../../Volumes/data/test_carl/results/peaks/contrasts/bed_bedgraph_paths.tsv"
-  elbowlimits: "~/../../../Volumes/data/test_carl/results/peaks/contrasts/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak/MOC1_siSmyd3_2m_25_HCHO_vs_MOC1_siNC_2m_25_HCHO__dedup__narrowPeak_AUCbased_diffanalysis_elbowlimits.yaml"
-  species: "mm10"
+  bbpaths: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
+  elbowlimits: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffanalysis_elbowlimits.yaml"
+  species: "hg38"
 editor_options: 
   chunk_output_type: console
 ---
@@ -64,11 +62,21 @@ x = matrix(mapply(x,FUN=as.integer),ncol=ncol(rawcounts))
 x = as.data.frame(x)
 colnames(x) = colnames(rawcounts)
 rownames(x) = rownames(rawcounts)
+
+# if lib size is greater than max integer size allowed, handle samples
+# cant replace with the original value since max integer is 2147483647
+# anything larger will be replaced with an NA
+x[is.na(x)]=2147483647
+
 rawcounts = x
 sampleinfo=sampleinfo[sampleinfo$samplename==colnames(rawcounts),]
 
 #determine lib reduction factor
-if (mean(colSums(rawcounts))>10000000){
+if (mean(colSums(rawcounts))>1000000000){
+  lib_factor=1e8
+}else if (mean(colSums(rawcounts))>100000000){
+  lib_factor=1e7
+}else if (mean(colSums(rawcounts))>10000000){
   lib_factor=1e6
 } else if (mean(colSums(rawcounts))>1000000){
     lib_factor=1e5
@@ -242,8 +250,11 @@ peaks <- GenomicRanges::makeGRangesFromDataFrame(x)
 if (params$species=="mm10"){
   txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
   anno_db<-"org.Mm.eg.db"
-} else if (params$species=="hg38"){
+} else if (params$species=="hg19"){
   txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+  anno_db<-"org.Hs.eg.db"
+} else if (params$species=="hg38"){
+  txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
   anno_db<-"org.Hs.eg.db"
 }
 options(ChIPseeker.downstreamDistance = 0)
