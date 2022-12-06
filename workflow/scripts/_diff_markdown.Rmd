@@ -26,7 +26,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # list packages
-list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db")
+list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg38.knownGene")
 
 #install as needed
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
