@@ -21,11 +21,10 @@ There are several groups of parameters that are editable for the user to control
     - These parameters will include the input and ouput files of the pipeline, as well as list all manifest names.
 - User parameters
     - These parameters will control the pipeline features. These include thresholds and whether to perform processes.
-- Advanced parameters
-    - These parameters generally do not need to be edited, as they control the outputs to peak calling and duplication type.
 - References
     - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
 
+#### 2.1.3.1 User Parameters (Spike in Controls)
 The pipeline allows for the use of a species specific spike-in control, or the use of normalization via library size. The parameter `spikein_genome` should be set to the species term used in `spikein_reference`.
 
 For example for ecoli spike-in:
@@ -50,6 +49,35 @@ spikein_reference:
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
 
+```
+
+#### 2.1.3.2 User Parameters (Duplication Status) 
+Users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) through the user parameter.
+```
+dupstatus: "dedup, no_dedup" 
+```
+
+#### 2.1.3.3 User Parameters (Peak Caller) 
+Three peak callers are available for deployment within the pipeline, with different settings deployed for each caller.
+1. [MACS2](https://github.com/macs3-project/MACS) is available with two peak calling options: narrowPeak or broadPeak. NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
+```
+peaktype: "narrowPeak, broadPeak"
+```
+2. [SEACR]() is available with four peak calling options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+```
+peaktype: "norm.stringent.bed, norm.relaxed.bed"
+```
+3. [GOPEAKS]() is available with two peak calling options: narrowpeaks or broadpeaks
+```
+peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
+```
+A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
+```
+# Complete list
+peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+
+# Recommended list
+# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 ```
 
 ## 2.2 Preparing Manifests
