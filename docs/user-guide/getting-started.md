@@ -4,7 +4,7 @@ The CARLISLE github repository is stored locally, and will be used for project d
 ## 1. Getting Started
 
 ## 1.1 Introduction
-The CARLISLE Pipelie beings with raw FASTQ files and performs trimming followed by alignment using [BOWTIE2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml). Data is then normalized through either the use of an user-species species (IE E.Coli) spike-in control or through the determined library size. Peaks are then called using [SEACR](https://github.com/FredHutch/SEACR) and [MACS2](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html), with various options selected by the user. Peaks are then annotated, and summarized into reports. If designated, differential analysis is performed using [DESEQ2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html). QC reports are also generated with each project.
+The CARLISLE Pipelie beings with raw FASTQ files and performs trimming followed by alignment using [BOWTIE2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml). Data is then normalized through either the use of an user-species species (IE E.Coli) spike-in control or through the determined library size. Peaks are then called using [MACS2](https://hbctraining.github.io/Intro-to-ChIPseq/lessons/05_peak_calling_macs.html), [SEACR](https://github.com/FredHutch/SEACR), and [GoPEAKS](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02707-w) with various options selected by the user. Peaks are then annotated, and summarized into reports. If designated, differential analysis is performed using [DESEQ2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html). QC reports are also generated with each project.
 
 The following are sub-commands used within CARLISLE:
 
@@ -28,6 +28,7 @@ CARLISLE has several dependencies listed below. These dependencies can be instal
 - fastxtoolkit: "fastxtoolkit/0.0.14"
 - macs2: "macs/2.2.7.1"
 - multiqc: "multiqc/1.9"
+- gopeaks: "github clone https://github.com/maxsonBraunLab/gopeaks"
 - picard: "picard/2.26.9"
 - python37: "python/3.7"
 - R: "R/4.0"
@@ -47,5 +48,5 @@ An interactive session should be started before performing any of the pipeline s
 
 ```
 # Grab an interactive node
-srun -N 1 -n 1 --time=12:00:00 -p interactive --mem=8gb  --cpus-per-task=4 --pty bash
+sinteractive --time=12:00:00 --mem=8gb  --cpus-per-task=4 --pty bash
 ```
