@@ -24,7 +24,8 @@ There are several groups of parameters that are editable for the user to control
 - References
     - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
 
-#### 2.1.3.1 User Parameters (Spike in Controls)
+#### 2.1.3.1 User Parameters 
+##### 2.1.3.1.1 (Spike in Controls)
 The pipeline allows for the use of a species specific spike-in control, or the use of normalization via library size. The parameter `spikein_genome` should be set to the species term used in `spikein_reference`.
 
 For example for ecoli spike-in:
@@ -51,14 +52,15 @@ spikein_reference:
 
 ```
 
-#### 2.1.3.2 User Parameters (Duplication Status) 
+##### 2.1.3.1.2 Duplication Status
 Users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) through the user parameter.
 ```
 dupstatus: "dedup, no_dedup" 
 ```
 
-#### 2.1.3.3 User Parameters (Peak Caller) 
+##### 2.1.3.1.3 Peak Caller
 Three peak callers are available for deployment within the pipeline, with different settings deployed for each caller.
+
 1. [MACS2](https://github.com/macs3-project/MACS) is available with two peak calling options: narrowPeak or broadPeak. NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
 ```
 peaktype: "narrowPeak, broadPeak"
@@ -79,6 +81,17 @@ peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stri
 # Recommended list
 # peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 ```
+
+#### 2.1.3.2 References
+Additional reference files may be added to the pipeline, if other species were to be used. 
+
+The absolute file paths which must be included are:
+1. fa: "/path/to/species.fa"
+2. blacklist: "/path/to/blacklistbed/species.bed"
+
+The following information must be included:
+1. regions: "list of regions to be included; IE chr1 chr2 chr3"
+2.  macs2_g: "macs2 genome shorthand; IE mm IE hs"
 
 ## 2.2 Preparing Manifests
 There are two manifests, one which required for all pipeliens and one that is only required if running a differential analysis. These files describe information on the samples and desired contrasts. The paths of these files are defined in the snakemake_config.yaml file. These files are:
