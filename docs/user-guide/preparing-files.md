@@ -63,11 +63,11 @@ Three peak callers are available for deployment within the pipeline, with differ
 ```
 peaktype: "narrowPeak, broadPeak"
 ```
-2. [SEACR]() is available with four peak calling options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+2. [SEACR](https://github.com/FredHutch/SEACR) is available with four peak calling options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
 ```
 peaktype: "norm.stringent.bed, norm.relaxed.bed"
 ```
-3. [GOPEAKS]() is available with two peak calling options: narrowpeaks or broadpeaks
+3. [GOPEAKS](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02707-w) is available with two peak calling options: narrowpeaks or broadpeaks
 ```
 peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
 ```
