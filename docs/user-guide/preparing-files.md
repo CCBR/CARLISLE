@@ -69,7 +69,7 @@ peaktype: "narrowPeak, broadPeak"
 ```
 peaktype: "norm.stringent.bed, norm.relaxed.bed"
 ```
-3. [GOPEAKS](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02707-w) is available with two peak calling options: narrowpeaks or broadpeaks
+3. [GOPEAKS](https://github.com/maxsonBraunLab/gopeaks) is available with two peak calling options: narrowpeaks or broadpeaks
 ```
 peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
 ```
