@@ -17,8 +17,8 @@ rule trim:
     input:
         unpack(get_input_fastqs)
     output:
-        R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
-        R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
+        R1 = temp(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz")),
+        R2 = temp(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz")),
     params:
         adapters = config["adapters"],
     threads: getthreads("trim")
@@ -57,14 +57,14 @@ rule align:
 # BAM is sorted and indexed, and stats are collected using flagstat and idxstats
 # """
     input:
-        R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
-        R2 = join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),
+        R1 = rules.trim.output.R1,
+        R2 = rules.trim.output.R2,
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
     output:
-        bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
-        bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
-        bamflagstat=join(RESULTSDIR,"tmp","bam","{replicate}.bam.flagstat"),
-        bamidxstats=join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
+        bam=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam")),
+        bai=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai")),
+        bamflagstat=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat")),
+        bamidxstats=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats")),
     params:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
@@ -105,8 +105,8 @@ rule filter:
 # * alignments with fragment length larger than "fragment_len_filter" from config.yaml are removed.
 # """
     input:
-        bam=join(RESULTSDIR,"tmp","bam","{replicate}.bam"),
-        bai=join(RESULTSDIR,"tmp","bam","{replicate}.bam.bai"),
+        bam=rules.align.output.bam,
+        bai=rules.align.output.bai,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
     output:
@@ -197,8 +197,8 @@ rule alignstats:
 # * nreads aligned (to genome and spikein) after fragment_len_filter and duplicate filtering dedup DUPSTATUS
 # """
     input:
-        R1 = join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),
-        raw_alignment_idxstats = join(RESULTSDIR,"tmp","bam","{replicate}.bam.idxstats"),
+        R1 = rules.trim.output.R1,
+        raw_alignment_idxstats = rules.align.output.bamidxstats,
         filtered_no_dedup_alignment_idxstats = join(RESULTSDIR,"bam","{replicate}.no_dedup.bam.idxstats"),
         filtered_dedup_alignment_idxstats = join(RESULTSDIR,"bam","{replicate}.dedup.bam.idxstats"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
@@ -266,13 +266,13 @@ rule bam2bg:
 # The above sf (scaling factor) is used to scale the bedgraph file. Scaled bedgraph is then converted to bigwig.
 # """
     input:
-        bam = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),
-        bai = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
+        bam = rules.filter.output.bam,
+        bai = rules.filter.output.bai,
+        bamidxstats = rules.filter.output.bamidxstats,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
-        bamidxstats = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),
     output:
-        fragments_bed = join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),
+        fragments_bed = join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")

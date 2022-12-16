@@ -27,21 +27,27 @@ rule gopeaks:
         gopeaks=TOOLS["gopeaks"],
         treatment = "{treatment}",
         control = "{control}",
+        dupstatus = "{dupstatus}",
         prefix = join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup")
     threads:
         getthreads("gopeaks")
     output:
-        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed"),
-        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broad_peaks.bed"),
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bed"),
     shell:
         """
-            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrowGo
-            {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broadGo --broad
+            if [[ {params.dupstatus} == "dedup" ]]; then
+                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrowGo
+                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broadGo --broad
+            else
+                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_no_dedup} -o {params.prefix}.narrowGo
+                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_no_dedup} -o {params.prefix}.broadGo --broad
+            fi
         """
 
 rule macs2:
     input:
-        fragments_bed = join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed")
+        fragments_bed = rules.bam2bg.output.fragments_bed,
     output:
         narrowPeak = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),
         broadPeak = join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),
@@ -73,14 +79,10 @@ rule seacr:
     input:
         unpack(get_input_bedgraphs)
     output:
-        normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed"),
-        normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed"),
-        nonStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.stringent.bed"),
-        nonRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.relaxed.bed"),
-        normStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed"),
-        normRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed"),
-        nonStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bed"),
-        nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bed"),
+        normStringentBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed"),
+        normRelaxedBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed"),
+        nonStringentBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bed"),
+        nonRelaxedBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bed"),
     params:
         treatment = "{treatment}",
         control = "{control}",
@@ -166,43 +168,36 @@ rule peak2bb:
     threads: getthreads("peak2bb")
     envmodules:
         TOOLS["ucsc"]
-    shell:"""
-set -exo pipefail
-if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-    TMPDIR="/lscratch/$SLURM_JOB_ID"
-else
-    dirname=$(basename $(mktemp))
-    TMPDIR="/dev/shm/$dirname"
-    mkdir -p $TMPDIR
-fi
-cut -f1-3 {input.narrowPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed
-bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed {input.genome_len} {output.narrowbb}
-cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed
-bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
-""" 
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+        cut -f1-3 {input.narrowPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed
+        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed {input.genome_len} {output.narrowbb}
+        cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed
+        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
+        """ 
 
 localrules: bed2bb_seacr
 
 rule bed2bb_seacr:
     input:
-        normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed"),
-        normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed"),
-        nonStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.stringent.bed"),
-        nonRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.relaxed.bed"),
-        normStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed"),
-        normRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed"),
-        nonStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bed"),
-        nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bed"),
+        normStringentBed = rules.seacr.output.normStringentBed,
+        normRelaxedBd = rules.seacr.output.normRelaxedBed,
+        nonStringentBed = rules.seacr.output.nonStringentBed,
+        nonRelaxedBed = rules.seacr.output.nonRelaxedBed,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        normStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bigbed"),
-        normRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bigbed"),
-        nonStringentBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.stringent.bigbed"),
-        nonRelaxedBed_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.non.relaxed.bigbed"),
-        normStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bigbed"),
-        normRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed"),
-        nonStringentBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed"),
-        nonRelaxedBed_no_dedup = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed"),
+        normStringentBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed"),
+        normRelaxedBed= join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed"),
+        nonStringentBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed"),
+        nonRelaxedBed = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed"),
     params:
         outdir = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}"),
         memG = getmemG("bed2bb_seacr")
@@ -238,10 +233,11 @@ rule bed2bb_gopeaks:
         broadPeaks=rules.gopeaks.output.broadPeaks,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed"),
-        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed"),
+        narrowPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed"),
+        broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed"),
     params:
         outdir = join(RESULTSDIR,"peaks","gopeaks"),
+        dupstatus = "{dupstatus}",
         memG = getmemG("bed2bb_gopeaks")
     threads: 
         getthreads("bed2bb_gopeaks")

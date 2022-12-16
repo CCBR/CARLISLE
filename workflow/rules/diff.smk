@@ -1,31 +1,50 @@
+def get_contrast_init(wildcards):
+    files=[]
+    if "narrowPeak" in config["peaktype"]:
+        n=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(n)
+    if "broadPeak" in config["peaktype"]:
+        b=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(b)
+    if "norm.stringent.bed" in config["peaktype"]:
+        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s)
+    if "norm.relaxed.bed" in config["peaktype"]:
+        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r)
+    if "narrowGo_peaks.bed" in config["peaktype"]:
+        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(n)
+    if "broadGo_peaks.bed" in config["peaktype"]:
+        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(b)
+    return files
+
 localrules:contrast_init
+localrules:make_inputs
+localrules: venn
 
 rule contrast_init:
     input:
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        unpack(get_contrast_init),
+        expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         join(RESULTSDIR,"replicate_sample.tsv"),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     output:
         outtsv=join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"),
     params:
         resultsdir = RESULTSDIR,
-        bedgraphdir = join(RESULTSDIR,"bedgraph")
+        bedgraphdir = join(RESULTSDIR,"bedgraph"),
+        dedup_list=DUPSTATUS,
+        peak_list=PEAKTYPE
     shell:
         """
         while read replicate sample;do
-            for dupstatus in dedup no_dedup;do
+            for dupstatus in {params.dedup_list};do
                 bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
                 fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
                 sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
-                for peaktype in narrowPeak broadPeak norm.relaxed.bed norm.stringent.bed narrowGo broadGo;do
+                for peaktype in {params.peak_list}; do
                     if [[ $dupstatus == "dedup" ]];then
                         bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
                     else
@@ -36,8 +55,6 @@ rule contrast_init:
             done
         done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}    
         """
-
-localrules:make_inputs
 
 rule make_inputs:
     input:
@@ -254,8 +271,6 @@ rule diffbb:
 
         bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
         """
-
-localrules: venn
 
 rule venn:
     input:

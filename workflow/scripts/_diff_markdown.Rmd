@@ -2,24 +2,22 @@
 title: "DifferentialCutAndRun"
 output:
   html_document:
-    # toc: true
-    # toc_float: true
 params:
-  rawcountsmatrix: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentscountsmatrix.txt"
-  coldata: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_sampleinfo.txt"
+  rawcountsmatrix: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_countsmatrix.txt"
+  coldata: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_sampleinfo.txt"
   dupstatus: "dedup" # dedup or no_dedup
-  condition1: "HN6_H3K4me3"
-  condition2: "5-3_H3K4me3" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
+  condition1: "siNC_H4K20me3"
+  condition2: "siSmyd3_H4K20me3" # contrasts is condition1 vs condition2 ... pay attention to the order of conditions
   indexcols: "peakID" # comma separated list of indexing columns eg. gene_id,gene_name
   htsfilter: "N" # Use HTSFilter (CPM filter does not work well for this type of data)
   fdr_cutoff: "0.05"
   log2fc_cutoff: "0.59" # |FC| of 1.5
-  results: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentsbased_diffresults.txt.tmp"
+  results: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffresults.txt"
   spiked: "Y"
   rawcountsprescaled: "N"
   scalesfbymean: "Y"
-  bbpaths: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
-  elbowlimits: "~/../../Volumes/ccbr1155/CS031014/analysis/results/peaks/contrasts/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed/HN6_H3K4me3_vs_5-3_H3K4me3__dedup__norm.relaxed.bed_fragmentsbased_diff_elbowlimits.tmp.yaml"
+  bbpaths: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
+  elbowlimits: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffanalysis_elbowlimits.yaml"
   species: "hg38"
 editor_options: 
   chunk_output_type: console
@@ -28,7 +26,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # list packages
-list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db")
+list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg38.knownGene")
 
 #install as needed
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
@@ -64,11 +62,21 @@ x = matrix(mapply(x,FUN=as.integer),ncol=ncol(rawcounts))
 x = as.data.frame(x)
 colnames(x) = colnames(rawcounts)
 rownames(x) = rownames(rawcounts)
+
+# if lib size is greater than max integer size allowed, handle samples
+# cant replace with the original value since max integer is 2147483647
+# anything larger will be replaced with an NA
+x[is.na(x)]=2147483647
+
 rawcounts = x
 sampleinfo=sampleinfo[sampleinfo$samplename==colnames(rawcounts),]
 
 #determine lib reduction factor
-if (mean(colSums(rawcounts))>10000000){
+if (mean(colSums(rawcounts))>1000000000){
+  lib_factor=1e8
+}else if (mean(colSums(rawcounts))>100000000){
+  lib_factor=1e7
+}else if (mean(colSums(rawcounts))>10000000){
   lib_factor=1e6
 } else if (mean(colSums(rawcounts))>1000000){
     lib_factor=1e5
@@ -183,7 +191,12 @@ DESeq2::plotMA(results)
 ### DESeq PCA
 
 ```{r pca,include=TRUE,echo=FALSE}
-rld <- vst(dds)
+# default for nsub is 1000, if there are less than 1000 rows this will error
+if (nrow(dds) < 1000){
+  rld <- vst(dds,nsub=nrow(dds))
+} else{
+  rld <- vst(dds)
+}
 assayrld = as.data.frame(assay(rld))
 assayrld$row_variance = rowVars(as.matrix(assayrld))
 assayrld = arrange(assayrld,desc(row_variance))
@@ -205,8 +218,6 @@ ggplot(pca$x,aes(x=PC1,y=PC2,label=rownames(pca$x)))+geom_point(col=as.factor(as
   theme_light()
 ```
 
-
-
 ### DESeq Elbow
 
 ```{r elbow,include=TRUE,echo=FALSE}
@@ -227,8 +238,6 @@ pander(lim)
 # DT::datatable(lim) %>% formatSignif(columns=colnames(lim),digits=4)
 ```
 
-
-
 ### DESeq Annotation
 
 ```{r annotate,include=TRUE,echo=FALSE}
@@ -241,8 +250,11 @@ peaks <- GenomicRanges::makeGRangesFromDataFrame(x)
 if (params$species=="mm10"){
   txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
   anno_db<-"org.Mm.eg.db"
-} else if (params$species=="hg38"){
+} else if (params$species=="hg19"){
   txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+  anno_db<-"org.Hs.eg.db"
+} else if (params$species=="hg38"){
+  txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
   anno_db<-"org.Hs.eg.db"
 }
 options(ChIPseeker.downstreamDistance = 0)

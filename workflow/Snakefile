@@ -27,47 +27,93 @@ def run_contrasts(wildcards):
         files.extend(venns)
     return files
 
+def run_macs2(wildcards):
+    files=[]
+    if "narrowPeak" in config["peaktype"]:
+        n=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(n)
+        n2=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(n2)        
+    if "broadPeak" in config["peaktype"]:
+        b=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(b)
+        b2=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(b2)
+    return files
+
+def run_seacr(wildcards):
+    files=[]
+    if "norm.stringent.bed" in config["peaktype"]:
+        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s)
+        s2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s2)
+        s3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s3)
+    if "norm.relaxed.bed" in config["peaktype"]:
+        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r)
+        r2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r2)
+        r3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r3)
+    return files
+
+def run_gopeaks(wildcards):
+    files=[]
+    if "narrowGo_peaks.bed" in config["peaktype"]:
+        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(n)
+        n2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(n2)
+
+    if "broadGo_peaks.bed" in config["peaktype"]:
+        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(b)
+        b2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        files.extend(b2)
+    return files
+
 include: "rules/init.smk"
 
 rule all:
     input:
-        # bowtie2 index building
-        join(BOWTIE2_INDEX,"ref.1.bt2"),
-        join(BOWTIE2_INDEX,"ref.len"),
-        join(BOWTIE2_INDEX,"spikein.len"),
-        # trim fastqs
-        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"tmp","trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
-        # bams
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # alignment stats yaml files and stats table
-        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
-        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
-        # bedgraphs and bigwigs
-        expand(join(RESULTSDIR,"tmp","fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # peaks
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        # peaks as bigbed
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.no_dedup.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
-        expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        ##########################################
+        ### required files
+        ##########################################
+        ## PEAKCALLS rules
+        unpack(run_macs2),
+        unpack(run_seacr),
+        unpack(run_gopeaks),
         unpack(run_contrasts),
+
+        ## ANNOTATION
+        expand(join(RESULTSDIR,"annotation","{pt}","{replicate}.{dupstatus}_peaks.annotation.txt"),pt=PT,replicate=REPLICATES,dupstatus=DUPSTATUS),
+
+        ##########################################
+        ### intermediate files
+        ##########################################
+        # bowtie2 index building
+        # join(BOWTIE2_INDEX,"ref.1.bt2"),
+        # join(BOWTIE2_INDEX,"ref.len"),
+        # join(BOWTIE2_INDEX,"spikein.len"),
+
+        ## ALIGN RULES
+        # filtered bams
+        # expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        
+        # # alignment stats yaml files and stats table
+        # expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+        # join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
+        
+        # # bedgraphs and bigwigs
+        # expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        
 
 include: "rules/align.smk"
 include: "rules/peakcalls.smk"
 include: "rules/diff.smk"
+incldue: "rules/annotation.smk"

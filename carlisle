@@ -323,7 +323,7 @@ if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
 
   cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
-#SBATCH --job-name="CARAP"
+#SBATCH --job-name="CARLISLE"
 #SBATCH --mem=40g
 #SBATCH --partition="$PARTITIONS"
 #SBATCH --time=96:00:00
