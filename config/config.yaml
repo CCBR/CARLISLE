@@ -27,23 +27,28 @@ spikein_scale: 1000000
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
 fragment_len_filter: "1000"
 
-#####################################################################################
-# Advanced parameters
-#####################################################################################
+# duplication status
+# users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup)
+# dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis 
+# dupstatus: "dedup" # means run deduplicated analysis only
+# dupstatus: "no_dedup" # means run non-deduplicated analysis only
+dupstatus: "dedup, no_dedup" 
+
 # which peaktypes to consider for differential analysis:
-#### peaktype: "narrowPeak,broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
-# macs2_narrow: narrowPeak
-# macs2_broad: broadPeak --> DESeq step generally fails for this... also, generally has too many calls.
-# seacr normalized stringent: norm.stringent.bed
-# seacr unnormalized stringent: non.stringent.bed
-# seacr normalized relaxed: norm.relaxed.bed
-# seacr unnormalized relaxed: non.relaxed.bed
-# goPeaks broad parameters: H4K20,H3K9,H3K27
-# goPeaks narrow parameters: H3K4
+## macs2 options: narrowPeak or broadPeak
+### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
+### peaktype: "narrowPeak, broadPeak"
+# seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+### peaktype: "norm.stringent.bed, norm.relaxed.bed"
+# gopeaks options: narrowpeaks or broadpeaks
+### peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
+## complete list:
+# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+## recommended list:
+# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
 # dupstatus and peaktypes
-dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGoPeak, broadGoPeak"
 
 #####################################################################################
 # References
