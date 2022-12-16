@@ -87,6 +87,9 @@ rule all:
         unpack(run_gopeaks),
         unpack(run_contrasts),
 
+        ## ANNOTATION
+        expand(join(RESULTSDIR,"annotation","{pt}","{replicate}.{dupstatus}_peaks.annotation.txt"),pt=PT,replicate=REPLICATES,dupstatus=DUPSTATUS),
+
         ##########################################
         ### intermediate files
         ##########################################
@@ -113,3 +116,4 @@ rule all:
 include: "rules/align.smk"
 include: "rules/peakcalls.smk"
 include: "rules/diff.smk"
+incldue: "rules/annotation.smk"
