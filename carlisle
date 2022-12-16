@@ -188,7 +188,7 @@ function runcheck(){
 
 function controlcheck(){
   # check controls are not listed in comparisons
-  control_list=`awk '$3 ~ /Y/' samples.tsv | awk '{print $1}'`
+  control_list=`awk '$3 ~ /Y/' ${WORKDIR}/samples.tsv | awk '{print $1}'`
   check1=`awk '{print $1}' ${WORKDIR}/contrasts.tsv`
   check2=`awk '{print $2}' ${WORKDIR}/contrasts.tsv`
   
