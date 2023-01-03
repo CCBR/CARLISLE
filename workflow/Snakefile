@@ -1,32 +1,5 @@
 from os.path import join
 
-def run_contrasts(wildcards):
-    files=[]
-    if config["run_contrasts"] == "Y":
-        files.append(join(RESULTSDIR,"replicate_sample.tsv"))
-        files.append(join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"))
-        inputs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(inputs)
-        cms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(cms)
-        fcms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(fcms)
-        results=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(results)
-        htmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(htmls)
-        bbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(bbs)
-        fresults=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(fresults)
-        fhtmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(fhtmls)
-        fbbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(fbbs)
-        venns=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
-        files.extend(venns)
-    return files
-
 def run_macs2(wildcards):
     files=[]
     if "narrowPeak" in config["peaktype"]:
@@ -66,7 +39,6 @@ def run_gopeaks(wildcards):
         files.extend(n)
         n2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
         files.extend(n2)
-
     if "broadGo_peaks.bed" in config["peaktype"]:
         b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
         files.extend(b)
@@ -74,7 +46,53 @@ def run_gopeaks(wildcards):
         files.extend(b2)
     return files
 
+def run_contrasts(wildcards):
+    files=[]
+    if config["run_contrasts"] == "Y":
+        files.append(join(RESULTSDIR,"replicate_sample.tsv"))
+        files.append(join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"))
+        inputs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(inputs)
+        cms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(cms)
+        fcms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(fcms)
+        results=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(results)
+        htmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(htmls)
+        bbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(bbs)
+        fresults=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(fresults)
+        fhtmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(fhtmls)
+        fbbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(fbbs)
+        venns=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        files.extend(venns)
+    return files
+
+def get_annotation_macs2(wildcards):
+    files=[]
+    if "narrowPeak" in config["peaktype"] or "broadPeak" in config["peaktype"]:
+        f=expand(join(RESULTSDIR,"annotation","{macs_types}","{replicate}.{dupstatus}_peaks.annotation.txt"),macs_types=MACS_TYPES,replicate=REPLICATES,dupstatus=DUPSTATUS),
+        files.extend(f)
+    return files
+
+def get_annotation_s_and_g(wildcards):
+    files=[]
+    if "narrowGo_peaks.bed" in config["peaktype"] or "broadGo_peaks.bed" in config["peaktype"] or "norm.stringent.bed" in config["peaktype"] or "norm.relaxed.bed" in config["peaktype"]:
+        f=expand(join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}.{dupstatus}_peaks.annotation.txt"),s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS),
+        files.extend(f)
+    return files
+
+
 include: "rules/init.smk"
+include: "rules/align.smk"
+include: "rules/peakcalls.smk"
+include: "rules/diff.smk"
+#include: "rules/annotations.smk"
 
 rule all:
     input:
@@ -88,7 +106,8 @@ rule all:
         unpack(run_contrasts),
 
         ## ANNOTATION
-        expand(join(RESULTSDIR,"annotation","{pt}","{replicate}.{dupstatus}_peaks.annotation.txt"),pt=PT,replicate=REPLICATES,dupstatus=DUPSTATUS),
+        #unpack(get_annotation_macs2),
+        #unpack(get_annotation_s_and_g),
 
         ##########################################
         ### intermediate files
@@ -111,9 +130,3 @@ rule all:
         # expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        
-
-include: "rules/align.smk"
-include: "rules/peakcalls.smk"
-include: "rules/diff.smk"
-incldue: "rules/annotation.smk"
