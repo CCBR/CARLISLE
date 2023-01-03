@@ -165,6 +165,10 @@ rule DESeq:
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
             --species {params.species}
+
+        # change elbow limits to provided log2fc if limit is set to .na.real
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
         """
 
 rule DESeq2:
