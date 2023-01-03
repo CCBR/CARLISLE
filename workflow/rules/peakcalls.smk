@@ -1,19 +1,18 @@
-def get_input_bedgraphs(wildcards):
-    d=dict()
-    for dupstatus in DUPSTATUS:
-        t="treatment_bedgraph_"+dupstatus
-        c="control_bedgraph_"+dupstatus
-        d[t] = join(RESULTSDIR,"bedgraph",wildcards.treatment+"."+dupstatus+".bedgraph")
-        d[c] = join(RESULTSDIR,"bedgraph",wildcards.control+"."+dupstatus+".bedgraph")
-    return d
-
 def get_input_bams(wildcards):
     d=dict()
     for dupstatus in DUPSTATUS:
-        t="treatment_bam_"+dupstatus
-        c="control_bam_"+dupstatus
+        t="treatment_bam"
+        c="control_bam"
         d[t] = join(RESULTSDIR,"bam",wildcards.treatment+"."+dupstatus+".bam")
         d[c] = join(RESULTSDIR,"bam",wildcards.control+"."+dupstatus+".bam")
+    return d
+
+def get_input_bedgraphs(wildcards):
+    d=dict()
+    t="treatment_bedgraph"
+    c="control_bedgraph"
+    d[t] = join(RESULTSDIR,"bedgraph",wildcards.treatment + "." + wildcards.dupstatus + ".bedgraph")
+    d[c] = join(RESULTSDIR,"bedgraph",wildcards.control + "." + wildcards.dupstatus + ".bedgraph")
     return d
 
 rule gopeaks:
@@ -28,7 +27,7 @@ rule gopeaks:
         treatment = "{treatment}",
         control = "{control}",
         dupstatus = "{dupstatus}",
-        prefix = join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup")
+        prefix = join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}")
     threads:
         getthreads("gopeaks")
     output:
@@ -36,13 +35,8 @@ rule gopeaks:
         broadPeaks=join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bed"),
     shell:
         """
-            if [[ {params.dupstatus} == "dedup" ]]; then
-                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.narrowGo
-                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_dedup} -o {params.prefix}.broadGo --broad
-            else
-                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_no_dedup} -o {params.prefix}.narrowGo
-                {params.gopeaks} -b {input.treatment_bam_dedup} -c {input.control_bam_no_dedup} -o {params.prefix}.broadGo --broad
-            fi
+            {params.gopeaks} -b {input.treatment_bam} -c {input.control_bam} -o {params.prefix}.narrowGo
+            {params.gopeaks} -b {input.treatment_bam} -c {input.control_bam} -o {params.prefix}.broadGo --broad
         """
 
 rule macs2:
@@ -86,7 +80,8 @@ rule seacr:
     params:
         treatment = "{treatment}",
         control = "{control}",
-        outdir = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}")
+        outdir = join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}"),
+        dupstatus= "{dupstatus}",
     threads: getthreads("seacr")
     envmodules:
         TOOLS["seacr"],
@@ -102,53 +97,29 @@ rule seacr:
         fi
         cd {params.outdir}
 
-        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-            --control {input.control_bedgraph_dedup} \\
+        SEACR.sh --bedgraph {input.treatment_bedgraph} \\
+            --control {input.control_bedgraph} \\
             --normalize norm \\
             --mode stringent \\
-            --output {params.treatment}_vs_{params.control}.dedup.norm
+            --output {params.treatment}_vs_{params.control}.{params.dupstatus}.norm
 
-        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-            --control {input.control_bedgraph_dedup} \\
+        SEACR.sh --bedgraph {input.treatment_bedgraph} \\
+            --control {input.control_bedgraph} \\
             --normalize norm \\
             --mode relaxed \\
-            --output {params.treatment}_vs_{params.control}.dedup.norm
+            --output {params.treatment}_vs_{params.control}.{params.dupstatus}.norm
 
-        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-            --control {input.control_bedgraph_dedup} \\
+        SEACR.sh --bedgraph {input.treatment_bedgraph} \\
+            --control {input.control_bedgraph} \\
             --normalize non \\
             --mode stringent \\
-            --output {params.treatment}_vs_{params.control}.dedup.non
+            --output {params.treatment}_vs_{params.control}.{params.dupstatus}.non
 
-        SEACR.sh --bedgraph {input.treatment_bedgraph_dedup} \\
-            --control {input.control_bedgraph_dedup} \\
+        SEACR.sh --bedgraph {input.treatment_bedgraph} \\
+            --control {input.control_bedgraph} \\
             --normalize non \\
             --mode relaxed \\
-            --output {params.treatment}_vs_{params.control}.dedup.non
-
-        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-            --control {input.control_bedgraph_no_dedup} \\
-            --normalize norm \\
-            --mode stringent \\
-            --output {params.treatment}_vs_{params.control}.no_dedup.norm
-
-        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-            --control {input.control_bedgraph_no_dedup} \\
-            --normalize norm \\
-            --mode relaxed \\
-            --output {params.treatment}_vs_{params.control}.no_dedup.norm
-
-        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-            --control {input.control_bedgraph_no_dedup} \\
-            --normalize non \\
-            --mode stringent \\
-            --output {params.treatment}_vs_{params.control}.no_dedup.non
-
-        SEACR.sh --bedgraph {input.treatment_bedgraph_no_dedup} \\
-            --control {input.control_bedgraph_no_dedup} \\
-            --normalize non \\
-            --mode relaxed \\
-            --output {params.treatment}_vs_{params.control}.no_dedup.non
+            --output {params.treatment}_vs_{params.control}.{params.dupstatus}.non
         """
 
 localrules: peak2bb
