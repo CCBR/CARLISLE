@@ -193,7 +193,7 @@ rule DESeq2:
         """
         set -exo pipefail
         dirname=$(basename $(mktemp))
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then x
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
         else
             TMPDIR="/dev/shm/$dirname"
@@ -220,6 +220,10 @@ rule DESeq2:
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
             --species {params.species}
+
+        # change elbow limits to provided log2fc if limit is set to .na.real
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
         """
 
 rule diffbb:
