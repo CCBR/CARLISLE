@@ -17,7 +17,7 @@ contrasts_fdr_cutoff: "0.05"
 contrasts_lfc_cutoff: "0.59" # FC of 1.5
 
 # reference
-genome: "mm10"    # currently supports hg38 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+genome: "hg38"    # currently supports hg38 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
 spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
 spikein_genome: "ecoli" # ignored if spiked is set to N
@@ -48,7 +48,7 @@ dupstatus: "dedup, no_dedup"
 # peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
 # dupstatus and peaktypes
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGoPeak, broadGoPeak"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
 #####################################################################################
 # References
