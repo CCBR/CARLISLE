@@ -193,7 +193,7 @@ rule DESeq2:
         """
         set -exo pipefail
         dirname=$(basename $(mktemp))
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then x
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
         else
             TMPDIR="/dev/shm/$dirname"
