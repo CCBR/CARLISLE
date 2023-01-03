@@ -116,6 +116,7 @@ print("# Treatment Control combinations:")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
+TREATMENT_CONTROL_LIST=[]
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
     c=crow.controlName+"_"+str(crow.controlReplicateNumber)
@@ -127,6 +128,7 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     process_replicates.extend([t,c])
     TREATMENTS.append(t)
     CONTROLS.append(c)
+    TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
     not_to_process = set(REPLICATES) - set(process_replicates)
@@ -136,8 +138,6 @@ if len(process_replicates)!=len(REPLICATES):
     REPLICATES = process_replicates
 print("# Read access to all fastq files in confirmed!")
 
-# DUPSTATUS=["dedup","no_dedup"]
-# PEAKTYPE=["narrowPeak","broadPeak","norm.stringent.bed","norm.relaxed.bed"]
 DUPSTATUS=config["dupstatus"]
 PEAKTYPE=config["peaktype"]
 DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
@@ -201,7 +201,16 @@ if config["run_contrasts"] == "Y":
         if os.path.exists(rg_file): os.remove(rg_file)
         # once file is removed it will be recreated by rule create_replicate_sample_table
 
-    
+#separate peak types into two lists
+macs_set=[]
+s_and_g_set=[]
+for pt in PT:
+    if pt == "narrowPeak" or pt == "broadPeak":
+        macs_set.append(pt)
+    else:
+        s_and_g_set.append(pt)
+MACS_TYPES=list(set(macs_set))
+S_AND_G_TYPES=list(set(s_and_g_set))
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
