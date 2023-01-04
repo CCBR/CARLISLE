@@ -53,7 +53,9 @@ rule contrast_init:
                     echo -ne "$replicate\\t$sample\\t$dupstatus\\t$peaktype\\t$bed\\t$bedgraph\\t$sf\\t$fragment_bed\\n"
                 done
             done
-        done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}    
+        done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}
+
+        exit 0    
         """
 
 rule make_inputs:
