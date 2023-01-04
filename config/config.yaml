@@ -17,10 +17,10 @@ contrasts_fdr_cutoff: "0.05"
 contrasts_lfc_cutoff: "0.59" # FC of 1.5
 
 # reference
-genome: "hg38"    # currently supports hg38 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
 spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
-spikein_genome: "ecoli" # ignored if spiked is set to N
+spikein_genome: "ecoli" # must be species found in spikein_reference below; ignored if spiked is set to N
 spikein_scale: 1000000
 
 # user parameters for alignment
@@ -60,6 +60,11 @@ reference:
     blacklist: "PIPELINE_HOME/resources/blacklistbed/hg38.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
+  hg19:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/hg19.fa"
+    blacklist: "PIPELINE_HOME/resources/blacklistbed/hg19.bed"
+    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
+    macs2_g: "hs"
   mm10:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
     blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
@@ -71,5 +76,7 @@ spikein_reference:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
+  saccharomyces:
+    fa: "PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
