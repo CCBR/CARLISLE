@@ -17,18 +17,18 @@ def run_macs2(wildcards):
 def run_seacr(wildcards):
     files=[]
     if "norm.stringent.bed" in config["peaktype"]:
-        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s)
-        s2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s2)
-        s3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s3)
     if "norm.relaxed.bed" in config["peaktype"]:
-        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
-        r2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r2)
-        r3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r3)
     return files
 
