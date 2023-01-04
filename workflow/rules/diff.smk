@@ -20,7 +20,6 @@ def get_contrast_init(wildcards):
         files.extend(b)
     return files
 
-localrules:contrast_init
 localrules:make_inputs
 localrules: venn
 
@@ -39,6 +38,7 @@ rule contrast_init:
         peak_list=PEAKTYPE
     shell:
         """
+        set +e
         while read replicate sample;do
             for dupstatus in {params.dedup_list};do
                 bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
@@ -55,7 +55,16 @@ rule contrast_init:
             done
         done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}
 
-        exit 0    
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            echo $exitcode
+            head {output.outtsv}
+            exit 0
+        else
+            exit 0
+        fi
+  
         """
 
 rule make_inputs:
