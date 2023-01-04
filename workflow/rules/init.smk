@@ -143,10 +143,13 @@ PEAKTYPE=config["peaktype"]
 DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
 PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
 
+# set threshold settings
+FDRCUTOFF = config["contrasts_fdr_cutoff"]
+LFCCUTOFF = config["contrasts_lfc_cutoff"]
+
+# set contrast settings
 if config["run_contrasts"] == "Y":
     print("# Checking constrasts to run...")
-    FDRCUTOFF = config["contrasts_fdr_cutoff"]
-    LFCCUTOFF = config["contrasts_lfc_cutoff"]
     contrasts_table = config["contrasts"]
     check_readaccess(contrasts_table)
     contrasts_df=pd.read_csv(contrasts_table,sep="\t",header=0)
@@ -204,7 +207,7 @@ if config["run_contrasts"] == "Y":
 #separate peak types into two lists
 macs_set=[]
 s_and_g_set=[]
-for pt in PT:
+for pt in PEAKTYPE:
     if pt == "narrowPeak" or pt == "broadPeak":
         macs_set.append(pt)
     else:
