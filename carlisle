@@ -241,7 +241,7 @@ function testrun() {
   sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/config/samples.test.tsv > $WORKDIR/samples.tsv
   cp ${PIPELINE_HOME}/config/contrasts.test.tsv $WORKDIR/contrasts.tsv
   check_essential_files
-  runslurm
+  dryrun
 }
 
 function runslurm() {
