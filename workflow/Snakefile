@@ -35,14 +35,14 @@ def run_seacr(wildcards):
 def run_gopeaks(wildcards):
     files=[]
     if "narrowGo_peaks.bed" in config["peaktype"]:
-        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(n)
-        n2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        n2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(n2)
     if "broadGo_peaks.bed" in config["peaktype"]:
-        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(b)
-        b2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bigbed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        b2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(b2)
     return files
 
