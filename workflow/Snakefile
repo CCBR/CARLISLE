@@ -76,23 +76,31 @@ def run_contrasts(wildcards):
 def get_annotation_macs2(wildcards):
     files=[]
     if "narrowPeak" in config["peaktype"] or "broadPeak" in config["peaktype"]:
-        f=expand(join(RESULTSDIR,"annotation","{macs_types}","{replicate}.{dupstatus}_peaks.annotation.txt"),macs_types=MACS_TYPES,replicate=REPLICATES,dupstatus=DUPSTATUS),
-        files.extend(f)
+        peaks=expand(join(RESULTSDIR,"annotation","{macs_types}","{replicate}.{dupstatus}_peaks.annotation.txt"),macs_types=MACS_TYPES,replicate=REPLICATES,dupstatus=DUPSTATUS)
+        files.extend(peaks)
     return files
 
 def get_annotation_s_and_g(wildcards):
     files=[]
     if "narrowGo_peaks.bed" in config["peaktype"] or "broadGo_peaks.bed" in config["peaktype"] or "norm.stringent.bed" in config["peaktype"] or "norm.relaxed.bed" in config["peaktype"]:
-        f=expand(join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}.{dupstatus}_peaks.annotation.txt"),s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS),
+        f=expand(join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}.{dupstatus}_peaks.annotation.txt"),s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS)
         files.extend(f)
     return files
 
+def get_motif_analysis(wildcards):
+    files=[]
+    bed=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}.{dupstatus}_peaks.no_TSS_{s_dist}.bed"),peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
+    files.extend(bed)
+
+    html=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}.{dupstatus}.motifs","knownResults.html"),peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS)
+    files.extend(html)
+    return files
 
 include: "rules/init.smk"
 include: "rules/align.smk"
 include: "rules/peakcalls.smk"
 include: "rules/diff.smk"
-#include: "rules/annotations.smk"
+include: "rules/annotations.smk"
 
 rule all:
     input:
@@ -106,8 +114,9 @@ rule all:
         unpack(run_contrasts),
 
         ## ANNOTATION
-        #unpack(get_annotation_macs2),
-        #unpack(get_annotation_s_and_g),
+        unpack(get_annotation_macs2),
+        unpack(get_annotation_s_and_g),
+        unpack(get_motif_analysis)
 
         ##########################################
         ### intermediate files
@@ -130,3 +139,4 @@ rule all:
         # expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+

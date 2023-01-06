@@ -117,6 +117,7 @@ process_replicates = []
 TREATMENTS = []
 CONTROLS = []
 TREATMENT_CONTROL_LIST=[]
+TREAT_to_CONTRL_DICT=dict()
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
     c=crow.controlName+"_"+str(crow.controlReplicateNumber)
@@ -129,6 +130,7 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     TREATMENTS.append(t)
     CONTROLS.append(c)
     TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+    TREAT_to_CONTRL_DICT[t]=c
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
     not_to_process = set(REPLICATES) - set(process_replicates)
@@ -300,7 +302,8 @@ refdata["blacklistbed"] = GENOMEBLACKLIST
 refdata["spiked"] = SPIKED
 refdata["spikein_genome"] = SPIKED_GENOMEFA
 
-
+# set annotation params
+S_DISTANCE=config["stitch_distance"]
 #########################################################
 
 localrules: create_replicate_sample_table
