@@ -5,18 +5,6 @@ def get_bed_macs2(wildcards):
                 bed=join(RESULTSDIR,"peaks","macs2", wildcards.replicate, wildcards.replicate + "." + wildcards.dupstatus + "_peaks.broadPeak")
         return bed
 
-def get_bed2_macs2(wildcards):
-        if wildcards.macs_types == "narrowPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.narrowPeak")
-        if wildcards.macs_types =="broadPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.broadPeak")
-        return bed
-
-def get_cntrl_bam(wildcards):
-        cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.treatment]
-        cntrl_file=join(RESULTSDIR,"bam", cntrl_sample + "." + wildcards.dupstatus + ".bam"),
-        return cntrl_file
-
 def get_bed_s_and_g(wildcards):
         if wildcards.s_and_g_types =="norm.stringent.bed":
                 bed=join(RESULTSDIR,"peaks","seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.stringent.bed")
@@ -27,6 +15,11 @@ def get_bed_s_and_g(wildcards):
         if wildcards.s_and_g_types =="broadGo_peaks.bed":
                 bed=join(RESULTSDIR,"peaks","gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".broadGo_peaks.bed")
         return bed
+
+def get_cntrl_bam(wildcards):
+        cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.treatment]
+        cntrl_file=join(RESULTSDIR,"bam", cntrl_sample + "." + wildcards.dupstatus + ".bam"),
+        return cntrl_file
 
 def get_bed_all(wildcards):
         cntrl=TREAT_to_CONTRL_DICT[wildcards.treatment]
