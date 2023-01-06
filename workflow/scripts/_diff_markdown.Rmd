@@ -192,15 +192,19 @@ DESeq2::plotMA(results)
 
 ```{r pca,include=TRUE,echo=FALSE}
 # default for nsub is 1000, if there are less than 1000 rows with a mean > 5 this will error
-# If there are less than 1K but more than 150 then set the nsub value to the n rows
+# If there are less than 1K check hether there are enough istances to use nsub value set to the n rows
 # if there are not then variancestablizing must be used
 if (sum( rowMeans( counts(dds, normalized=TRUE)) > 5 ) > 1000){
   rld <- vst(dds)
-} else if (sum( rowMeans( counts(dds, normalized=TRUE)) > 5 ) > 150){
-  rld <- vst(dds,nsub=nrow(dds))
-} else {
-  rld <- varianceStabilizingTransformation(dds)
-}
+} else{
+  t <- try(vst(dds,nsub=nrow(dds)),silent = TRUE)
+  if(grepl( "Error", t, fixed = TRUE)){
+    rld <- varianceStabilizingTransformation(dds)
+  } else{
+    rld <- vst(dds,nsub=nrow(dds))
+  }
+} 
+
 assayrld = as.data.frame(assay(rld))
 assayrld$row_variance = rowVars(as.matrix(assayrld))
 assayrld = arrange(assayrld,desc(row_variance))
