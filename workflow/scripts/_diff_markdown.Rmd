@@ -195,12 +195,22 @@ DESeq2::plotMA(results)
 # If there are less than 1K check hether there are enough istances to use nsub value set to the n rows
 # if there are not then variancestablizing must be used
 if (sum( rowMeans( counts(dds, normalized=TRUE)) > 5 ) > 1000){
+  print("VST: Using standard method")
   rld <- vst(dds)
 } else{
+  # run test for dds
   t <- try(vst(dds,nsub=nrow(dds)),silent = TRUE)
-  if(grepl( "Error", t, fixed = TRUE)){
+  
+  # if this completes then run nsub equal to nrow
+  # if it fails run separate function
+  if (class(t)[1] == "DESeqTransform"){
+    print("VST: Using nrow as nsub")
+    rld <- vst(dds,nsub=nrow(dds))
+  } else if(grepl( "Error", t, fixed = TRUE)){
+    print ("VST: Using variance Stablizing transformation")
     rld <- varianceStabilizingTransformation(dds)
   } else{
+    print("VST: Using nrow as nsub")
     rld <- vst(dds,nsub=nrow(dds))
   }
 } 
