@@ -303,12 +303,13 @@ function run() {
     PARTITIONS="norm"
     if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
 
-    echo "#!/bin/bash
-    #SBATCH --job-name="CARLISLE"
-    #SBATCH --mem=40g
-    #SBATCH --partition="$PARTITIONS"
-    #SBATCH --time=96:00:00
-    #SBATCH --cpus-per-task=2
+    cat > ${WORKDIR}/submit_script.sbatch << EOF
+#!/bin/bash
+#SBATCH --job-name="CARLISLE"
+#SBATCH --mem=40g
+#SBATCH --partition="$PARTITIONS"
+#SBATCH --time=96:00:00
+#SBATCH --cpus-per-task=2
 
     module load $PYTHON_VERSION
     module load $SNAKEMAKE_VERSION
@@ -341,8 +342,7 @@ function run() {
     fi
 
     bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/log/snakemake.log > ${WORKDIR}/log/snakemake.log.HPC_summary.txt
-
-    " > ${WORKDIR}/submit_script.sbatch
+EOF
 
     sbatch ${WORKDIR}/submit_script.sbatch
 
