@@ -5,14 +5,14 @@
 workdir: "WORKDIR"
 
 # tab delimited samples file .. see samplefile for format details
-samplemanifest: "WORKDIR/samples.tsv"
+samplemanifest: "WORKDIR/config/samples.tsv"
 
 #####################################################################################
 # User parameters
 #####################################################################################
 # run sample contrasts
 run_contrasts: "Y" # Y or N
-contrasts: "WORKDIR/contrasts.tsv"  # run_contrasts needs to be "Y"
+contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be "Y"
 contrasts_fdr_cutoff: "0.05"
 contrasts_lfc_cutoff: "0.59" # FC of 1.5
 

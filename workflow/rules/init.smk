@@ -8,11 +8,8 @@ import yaml
 import pprint
 import shutil
 import uuid
-# import glob
-# import shutil
 pp = pprint.PrettyPrinter(indent=4)
 #########################################################
-
 
 #########################################################
 # FILE-ACTION FUNCTIONS 
@@ -69,7 +66,6 @@ if not os.path.exists(join(RESULTSDIR)):
 for f in ["samplemanifest"]:
     check_readaccess(config[f])
 #########################################################
-
 
 #########################################################
 # CREATE SAMPLE DATAFRAME
@@ -226,7 +222,7 @@ S_AND_G_TYPES=list(set(s_and_g_set))
 try:
     TOOLSYAML = config["tools"]
 except KeyError:
-    TOOLSYAML = join(WORKDIR,"tools.yaml")
+    TOOLSYAML = join(WORKDIR,"config","tools.yaml")
 check_readaccess(TOOLSYAML)
 with open(TOOLSYAML) as f:
     TOOLS = yaml.safe_load(f)
@@ -240,7 +236,7 @@ with open(TOOLSYAML) as f:
 try:
     CLUSTERYAML = config["CLUSTERYAML"]
 except KeyError:
-    CLUSTERYAML = join(WORKDIR,"cluster.yaml")
+    CLUSTERYAML = join(WORKDIR,"config","cluster.yaml")
 check_readaccess(CLUSTERYAML)
 with open(CLUSTERYAML) as json_file:
     CLUSTER = yaml.safe_load(json_file)
