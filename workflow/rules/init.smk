@@ -236,7 +236,6 @@ with open(TOOLSYAML) as f:
 #########################################################
 # READ CLUSTER PER-RULE REQUIREMENTS
 #########################################################
-
 ## Load cluster.json
 try:
     CLUSTERYAML = config["CLUSTERYAML"]
@@ -256,7 +255,6 @@ getmemG=lambda rname:getmemg(rname).replace("g","G")
 #########################################################
 # SET OTHER PIPELINE GLOBAL VARIABLES
 #########################################################
-
 print("# Pipeline Parameters:")
 print("#"*100)
 print("# Working dir :",WORKDIR)
@@ -304,8 +302,17 @@ refdata["spikein_genome"] = SPIKED_GENOMEFA
 
 # set annotation params
 S_DISTANCE=config["stitch_distance"]
-#########################################################
 
+#########################################################
+# CHECK ACCESS TO OTHER RESOURCES
+#########################################################
+if GENOME == "hg38" or GENOME == "hg19":
+    check_readaccess(config["reference"][GENOME]["tss_bed"])
+    check_readaccess(config["reference"][GENOME]["rose"])
+
+#########################################################
+# DEFINE LOCAL RULES
+#########################################################
 localrules: create_replicate_sample_table
 
 rule create_replicate_sample_table:
