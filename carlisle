@@ -244,15 +244,15 @@ function preruncleanup() {
 
   cd $WORKDIR
   ## Archive previous run files
-  if [ -f ${WORKDIR}/log/snakemake.log ];then 
+  if [ -f ${WORKDIR}/logs/snakemake.log ];then 
     modtime=$(stat ${WORKDIR}/snakemake.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
-    mv ${WORKDIR}/log/snakemake.log ${WORKDIR}/stats/snakemake.${modtime}.log
+    mv ${WORKDIR}/logs/snakemake.log ${WORKDIR}/stats/snakemake.${modtime}.log
 
-    if [ -f ${WORKDIR}/log/snakemake.log.HPC_summary.txt ];then 
-      mv ${WORKDIR}/log/snakemake.log.HPC_summary.txt ${WORKDIR}/stats/snakemake.${modtime}.log.HPC_summary.txt
+    if [ -f ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ];then 
+      mv ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ${WORKDIR}/stats/snakemake.${modtime}.log.HPC_summary.txt
     fi
-    if [ -f ${WORKDIR}/log/snakemake.stats ];then 
-      mv ${WORKDIR}/log/snakemake.stats ${WORKDIR}/stats/snakemake.${modtime}.stats
+    if [ -f ${WORKDIR}/logs/snakemake.stats ];then 
+      mv ${WORKDIR}/logs/snakemake.stats ${WORKDIR}/stats/snakemake.${modtime}.stats
     fi
   fi
 
@@ -283,12 +283,12 @@ function run() {
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cores all \
-    --stats ${WORKDIR}/log/snakemake.stats \
-    2>&1|tee ${WORKDIR}/log/snakemake.log
+    --stats ${WORKDIR}/logs/snakemake.stats \
+    2>&1|tee ${WORKDIR}/logs/snakemake.log
 
     if [ "$?" -eq "0" ];then
       snakemake -s $SNAKEFILE \
-      --report ${WORKDIR}/log/runlocal_snakemake_report.html \
+      --report ${WORKDIR}/logs/runlocal_snakemake_report.html \
       --directory $WORKDIR \
       --configfile ${WORKDIR}/config/config.yaml 
     fi
@@ -331,17 +331,17 @@ function run() {
     --rerun-incomplete \
     --keep-going \
     --restart-times 1 \
-    --stats ${WORKDIR}/log/snakemake.stats \
-    2>&1|tee ${WORKDIR}/log/snakemake.log
+    --stats ${WORKDIR}/logs/snakemake.stats \
+    2>&1|tee ${WORKDIR}/logs/snakemake.log
 
     if [ "\$?" -eq "0" ];then
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
-      --report ${WORKDIR}/log/runslurm_snakemake_report.html \
+      --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
       --configfile ${WORKDIR}/config/config.yaml 
     fi
 
-    bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/log/snakemake.log > ${WORKDIR}/log/snakemake.log.HPC_summary.txt
+    bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
 EOF
 
     sbatch ${WORKDIR}/submit_script.sbatch
@@ -359,7 +359,7 @@ EOF
     --rerun-incomplete \
     --keep-going \
     --touch \
-    --stats ${WORKDIR}/log/snakemake.stats
+    --stats ${WORKDIR}/logs/snakemake.stats
   fi
 }
 

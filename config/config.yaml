@@ -57,7 +57,7 @@ tss_distance: 2500
 
 ## homer
 motif_size: 1000
-preparsedDir: ""
+preparsedDir: "/data/CCBR_Pipeliner/db/PipeDB/homer/parsedDir"
 
 #####################################################################################
 # References
