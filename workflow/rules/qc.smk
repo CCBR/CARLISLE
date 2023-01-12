@@ -100,12 +100,12 @@ rule multiqc:
     https://multiqc.info/docs/#running-multiqc
     """
     input:
-        f1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
-        f2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
-        f3=expand(rules.qc_fastq_screen_validator.output.speciesR1,replicate=REPLICATES),
-        f4=expand(rules.qc_fastq_screen_validator.output.speciesR2,replicate=REPLICATES),
-        #f3=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
-        #f4=expand(rules.align.output.bamidxstats,replicate=REPLICATES)
+        fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
+        fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
+        screenR1=expand(rules.qc_fastq_screen_validator.output.speciesR1,replicate=REPLICATES),
+        screenR2=expand(rules.qc_fastq_screen_validator.output.speciesR2,replicate=REPLICATES),
+        flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
+        idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES)
     params:
         qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
         dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
@@ -124,5 +124,6 @@ rule multiqc:
             -d -dd 1 \\
             {params.dir_fqc} \\
             {params.dir_fqscreen} \\
+            {params.dir_samtools}
             -o {params.outDir}
         """
