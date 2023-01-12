@@ -1,0 +1,23 @@
+#Intro title information
+title: "CUTRUN Analysis Report"
+report_header_info:
+    - FASTQ Analysis: 'Analysis includes basic QC metrics'
+    - FASTQScreen Analysis: 'Analysis includes human, mouse, and bacteria'
+    - SAMStats Analysis: 'Analysis included flagstats and idxstats'
+
+#include fastqscreen
+fastqscreen_simpleplot: true
+
+#remove analysis paths from file
+show_analysis_paths: False
+
+#find samples
+sp:
+    fastq_screen:
+        fn: '*_screen.txt'
+
+module_order:
+# Sample Quality control
+    - 'fastqc'
+    - 'fastq_screen'
+    - 'samtools'
