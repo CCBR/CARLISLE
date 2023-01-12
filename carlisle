@@ -22,7 +22,7 @@ SCRIPTBASENAME=$(readlink -f $(basename $0))
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv resources/cluster.yaml resources/tools.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster.yaml resources/tools.yaml"
 ESSENTIAL_FOLDERS="workflow/scripts"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -245,7 +245,7 @@ function preruncleanup() {
   cd $WORKDIR
   ## Archive previous run files
   if [ -f ${WORKDIR}/logs/snakemake.log ];then 
-    modtime=$(stat ${WORKDIR}/snakemake.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
+    modtime=$(stat ${WORKDIR}/logs/snakemake.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/logs/snakemake.log ${WORKDIR}/stats/snakemake.${modtime}.log
 
     if [ -f ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ];then 

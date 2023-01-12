@@ -76,6 +76,21 @@ rule peakAnnotation_s_and_g:
 rule rose_all:
         """
         Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
+
+        # SEACR bed file output format
+        <1>     <2>     <3>     <4>             <5>             <6>
+        <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
+
+        # MACS2 bed file output format
+        https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
+        <1>     <2>     <3>     <4>     <5>                             <6>     <7>             <8>             <9>             <10>
+        <chr>   <start> <end>   <name>  <integer score for display>     <empty> <fold-change> <-log10pvalue>    <-log10qvalue>  <relative summit position to peak start>
+        ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff. 
+        ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100) 
+        ### by using the following 1-liner awk: awk -v OFS="\t" '{$5=$5>1000?1000:$5} {print}' NAME_peaks.narrowPeak
+        ## broadPeak does not have 10th column
+        ### Since in the broad peak calling mode, the peak summit won't be called, the values in the 5th, and 7-9th columns are the mean value across all positions in the peak region
+
         """
         input:
                 bed=get_bed_all,

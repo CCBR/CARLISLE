@@ -1,5 +1,9 @@
 from os.path import join
 
+def qc(wildcards):
+    files=expand(join(RESULTSDIR,'qc', 'multiqc_report.html'))
+    return files
+
 def run_macs2(wildcards):
     files=[]
     if "narrowPeak" in PEAKTYPE:
@@ -98,6 +102,7 @@ def get_motif_analysis(wildcards):
 
 include: "rules/init.smk"
 include: "rules/align.smk"
+include: "rules/qc.smk"
 include: "rules/peakcalls.smk"
 include: "rules/diff.smk"
 include: "rules/annotations.smk"
@@ -107,16 +112,19 @@ rule all:
         ##########################################
         ### required files
         ##########################################
-        ## PEAKCALLS rules
-        unpack(run_macs2),
-        unpack(run_seacr),
-        unpack(run_gopeaks),
-        unpack(run_contrasts),
+        ## QC rules
+        unpack(qc),
+        
+        # ## PEAKCALLS rules
+        # unpack(run_macs2),
+        # unpack(run_seacr),
+        # unpack(run_gopeaks),
+        # unpack(run_contrasts),
 
-        ## ANNOTATION
-        unpack(get_annotation_macs2),
-        unpack(get_annotation_s_and_g),
-        unpack(get_motif_analysis)
+        # ## ANNOTATION
+        # unpack(get_annotation_macs2),
+        # unpack(get_annotation_s_and_g),
+        #unpack(get_motif_analysis)
 
         ##########################################
         ### intermediate files
