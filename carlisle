@@ -28,12 +28,12 @@ ESSENTIAL_FOLDERS="workflow/scripts"
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
 
 function get_git_commitid_tag() {
-# This function gets the latest git commit id and tag
-# Input is PIPELINE_HOME folder which is a git folder
-  cd $1
-  gid=$(git rev-parse HEAD)
-  tag=$(git describe --tags $gid 2>/dev/null)
-  echo -ne "$gid\t$tag"
+  # This function gets the latest git commit id and tag
+  # Input is PIPELINE_HOME folder which is a git folder
+    cd $1
+    gid=$(git rev-parse HEAD)
+    tag=$(git describe --tags $gid 2>/dev/null)
+    echo -ne "$gid\t$tag"
 }
 
 # ## setting PIPELINE_HOME
@@ -105,6 +105,13 @@ function init() {
   #create log and stats folders
   if [ ! -d $WORKDIR/logs ]; then mkdir -p $WORKDIR/logs;echo "Logs Dir: $WORKDIR/logs";fi
   if [ ! -d $WORKDIR/stats ];then mkdir -p $WORKDIR/stats;echo "Stats Dir: $WORKDIR/stats";fi
+
+  #create links for rose file
+  if [[ ! -d $WORKDIR/annotation ]]; then 
+    mkdir -p $WORKDIR/annotation
+    cp ${PIPELINE_HOME}/hg19_refseq.ucsc $WORKDIR/annotation/hg19_refseq.ucsc 
+    cp ${PIPELINE_HOME}/hg38_refseq.ucsc $WORKDIR/annotation/hg38_refseq.ucsc
+  fi
 
   echo "Done Initializing $WORKDIR. You can now edit $WORKDIR/config/config.yaml and $WORKDIR/config/samples.tsv"
 
