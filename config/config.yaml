@@ -18,10 +18,14 @@ contrasts_lfc_cutoff: "0.59" # FC of 1.5
 
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
-spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
+spiked: "Y" # If Y, then normalization will be performed based off of spike-in aligned read count; if "LIRBARY" then library normalization will be performed; if N then no norm will be performed
+## if spiked ="Y"
 spikein_genome: "ecoli" # must be species found in spikein_reference below; ignored if spiked is set to N
 spikein_scale: 1000000
+## if spiked="LIBRARY"
+library_path: "WORKDIR/library/" #path to the dir where library norm stats was stored IE /carlisle/results/alignment_stats/
 
 # user parameters for alignment
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
@@ -83,6 +87,11 @@ reference:
     blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
+  t2t:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna"
+    blacklist: "/data/CCBR_Pipeliner/db/PipeDB/Indices/T2T/T2T.excluderanges.bed"
+    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
+    macs2_g: "hs"
 
 spikein_reference:
   ecoli:
