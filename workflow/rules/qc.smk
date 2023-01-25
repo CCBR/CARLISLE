@@ -124,6 +124,6 @@ rule multiqc:
             -d -dd 1 \\
             {params.dir_fqc} \\
             {params.dir_fqscreen} \\
-            {params.dir_samtools}
+            {params.dir_samtools} \\
             -o {params.outDir}
         """
