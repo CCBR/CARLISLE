@@ -65,6 +65,7 @@ if not os.path.exists(join(RESULTSDIR)):
     os.mkdir(join(RESULTSDIR))
 for f in ["samplemanifest"]:
     check_readaccess(config[f])
+
 #########################################################
 
 #########################################################
@@ -228,7 +229,6 @@ with open(TOOLSYAML) as f:
     TOOLS = yaml.safe_load(f)
 #########################################################
 
-
 #########################################################
 # READ CLUSTER PER-RULE REQUIREMENTS
 #########################################################
@@ -282,9 +282,6 @@ if SPIKED == "Y":
 elif SPIKED == "LIBRARY":
     SPIKED_GENOMEFA="LIBRARY"
     LIBRARY_FILE=join(WORKDIR,"clean_library_size.csv")
-    check_readaccess(LIBRARY_FILE)
-    print("# Spike-in : using LIBRARY SIZE (DEPTH OF SEQ)")
-    print("# Spike-in library file : ",LIBRARY_FILE)
 else:
     print("# Spike-in : ")
 
@@ -309,7 +306,28 @@ if GENOME == "hg38" or GENOME == "hg19":
 #########################################################
 # DEFINE LOCAL RULES
 #########################################################
-localrules: create_replicate_sample_table
+localrules: create_replicate_sample_table,create_library_size_file
+
+rule create_library_size_file:
+    input:
+    output:
+        library_file=join(WORKDIR,"clean_library_size.csv")
+    params:
+        library_path=config["library_path"]
+    shell:
+        """
+        # remove previous files
+        if [[ -f {output.library_file} ]]; then mv {output.library_file} {output.library_file}_archived; fi
+        touch {output.library_file}
+            
+        cd {params.library_path}
+        for f in *alignment_stats.yaml; do
+            # add file to output
+            sampleid=`echo $f | cut -f1 -d"."`
+            dedup_reads=`cat $f | grep "dedup_nreads_genome:" | grep -v "nodedup" | cut -f2 -d" "`
+            echo "$sampleid,$dedup_reads,dedup" >> {output.library_file}
+        done
+        """
 
 rule create_replicate_sample_table:
     input:
@@ -373,7 +391,7 @@ rule create_reference:
         mkdir -p {params.bowtie2_dir}/tmp
         echo {params.refdata} > {params.bowtie2_dir}/tmp/ref.yaml
 
-        if [[ "{params.spiked_output}" == "" ]];then
+        if [[ "{params.use_spikein}" != "Y" ]];then
         # there is NO SPIKEIN
 
             # create faidx for genome and spike fasta
@@ -388,7 +406,7 @@ rule create_reference:
             # create len files
             cut -f1,2 {output.genomefa}.fai > {output.ref_len}
             cp {output.ref_len} {output.genome_len}
-            touch {output.spikein_len}
+            echo -e "NA\t0" > {output.spikein_len}
 
         else
         # THERE is SPIKEIN
