@@ -52,6 +52,12 @@ spikein_reference:
 
 ```
 
+If it's determined that the amount of spike-in is not sufficient for the run, a library normaliaztion can be performed.
+1. Complete a CARLISLE run with spike-in set to "Y". This will allow for the complete assessment of the spike-in.
+2. Run inital QC analysis on the output data
+3. Add the alignment_stats dir to the configuration file.
+4. Re-run the CARLISLE pipeline 
+
 ##### 2.1.3.1.2 Duplication Status
 Users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) through the user parameter.
 ```
