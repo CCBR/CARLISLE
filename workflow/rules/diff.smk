@@ -22,6 +22,7 @@ def get_contrast_init(wildcards):
 
 localrules:make_inputs
 localrules: venn
+localrules: diffbb
 
 rule contrast_init:
     input:
