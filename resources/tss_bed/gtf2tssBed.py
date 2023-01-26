@@ -3,7 +3,7 @@ import argparse
 import os
 
 def get_gene_name(s):
-        s=map(lambda x:x.replace(";","").replace("\"",""), s.strip().split(" "))
+        s=list(map(lambda x:x.replace(";","").replace("\"",""), s.strip().split(" ")))
         for i,v in enumerate(s):
                 if v == "gene_name":
                         gene_name = s[i+1]
