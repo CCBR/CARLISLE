@@ -87,11 +87,14 @@ reference:
     blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
-  t2t:
-    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/T2T/GCF_009914755.1_T2T-CHM13v2.0_genomic.fna"
-    blacklist: "/data/CCBR_Pipeliner/db/PipeDB/Indices/T2T/T2T.excluderanges.bed"
-    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
-    macs2_g: "hs"
+  hs1:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/ref.fa"
+    blacklist: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/T2T.excluderanges.bed"
+    tss_bed: "PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
+    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
+    macs2_g: "3.1e+8"
+# ref: https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html
+# used faCount from http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/ to get 3.1e+8 value above
 
 spikein_reference:
   ecoli:
