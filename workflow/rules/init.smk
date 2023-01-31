@@ -299,7 +299,7 @@ S_DISTANCE=config["stitch_distance"]
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES
 #########################################################
-if GENOME == "hg38" or GENOME == "hg19":
+if GENOME == "hg38" or GENOME == "hg19" or GENOME == "hs1":
     check_readaccess(config["reference"][GENOME]["tss_bed"])
     check_readaccess(config["reference"][GENOME]["rose"])
 
