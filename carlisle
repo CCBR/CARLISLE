@@ -109,8 +109,7 @@ function init() {
   #create links for rose file
   if [[ ! -d $WORKDIR/annotation ]]; then 
     mkdir -p $WORKDIR/annotation
-    cp ${PIPELINE_HOME}/hg19_refseq.ucsc $WORKDIR/annotation/hg19_refseq.ucsc 
-    cp ${PIPELINE_HOME}/hg38_refseq.ucsc $WORKDIR/annotation/hg38_refseq.ucsc
+    cp ${PIPELINE_HOME}/annotation/* $WORKDIR/annotation/
   fi
 
   echo "Done Initializing $WORKDIR. You can now edit $WORKDIR/config/config.yaml and $WORKDIR/config/samples.tsv"
@@ -229,8 +228,8 @@ function runlocal() {
 
 function testrun() {
   check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/config/samples.test.tsv > $WORKDIR/config/samples.tsv
-  cp ${PIPELINE_HOME}/config/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.test.tsv > $WORKDIR/config/samples.tsv
+  cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
   check_essential_files
   dryrun
 }
