@@ -10,3 +10,6 @@ site/
 *RData
 *Rhistory
 .*Rmd
+
+# ignore resources for deeptools
+resources/*gencode*
