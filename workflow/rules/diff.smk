@@ -144,6 +144,7 @@ rule DESeq:
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
         species = config["genome"],
+        gtf=config["reference"][config["genome"]]["gtf"]
     envmodules:
         TOOLS["R"]
     shell:
@@ -176,7 +177,8 @@ rule DESeq:
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
-            --species {params.species}
+            --species {params.species} \\
+            --gtf {params.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
         sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
@@ -203,6 +205,7 @@ rule DESeq2:
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
         species = config["genome"],
+        gtf=config["reference"][config["genome"]]["gtf"]
     envmodules:
         TOOLS["R"]
     shell:
@@ -235,7 +238,8 @@ rule DESeq2:
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
-            --species {params.species}
+            --species {params.species} \\
+            --gtf {params.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
         sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
