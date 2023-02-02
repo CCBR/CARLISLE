@@ -45,8 +45,6 @@ parser$add_argument("--elbowlimits", type="character", required=TRUE,
                     help = "YAML ELBOW limits")
 parser$add_argument("--tmpdir", type="character", required=FALSE, default="/tmp",
                     help = "tmpdir")
-parser$add_argument("--gtf", type="character", required=FALSE, default="",
-                    help = "GTF file path")
 parser$add_argument("--species", type="character", required=TRUE,
                     help = "species")
 parser$add_argument("--gtf", type="character", required=FALSE,

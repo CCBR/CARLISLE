@@ -57,7 +57,7 @@ list.of.bioconductor.packages=c("BiocManager",
 ## add extra packages for HS1
 if (params$species=="hs1"){
   #https://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0.html
-  list.of.packages=c(list.of.packages,"GenomicFeatures","BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
+  list.of.bioconductor.packages=c(list.of.bioconductor.packages,"GenomicFeatures","BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
 }
 
 #install as needed
