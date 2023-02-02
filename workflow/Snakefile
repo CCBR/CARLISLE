@@ -135,10 +135,10 @@ rule all:
         unpack(run_gopeaks),
         unpack(run_contrasts),
 
-        # ## ANNOTATION
-        unpack(get_annotation_macs2),
-        unpack(get_annotation_s_and_g),
-        unpack(get_motif_analysis)
+        # # ## ANNOTATION
+        # unpack(get_annotation_macs2),
+        # unpack(get_annotation_s_and_g),
+        # unpack(get_motif_analysis)
 
         ##########################################
         ### intermediate files

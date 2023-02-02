@@ -54,6 +54,12 @@ list.of.bioconductor.packages=c("BiocManager",
                                 "org.Mm.eg.db",
                                 "rtracklayer")
 
+## add extra packages for HS1
+if (params$species=="hs1"){
+  #https://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0.html
+  list.of.packages=c(list.of.packages,"GenomicFeatures","BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
+}
+
 #install as needed
 new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) {
@@ -307,7 +313,26 @@ if (params$species=="mm10"){
   txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
   anno_db<-"org.Hs.eg.db"
 } else if (params$species=="hs1"){
-  txdb <- makeTxDbFromGFF(params$gtf,format="gtf", taxonomyId=9606, organism="Homo sapiens")
+  # make txdb for T2T HS1
+  ## modify seq info to match GTF
+  temp_seqnames = paste0("chr",seqnames(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0))
+  temp_seqnames = gsub("MT","M",temp_seqnames)
+
+  ## rename all other features
+  BSgenome.T2T_updated=BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+  seqnames(BSgenome.T2T_updated)=temp_seqnames
+  names(seqlengths(BSgenome.T2T_updated))=temp_seqnames
+  names(isCircular(BSgenome.T2T_updated))=temp_seqnames
+  names(genome(BSgenome.T2T_updated))=temp_seqnames
+
+  ## https://rdrr.io/bioc/GenomicFeatures/man/makeTxDbFromGFF.html
+  ## create TXDB object
+  txdb<-makeTxDbFromGFF(params$gtf,
+                  format=c("auto"),
+                  dataSource="/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf",
+                  organism="human",
+                  taxonomyId=9606,
+                  chrominfo=seqinfo(BSgenome.T2T_updated))
   anno_db<-"org.Hs.eg.db"
 }
 options(ChIPseeker.downstreamDistance = 0)
