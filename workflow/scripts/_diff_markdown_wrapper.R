@@ -45,12 +45,15 @@ parser$add_argument("--elbowlimits", type="character", required=TRUE,
                     help = "YAML ELBOW limits")
 parser$add_argument("--tmpdir", type="character", required=FALSE, default="/tmp",
                     help = "tmpdir")
+parser$add_argument("--gtf", type="character", required=FALSE, default="",
+                    help = "GTF file path")
 parser$add_argument("--species", type="character", required=TRUE,
                     help = "species")
 parser$add_argument("--gtf", type="character", required=FALSE,
                     help = "gtf path - needed for HS1")
 args <- parser$parse_args()
 
+gtf <- args$gtf
 if (debug){
   rawcountsmatrix="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/counts_matrix.txt"
   coldata="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/sample_info.txt"
