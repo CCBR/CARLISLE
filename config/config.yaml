@@ -65,11 +65,14 @@ preparsedDir: "/data/CCBR_Pipeliner/db/PipeDB/homer/preparsedDir"
 
 #####################################################################################
 # References
+# NOTE: "gtf" is only required if TxDb is not avaiable for the species in 
+# Bioconductor eg. hs1
 #####################################################################################
 # references:
 reference:
   hg38:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/hg38.fa"
+    gtf: ""
     blacklist: "PIPELINE_HOME/resources/blacklistbed/hg38.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
@@ -77,6 +80,7 @@ reference:
     rose: "WORKDIR/annotation/hg38_refseq.ucsc"
   hg19:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/hg19.fa"
+    gtf: ""
     blacklist: "PIPELINE_HOME/resources/blacklistbed/hg19.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
@@ -84,11 +88,13 @@ reference:
     rose: "WORKDIR/annotation/hg19_refseq.ucsc"
   mm10:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
+    gtf: ""
     blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
   hs1:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/ref.fa"
+    gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
     blacklist: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/T2T.excluderanges.bed"
     tss_bed: "PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"

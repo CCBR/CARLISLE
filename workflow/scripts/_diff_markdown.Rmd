@@ -19,6 +19,7 @@ params:
   bbpaths: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
   elbowlimits: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffanalysis_elbowlimits.yaml"
   species: "hg38"
+  gtf: ""
 editor_options: 
   chunk_output_type: console
 ---
@@ -26,16 +27,47 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 # list packages
-list.of.packages=c("BiocManager","DESeq2","edgeR", "tidyverse","dplyr", "DT","reshape2","pander","plotly", "ggplot2", "ggfortify", "ggrepel", "ELBOW", "yaml", "EnhancedVolcano", "ChIPseeker","stringr","RColorBrewer","HTSFilter", "TxDb.Mmusculus.UCSC.mm10.knownGene", "org.Mm.eg.db", "TxDb.Hsapiens.UCSC.hg19.knownGene","org.Hs.eg.db", "TxDb.Hsapiens.UCSC.hg38.knownGene")
+list.of.packages=c( "DT",
+                    "RColorBrewer",
+                    "dplyr",
+                    "ggfortify",
+                    "ggplot2",
+                    "ggrepel",
+                    "pander",
+                    "plotly",
+                    "reshape2",
+                    "stringr",
+                    "tidyverse",
+                    "yaml")
+list.of.bioconductor.packages=c("BiocManager",
+                                "ChIPseeker",
+                                "DESeq2",
+                                "ELBOW",
+                                "EnhancedVolcano",
+                                "GenomicFeatures",
+                                "HTSFilter",
+                                "TxDb.Hsapiens.UCSC.hg19.knownGene",
+                                "TxDb.Hsapiens.UCSC.hg38.knownGene",
+                                "TxDb.Mmusculus.UCSC.mm10.knownGene",
+                                "edgeR",
+                                "org.Hs.eg.db",
+                                "org.Mm.eg.db",
+                                "rtracklayer")
 
 #install as needed
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) {
   print(new.packages)
   BiocManager::install(new.packages)
 }
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) {
+  print(new.packages)
+  install.packages(new.packages)
+}
 # load packages
 invisible(lapply(list.of.packages, library, character.only = TRUE))
+invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 ```
 
 ## Loading SampleInfo and Counts
@@ -273,6 +305,9 @@ if (params$species=="mm10"){
   anno_db<-"org.Hs.eg.db"
 } else if (params$species=="hg38"){
   txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
+  anno_db<-"org.Hs.eg.db"
+} else if (params$species=="hs1"){
+  txdb <- makeTxDbFromGFF(params$gtf,format="gtf", taxonomyId=9606, organism="Homo sapiens")
   anno_db<-"org.Hs.eg.db"
 }
 options(ChIPseeker.downstreamDistance = 0)
