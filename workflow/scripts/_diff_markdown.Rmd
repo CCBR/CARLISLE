@@ -56,8 +56,9 @@ list.of.bioconductor.packages=c("BiocManager",
 
 ## add extra packages for HS1
 if (params$species=="hs1"){
+  print("going to install")
   #https://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0.html
-  list.of.bioconductor.packages=c(list.of.bioconductor.packages,"GenomicFeatures","BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
+  list.of.bioconductor.packages=c(list.of.bioconductor.packages,"BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
 }
 
 #install as needed
@@ -66,11 +67,13 @@ if(length(new.packages)) {
   print(new.packages)
   BiocManager::install(new.packages)
 }
+
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) {
   print(new.packages)
   install.packages(new.packages)
 }
+
 # load packages
 invisible(lapply(list.of.packages, library, character.only = TRUE))
 invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
