@@ -63,15 +63,22 @@ if (params$species=="hs1"){
 
 #install as needed
 new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
+##handle ELBOW separately - it requires an older version of bioconductor / R
+if("ELBOW" %in% new.packages){
+  install.packages("/data/CCBR_Pipeliner/Pipelines/CARLISLE_dev/resources/other/ELBOW_1.10.0.tar.gz", 
+    repos = NULL, type="source", INSTALL_opts = '--no-lock')
+  new.packages=new.packages[names(new.packages) != "ELBOW"]
+}
+##handle all other pkgs
 if(length(new.packages)) {
   print(new.packages)
-  BiocManager::install(new.packages)
+  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
 }
 
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) {
   print(new.packages)
-  install.packages(new.packages)
+  install.packages(new.packages, INSTALL_opts = '--no-lock')
 }
 
 # load packages
@@ -372,6 +379,11 @@ colnames(deg)[length(colnames(deg))]="Total"
 rownames(deg)[length(rownames(deg))]="Total"
 deg %>% rownames_to_column(var="Annotation") -> deg
 pander(deg)
+
+# add catch for hs1 which names SYMBOLS col as geneId
+lookup <- c(SYMBOL = "geneId")
+results_df=results_df %>%
+   dplyr::rename(any_of(lookup))
 ```
 
 ### DESeq Volcano
@@ -398,7 +410,7 @@ EnhancedVolcano(results_df,
                 subtitle = "",
                 titleLabSize = 1,
                 subtitleLabSize = 1,
-                captionLabSize = 10,
+                #captionLabSize = 10,
                 colCustom = keyvals,
                 colAlpha = 1,
                 # boxedLabels = TRUE,
