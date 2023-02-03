@@ -226,6 +226,11 @@ rule rose:
 rule findMotif:
         """
         Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
+
+        Notes on using alternative genomes now in config
+        - http://homer.ucsd.edu/homer/introduction/update.html
+        - Config is located on Biowulf here: /usr/local/apps/homer/4.11.1/.//config.txt
+
         """
         input:
                 bed=get_bed_all,
@@ -239,7 +244,13 @@ rule findMotif:
                 outDir=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs"),
                 motif_size = config["motif_size"],
                 preparsedDir = config["preparsedDir"],
+                fa=config["reference"][config["genome]]["fa"]
         shell:
                 """
-                findMotifsGenome.pl {input.bed} {params.genome} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
+                # hs1 is not part of HOMER's config genome db. Must add it as a separate param
+                if [[ {params.genome} == "hs1" ]]; then
+                        findMotifsGenome.pl {input.bed} {params.fa} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
+                else
+                        findMotifsGenome.pl {input.bed} {params.genome} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
+                fi
                 """
