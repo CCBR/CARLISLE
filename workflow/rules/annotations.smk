@@ -50,9 +50,15 @@ rule peakAnnotation_macs2:
                 TOOLS["homer"],
         params:
                 genome = config["genome"],
+                fa=config["reference"][config["genome"]]["fa"],
+                gtf = config["reference"][config["genome"]]["gtf"],
         shell:
                 """  
-                annotatePeaks.pl {input} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                if [[ {params.genome} == "hs1" ]]; then
+                        annotatePeaks.pl {input} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+                else
+                        annotatePeaks.pl {input} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                fi
                 """
 
 rule peakAnnotation_s_and_g:
@@ -68,9 +74,15 @@ rule peakAnnotation_s_and_g:
                 TOOLS["homer"],
         params:
                 genome = config["genome"],
+                fa=config["reference"][config["genome"]]["fa"],
+                gtf = config["reference"][config["genome"]]["gtf"],
         shell:
                 """  
-                annotatePeaks.pl {input} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                if [[ {params.genome} == "hs1" ]]; then
+                        annotatePeaks.pl {input} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+                else
+                        annotatePeaks.pl {input} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                fi
                 """
 
 rule rose:
@@ -244,7 +256,7 @@ rule findMotif:
                 outDir=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs"),
                 motif_size = config["motif_size"],
                 preparsedDir = config["preparsedDir"],
-                fa=config["reference"][config["genome]]["fa"]
+                fa=config["reference"][config["genome"]]["fa"]
         shell:
                 """
                 # hs1 is not part of HOMER's config genome db. Must add it as a separate param
