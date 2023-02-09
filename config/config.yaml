@@ -42,17 +42,23 @@ dupstatus: "dedup, no_dedup"
 ## macs2 options: narrowPeak or broadPeak
 ### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
 ### peaktype: "narrowPeak, broadPeak"
-# seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+## seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
 ### peaktype: "norm.stringent.bed, norm.relaxed.bed"
-# gopeaks options: narrowpeaks or broadpeaks
+## gopeaks options: narrowpeaks or broadpeaks
 ### peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
 ## complete list:
-# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 ## recommended list:
-# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
-
-# dupstatus and peaktypes
+### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+
+# qvalues
+## thresholds to be used for peak callers
+## must be a list of comma separated values. minimum of numeric value required.
+### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
+### default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
+### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
+quality_thresholds: "0.1,0.05,0.01"
 
 # annotations
 ## rose parameters
