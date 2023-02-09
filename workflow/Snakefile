@@ -98,10 +98,9 @@ def get_annotation_s_and_g(wildcards):
 
 def get_motif_analysis(wildcards):
     files=[]
+    # from rose
     bed=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.no_TSS_{s_dist}.bed"),peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
     files.extend(bed)
-
-    # from rose
     bed=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.summits.bed"), peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
     files.extend(bed)
     
@@ -136,9 +135,9 @@ rule all:
         unpack(run_contrasts),
 
         # # ## ANNOTATION
-        # unpack(get_annotation_macs2),
-        # unpack(get_annotation_s_and_g),
-        # unpack(get_motif_analysis)
+        unpack(get_annotation_macs2),
+        unpack(get_annotation_s_and_g),
+        unpack(get_motif_analysis)
 
         ##########################################
         ### intermediate files
