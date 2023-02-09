@@ -1,40 +1,8 @@
 def get_bed_macs2(wildcards):
         if wildcards.macs_types == "narrowPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.replicate, wildcards.replicate + "." + wildcards.dupstatus + "_peaks.narrowPeak")
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.replicate, wildcards.replicate + "." + wildcards.dupstatus + "_peaks.narrowPeak")
         if wildcards.macs_types =="broadPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.replicate, wildcards.replicate + "." + wildcards.dupstatus + "_peaks.broadPeak")
-        return bed
-
-def get_bed_s_and_g(wildcards):
-        if wildcards.s_and_g_types =="norm.stringent.bed":
-                bed=join(RESULTSDIR,"peaks","seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.stringent.bed")
-        if wildcards.s_and_g_types =="norm.relaxed.bed":
-                bed=join(RESULTSDIR,"peaks","seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.relaxed.bed")
-        if wildcards.s_and_g_types =="narrowGo_peaks.bed":
-                bed=join(RESULTSDIR,"peaks","gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
-        if wildcards.s_and_g_types =="broadGo_peaks.bed":
-                bed=join(RESULTSDIR,"peaks","gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".broadGo_peaks.bed")
-        return bed
-
-def get_cntrl_bam(wildcards):
-        cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.treatment]
-        cntrl_file=join(RESULTSDIR,"bam", cntrl_sample + "." + wildcards.dupstatus + ".bam"),
-        return cntrl_file
-
-def get_bed_all(wildcards):
-        cntrl=TREAT_to_CONTRL_DICT[wildcards.treatment]
-        if wildcards.peak_types == "narrowPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.narrowPeak")
-        if wildcards.peak_types =="broadPeak":
-                bed=join(RESULTSDIR,"peaks","macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.broadPeak")
-        if wildcards.peak_types =="norm.stringent.bed":
-                bed=join(RESULTSDIR,"peaks","seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.stringent.bed")
-        if wildcards.peak_types =="norm.relaxed.bed":
-                bed=join(RESULTSDIR,"peaks","seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.relaxed.bed")
-        if wildcards.peak_types =="narrowGo_peaks.bed":
-                bed=join(RESULTSDIR,"peaks","gopeaks", wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
-        if wildcards.peak_types =="broadGo_peaks.bed":
-                bed=join(RESULTSDIR,"peaks","gopeaks", wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".broadGo_peaks.bed")
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.replicate, wildcards.replicate + "." + wildcards.dupstatus + "_peaks.broadPeak")
         return bed
 
 rule peakAnnotation_macs2:
@@ -44,8 +12,8 @@ rule peakAnnotation_macs2:
         input:
                 get_bed_macs2,
         output:
-                annotation=join(RESULTSDIR,"annotation","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.txt"),
-                annotation_summary=join(RESULTSDIR,"annotation","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.summary")
+                annotation=join(RESULTSDIR,"annotation","{qthresholds}","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.txt"),
+                annotation_summary=join(RESULTSDIR,"annotation","{qthresholds}","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.summary")
         envmodules:
                 TOOLS["homer"],
         params:
@@ -61,6 +29,17 @@ rule peakAnnotation_macs2:
                 fi
                 """
 
+def get_bed_s_and_g(wildcards):
+        if wildcards.s_and_g_types =="norm.stringent.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.stringent.bed")
+        if wildcards.s_and_g_types =="norm.relaxed.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.relaxed.bed")
+        if wildcards.s_and_g_types =="narrowGo_peaks.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
+        if wildcards.s_and_g_types =="broadGo_peaks.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".broadGo_peaks.bed")
+        return bed
+
 rule peakAnnotation_s_and_g:
         """
         Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
@@ -68,8 +47,8 @@ rule peakAnnotation_s_and_g:
         input:
                 get_bed_s_and_g,
         output:
-                annotation=join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.txt"),
-                annotation_summary=join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.summary"),
+                annotation=join(RESULTSDIR,"annotation","{qthresholds}","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.txt"),
+                annotation_summary=join(RESULTSDIR,"annotation","{qthresholds}","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.summary"),
         envmodules:
                 TOOLS["homer"],
         params:
@@ -84,6 +63,27 @@ rule peakAnnotation_s_and_g:
                         annotatePeaks.pl {input} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
                 fi
                 """
+
+def get_cntrl_bam(wildcards):
+        cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.treatment]
+        cntrl_file=join(RESULTSDIR, "bam", cntrl_sample + "." + wildcards.dupstatus + ".bam"),
+        return cntrl_file
+
+def get_bed_all(wildcards):
+        cntrl=TREAT_to_CONTRL_DICT[wildcards.treatment]
+        if wildcards.peak_types == "narrowPeak":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.narrowPeak")
+        if wildcards.peak_types =="broadPeak":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.broadPeak")
+        if wildcards.peak_types =="norm.stringent.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.stringent.bed")
+        if wildcards.peak_types =="norm.relaxed.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.relaxed.bed")
+        if wildcards.peak_types =="narrowGo_peaks.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
+        if wildcards.peak_types =="broadGo_peaks.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".broadGo_peaks.bed")
+        return bed
 
 rule rose:
         """
@@ -123,9 +123,9 @@ rule rose:
                 bam=join(RESULTSDIR,"bam", "{treatment}.{dupstatus}.bam"),
                 cntrl_bam=get_cntrl_bam,
         output:
-                no_tss_bed=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.no_TSS_{s_dist}.bed"),
-                regular_summit=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.regular.summits.bed"),
-                super_summit=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.summits.bed"),
+                no_tss_bed=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.no_TSS_{s_dist}.bed"),
+                regular_summit=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.regular.summits.bed"),
+                super_summit=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.summits.bed"),
         envmodules:
                 TOOLS["bedtools"],
                 TOOLS["rose"],
@@ -142,12 +142,12 @@ rule rose:
                 workdir=join(WORKDIR),
                 refseq=config["reference"][config["genome"]]["rose"],
                 sampleID="{treatment}",
-                prefix=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}"),
-                all=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.txt"),
-                regular=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}AllEnhancers.table.regular.bed"),
-                super=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.bed"),
-                regular_great=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.GREAT.bed"),
-                super_great=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.regular.GREAT.bed"),
+                prefix=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}"),
+                all=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.txt"),
+                regular=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}AllEnhancers.table.regular.bed"),
+                super=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.bed"),
+                regular_great=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.GREAT.bed"),
+                super_great=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.regular.GREAT.bed"),
         shell:
                 """
                 # set tmp
@@ -243,9 +243,8 @@ rule rose:
                         echo "Less than 5 usable peaks detected ($num_of_peaks)" > {output.regular_summit}
                         echo "Less than 5 usable peaks detected ($num_of_peaks)" > {output.super_summit}
                 fi
-
-
                 """
+
 
 rule findMotif:
         """
@@ -259,13 +258,13 @@ rule findMotif:
         input:
                 bed=get_bed_all,
         output:
-                known_html=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs","knownResults.html"),
+                known_html=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs","knownResults.html"),
         threads: getthreads("findMotif")
         envmodules:
                 TOOLS["homer"],
         params:
                 genome = config["genome"],
-                outDir=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs"),
+                outDir=join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs"),
                 motif_size = config["motif_size"],
                 preparsedDir = config["preparsedDir"],
                 fa=config["reference"][config["genome"]]["fa"]
