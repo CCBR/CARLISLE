@@ -12,46 +12,46 @@ def qc(wildcards):
 def run_macs2(wildcards):
     files=[]
     if "narrowPeak" in PEAKTYPE:
-        n=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(n)
-        n2=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(n2)        
     if "broadPeak" in PEAKTYPE:
-        b=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(b)
-        b2=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(b2)
     return files
 
 def run_seacr(wildcards):
     files=[]
     if "norm.stringent.bed" in PEAKTYPE:
-        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s)
-        s2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s2)
-        s3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s3=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s3)
     if "norm.relaxed.bed" in PEAKTYPE:
-        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
-        r2=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r2)
-        r3=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r3=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r3)
     return files
 
 def run_gopeaks(wildcards):
     files=[]
     if "narrowGo_peaks.bed" in PEAKTYPE:
-        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(n)
-        n2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(n2)
     if "broadGo_peaks.bed" in PEAKTYPE:
-        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(b)
-        b2=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed")],treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(b2)
     return files
 
@@ -59,53 +59,54 @@ def run_contrasts(wildcards):
     files=[]
     if config["run_contrasts"] == "Y":
         files.append(join(RESULTSDIR,"replicate_sample.tsv"))
-        files.append(join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"))
-        inputs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        bb=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","bed_bedgraph_paths.tsv"),qthresholds=QTRESHOLDS)
+        files.extend(bb)
+        inputs=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(inputs)
-        cms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        cms=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(cms)
-        fcms=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        fcms=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(fcms)
-        results=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        results=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(results)
-        htmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        htmls=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(htmls)
-        bbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        bbs=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(bbs)
-        fresults=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        fresults=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(fresults)
-        fhtmls=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        fhtmls=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(fhtmls)
-        fbbs=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        fbbs=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(fbbs)
-        venns=expand([join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")],zip,c1=C1s,c2=C2s,ds=DS,pt=PT)
+        venns=expand([join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")],zip,qs=QS,c1=C1s,c2=C2s,ds=DS,pt=PT)
         files.extend(venns)
     return files
 
 def get_annotation_macs2(wildcards):
     files=[]
     if ("narrowPeak" in PEAKTYPE) or ("broadPeak" in PEAKTYPE):
-        peaks=expand(join(RESULTSDIR,"annotation","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.txt"),macs_types=MACS_TYPES,replicate=REPLICATES,dupstatus=DUPSTATUS)
+        peaks=expand(join(RESULTSDIR,"annotation","{qthresholds}","{macs_types}","{replicate}","{replicate}.{dupstatus}.annotation.txt"),qthresholds=QTRESHOLDS,macs_types=MACS_TYPES,replicate=REPLICATES,dupstatus=DUPSTATUS)
         files.extend(peaks)
     return files
 
 def get_annotation_s_and_g(wildcards):
     files=[]
     if ("narrowGo_peaks.bed" in PEAKTYPE) or ("broadGo_peaks.bed" in PEAKTYPE) or ("norm.stringent.bed" in PEAKTYPE) or ("norm.relaxed.bed" in PEAKTYPE):
-        f=expand(join(RESULTSDIR,"annotation","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.txt"),s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS)
+        f=expand(join(RESULTSDIR,"annotation","{qthresholds}","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.txt"),qthresholds=QTRESHOLDS,s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS)
         files.extend(f)
     return files
 
 def get_motif_analysis(wildcards):
     files=[]
     # from rose
-    bed=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.no_TSS_{s_dist}.bed"),peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
+    bed=expand(join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.no_TSS_{s_dist}.bed"),qthresholds=QTRESHOLDS,peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
     files.extend(bed)
-    bed=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.summits.bed"), peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
+    bed=expand(join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.super.summits.bed"),qthresholds=QTRESHOLDS,peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS,s_dist=S_DISTANCE)
     files.extend(bed)
     
-    # from findMotif_all
-    html=expand(join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs","knownResults.html"),peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS)
+    # from findMotif
+    html=expand(join(RESULTSDIR,"annotation","{qthresholds}","{peak_types}","{treatment}","{treatment}.{dupstatus}.motifs","knownResults.html"),qthresholds=QTRESHOLDS,peak_types=PEAKTYPE,treatment=TREATMENTS,dupstatus=DUPSTATUS)
     files.extend(html)
     return files
 
@@ -134,7 +135,7 @@ rule all:
         unpack(run_gopeaks),
         unpack(run_contrasts),
 
-        # # ## ANNOTATION
+        # # # ## ANNOTATION
         unpack(get_annotation_macs2),
         unpack(get_annotation_s_and_g),
         unpack(get_motif_analysis)
