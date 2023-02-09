@@ -3,7 +3,7 @@ def get_cntrl_bed(wildcards):
     # control_flag will be ignored
     try:
         cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.replicate]
-        cntrl_file=join(RESULTSDIR, "fragments", cntrl_sample + "." + wildcards.dupstatus + "fragments.bed")
+        cntrl_file=join(RESULTSDIR, "fragments", cntrl_sample + "." + wildcards.dupstatus + ".fragments.bed")
     except:
         cntrl_file="CONTROL"
     return cntrl_file
