@@ -306,8 +306,8 @@ function run() {
     # snakemake command below
     #define partitions  
     BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
-    PARTITIONS="norm"
-    if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
+    PARTITIONS="norm,ccr"
+    #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
 
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
