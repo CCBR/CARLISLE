@@ -145,6 +145,8 @@ PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
 # set threshold settings
 FDRCUTOFF = config["contrasts_fdr_cutoff"]
 LFCCUTOFF = config["contrasts_lfc_cutoff"]
+QTRESHOLDS=config["quality_thresholds"]
+QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 
 # set contrast settings
 if config["run_contrasts"] == "Y":
@@ -158,6 +160,7 @@ if config["run_contrasts"] == "Y":
     C1s=[]
     C2s=[]
     DS=[]
+    QS=[]
     PT=[]
     SAMPLESINCONTRAST=list()
     for index, row in contrasts_df.iterrows():
@@ -171,12 +174,14 @@ if config["run_contrasts"] == "Y":
             exit()
         for ds in DUPSTATUS:
             for pt in PEAKTYPE:
-                C1s.append(c1)
-                C2s.append(c2)
-                DS.append(ds)
-                PT.append(pt)
-                contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
-                CONTRASTS[contrast_name]=[c1,c2,ds,pt]
+                for qt in QTRESHOLDS:
+                    QS.append(qt)
+                    C1s.append(c1)
+                    C2s.append(c2)
+                    DS.append(ds)
+                    PT.append(pt)
+                    contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
+                    CONTRASTS[contrast_name]=[c1,c2,ds,pt]
         SAMPLESINCONTRAST.append(c1)
         SAMPLESINCONTRAST.append(c2)
     SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
