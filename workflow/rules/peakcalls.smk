@@ -1,19 +1,12 @@
-def get_input_bams(wildcards):
-    d=dict()
-    for dupstatus in DUPSTATUS:
-        t="treatment_bam"
-        c="control_bam"
-        d[t] = join(RESULTSDIR,"bam",wildcards.treatment+"."+dupstatus+".bam")
-        d[c] = join(RESULTSDIR,"bam",wildcards.control+"."+dupstatus+".bam")
-    return d
-
-def get_input_bedgraphs(wildcards):
-    d=dict()
-    t="treatment_bedgraph"
-    c="control_bedgraph"
-    d[t] = join(RESULTSDIR,"bedgraph",wildcards.treatment + "." + wildcards.dupstatus + ".bedgraph")
-    d[c] = join(RESULTSDIR,"bedgraph",wildcards.control + "." + wildcards.dupstatus + ".bedgraph")
-    return d
+def get_cntrl_bam(wildcards):
+    # if the sample is a control, there will be no match
+    # control_flag will be ignored
+    try:
+        cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.replicate]
+        cntrl_file=join(RESULTSDIR, "bam", cntrl_sample + "." + wildcards.dupstatus + ".bam")
+    except:
+        cntrl_file="CONTROL"
+    return cntrl_file
 
 rule macs2:
     input:
@@ -25,6 +18,8 @@ rule macs2:
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
+        control_flag = config["macs2_control"],
+        control = get_cntrl_bam,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         outdir = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}")
     threads: getthreads("macs2")
@@ -42,8 +37,14 @@ rule macs2:
         fi
         if [[ ! -d {params.outdir} ]];then mkdir -p {params.outdir};fi
         cd {params.outdir}
-        macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-        macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+
+        if [[ {params.control_flag} == "Y" ]] && [[ {params.control} != "CONTROL" ]]; then
+            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
+            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+        else
+            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
+            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+        fi
         """
 
 localrules: peak2bb_macs2
@@ -78,6 +79,14 @@ rule peak2bb_macs2:
         cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed
         bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
         """ 
+
+def get_input_bedgraphs(wildcards):
+    d=dict()
+    t="treatment_bedgraph"
+    c="control_bedgraph"
+    d[t] = join(RESULTSDIR,"bedgraph",wildcards.treatment + "." + wildcards.dupstatus + ".bedgraph")
+    d[c] = join(RESULTSDIR,"bedgraph",wildcards.control + "." + wildcards.dupstatus + ".bedgraph")
+    return d
 
 rule seacr:
     input:
@@ -177,6 +186,16 @@ rule bed2bb_seacr:
             fi
         done
         """
+
+def get_input_bams(wildcards):
+    d=dict()
+    for dupstatus in DUPSTATUS:
+        t="treatment_bam"
+        c="control_bam"
+        d[t] = join(RESULTSDIR,"bam",wildcards.treatment+"."+dupstatus+".bam")
+        d[c] = join(RESULTSDIR,"bam",wildcards.control+"."+dupstatus+".bam")
+    return d
+
 
 rule gopeaks:
     '''

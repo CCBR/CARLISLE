@@ -62,6 +62,11 @@ dupstatus: "dedup, no_dedup"
 ### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
+## macs2 additional option
+### macs2 can be run with or without the control. adding a control will increase peak specificity
+### default is "N"; selecting "Y" will run the paired control sample provided in the sample manifest
+macs2_control: "N"
+
 # qvalues
 ## thresholds to be used for peak callers
 ## must be a list of comma separated values. minimum of numeric value required.
