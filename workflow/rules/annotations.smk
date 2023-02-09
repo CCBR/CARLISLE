@@ -140,6 +140,7 @@ rule rose:
                 tss_distance=config["tss_distance"],
                 peak_type="{peak_types}",
                 workdir=join(WORKDIR),
+                refseq=config["reference"][config["genome"]]["rose"],
                 sampleID="{treatment}",
                 prefix=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}"),
                 all=join(RESULTSDIR,"annotation","{peak_types}","{treatment}","{treatment}.{dupstatus}.{s_dist}","{treatment}_AllStitched.table.txt"),
@@ -204,13 +205,24 @@ rule rose:
                         # developed from outdated verison of rose: https://github.com/younglab/ROSE
                         echo "rose"
                         cd {params.workdir}
-                        ROSE_main.py \
-                                -i {output.no_tss_bed} \
-                                -g {params.genome} \
-                                -r $TMPDIR/subset.bam {input.cntrl_bam} \
-                                -t {params.tss_distance} \
-                                -s {params.stitch_distance} \
-                                -o {params.prefix}
+                        
+                        if [[ {params.genome} == "hs1" ]]; then
+                                ROSE_main.py \
+                                        -i {output.no_tss_bed} \
+                                        --custom={params.refseq} \
+                                        -r $TMPDIR/subset.bam {input.cntrl_bam} \
+                                        -t {params.tss_distance} \
+                                        -s {params.stitch_distance} \
+                                        -o {params.prefix}                        
+                        else
+                                ROSE_main.py \
+                                        -i {output.no_tss_bed} \
+                                        -g {params.genome} \
+                                        -r $TMPDIR/subset.bam {input.cntrl_bam} \
+                                        -t {params.tss_distance} \
+                                        -s {params.stitch_distance} \
+                                        -o {params.prefix}
+                        fi
                         
                         # rose to bed file
                         echo "convert bed"
