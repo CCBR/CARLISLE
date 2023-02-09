@@ -1,9 +1,9 @@
-def get_cntrl_bam(wildcards):
+def get_cntrl_bed(wildcards):
     # if the sample is a control, there will be no match
     # control_flag will be ignored
     try:
         cntrl_sample=TREAT_to_CONTRL_DICT[wildcards.replicate]
-        cntrl_file=join(RESULTSDIR, "bam", cntrl_sample + "." + wildcards.dupstatus + ".bam")
+        cntrl_file=join(RESULTSDIR, "fragments", cntrl_sample + "." + wildcards.dupstatus + "fragments.bed")
     except:
         cntrl_file="CONTROL"
     return cntrl_file
@@ -19,7 +19,7 @@ rule macs2:
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
         control_flag = config["macs2_control"],
-        control = get_cntrl_bam,
+        control = get_cntrl_bed,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         outdir = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}")
     threads: getthreads("macs2")
