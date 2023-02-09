@@ -20,41 +20,54 @@ def get_contrast_init(wildcards):
         files.extend(b)
     return files
 
-localrules:make_inputs
-localrules: venn
-localrules: diffbb
+localrules: contrast_init, make_inputs, diffbb, venn
 
 rule contrast_init:
+    """
+    TSV file should include 8 columns:
+    1)replicate     2)sample    3)dupstatus  4)peaktype           
+    53_H3K4me3_2	53_H3K4me3	dedup	     broadGo_peaks.bed
+    
+    5)bed
+    /results/peaks/gopeaks/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
+    
+    6)bedgraph                                     7)scaling factor (sf)
+    /results/bedgraph/53_H3K4me3_2.dedup.bedgraph	65.65988181221273801707	
+    
+    8)fragment_bed
+    /results/fragments/53_H3K4me3_2.dedup.fragments.bed
+    """
     input:
         unpack(get_contrast_init),
-        expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        join(RESULTSDIR,"replicate_sample.tsv"),
-        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+        frag_beds=expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        rep_file=join(RESULTSDIR,"replicate_sample.tsv"),
+        yamls=expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     output:
         outtsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","bed_bedgraph_paths.tsv"),
     params:
-        resultsdir = RESULTSDIR,
-        bedgraphdir = join(RESULTSDIR,"bedgraph"),
+        peaksDir = join(RESULTSDIR,"peaks","{qthresholds}"),
+        bedgraphDir = join(RESULTSDIR,"bedgraph"),
+        fragDir = join(RESULTSDIR,"fragments"),
         dedup_list=DUPSTATUS,
-        peak_list=PEAKTYPE
+        peak_list=PEAKTYPE,
     shell:
         """
         set +e
         while read replicate sample;do
             for dupstatus in {params.dedup_list};do
-                bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
-                fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
-                sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
+                bedgraph=$(find {params.bedgraphDir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
+                fragment_bed=$(find {params.fragDir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
+                sf=$(cat {params.bedgraphDir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
                 for peaktype in {params.peak_list}; do
                     if [[ $dupstatus == "dedup" ]];then
-                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
+                        bed=$(find {params.peaksDir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
                     else
-                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
+                        bed=$(find {params.peaksDir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
                     fi
                     echo -ne "$replicate\\t$sample\\t$dupstatus\\t$peaktype\\t$bed\\t$bedgraph\\t$sf\\t$fragment_bed\\n"
                 done
             done
-        done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}
+        done < {input.rep_file} > {output.outtsv}
 
         exitcode=$?
         if [ $exitcode -eq 1 ]
@@ -69,6 +82,20 @@ rule contrast_init:
         """
 
 rule make_inputs:
+    """
+    TSV file should include 6 columns
+    1)condition     2)sample
+    53_H3K4me3	    53_H3K4me3_1 
+    
+    3)bed
+    /results/peaks/gopeaks/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
+    
+    4)bedgraph                                      5)scaling factor
+    /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176	
+    
+    6)bed
+    /results/fragments/53_H3K4me3_1.dedup.fragments.bed
+    """
     input:
         join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"),
     output:
@@ -245,7 +272,6 @@ rule DESeq2:
         sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
         sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
         """
-
 
 rule diffbb:
     input:
