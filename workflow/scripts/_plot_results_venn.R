@@ -1,17 +1,32 @@
 #!/usr/bin/env Rscript
 rm(list=ls())
 
-suppressPackageStartupMessages(library("argparse"))
-suppressPackageStartupMessages(library("ggvenn"))
+# package list
+list.of.packages=c("argparse","ggvenn")
 
+#install as needed
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+## handle ggvenn separately - it requires an older version of bioconductor / R
+if("ggvenn" %in% new.packages){
+  install.packages("/data/CCBR_Pipeliner/Pipelines/CARLISLE_dev/resources/other/ggvenn_0.1.9.tar.gz", 
+    repos = NULL, type="source", INSTALL_opts = '--no-lock')
+  new.packages=new.packages[names(new.packages) != "ggvenn"]
+}
+##handle all other pkgs
+if(length(new.packages)) {
+  print(new.packages)
+  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
+}
+
+# load packages
+invisible(lapply(list.of.packages, library, character.only = TRUE))
+
+# handle debugging
+debug="FALSE"
+# files=list.files(path=path)
 # debug="TRUE"
 # path="~/Documents/Projects/ccbr1155/CS030586/contrasts/siSmyd3_2m_Smyd3_0.25HCHO_500K_vs_siNC_2m_Smyd3_0.25HCHO_500K__dedup__narrowPeak"
-
-# files=list.files(path=path)
-debug="FALSE"
 # path="/data/CCBR/projects/ccbr1155/CS030586_CARAP/diff"
-
-
 
 if (debug){
   auc = grep(pattern = "_AUCbased_diffresults.txt",files)[1]
@@ -21,7 +36,6 @@ if (debug){
 } else {
   # create parser object
   parser <- ArgumentParser()
-  
   
   parser$add_argument("--aucresults", type="character", required=TRUE,
                       help="path to aucresults")

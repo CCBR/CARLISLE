@@ -5,23 +5,27 @@
 workdir: "WORKDIR"
 
 # tab delimited samples file .. see samplefile for format details
-samplemanifest: "WORKDIR/samples.tsv"
+samplemanifest: "WORKDIR/config/samples.tsv"
 
 #####################################################################################
 # User parameters
 #####################################################################################
 # run sample contrasts
 run_contrasts: "Y" # Y or N
-contrasts: "WORKDIR/contrasts.tsv"  # run_contrasts needs to be "Y"
+contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be "Y"
 contrasts_fdr_cutoff: "0.05"
 contrasts_lfc_cutoff: "0.59" # FC of 1.5
 
 # reference
-genome: "mm10"    # currently supports hg38 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+
 # spiking .. if this is changed then the reference bowtie2 index should be recreated
-spiked: "Y" # are the samples spiked or not. If Y, then normalization will be performed based off of spike-in aligned read count
-spikein_genome: "ecoli" # ignored if spiked is set to N
+spiked: "Y" # If Y, then normalization will be performed based off of spike-in aligned read count; if "LIRBARY" then library normalization will be performed; if N then no norm will be performed
+## if spiked ="Y"
+spikein_genome: "ecoli" # must be species found in spikein_reference below; ignored if spiked is set to N
 spikein_scale: 1000000
+## if spiked="LIBRARY"
+library_path: "WORKDIR/library/" #path to the dir where library norm stats was stored IE /carlisle/results/alignment_stats/
 
 # user parameters for alignment
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
@@ -32,44 +36,100 @@ fragment_len_filter: "1000"
 # dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis 
 # dupstatus: "dedup" # means run deduplicated analysis only
 # dupstatus: "no_dedup" # means run non-deduplicated analysis only
-dupstatus: "dedup, no_dedup" 
+dupstatus: "dedup, no_dedup"
 
 # which peaktypes to consider for differential analysis:
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | Macs2       | narrowPeak          | broadPeak         | NA                    | NA                  | NA                        | NA                      |
 ## macs2 options: narrowPeak or broadPeak
 ### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
-### peaktype: "narrowPeak, broadPeak"
-# seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
-### peaktype: "norm.stringent.bed, norm.relaxed.bed"
-# gopeaks options: narrowpeaks or broadpeaks
-### peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
-## complete list:
-# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
-## recommended list:
-# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
-# dupstatus and peaktypes
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGoPeak, broadGoPeak"
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | SEACR       | NA                  | NA                | norm.stringent.bed    | norm.relaxed.bed    | non.stringent.bed         | non.relaxed.bed         |
+## seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | GoPeaks     | narrowGo_peaks.bed  | broadGo_peaks.bed | NA                    | NA                  | NA                        | NA                      |
+## gopeaks options: narrowpeaks or broadpeaks
+
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | Macs2       | narrowPeak          | broadPeak         | NA                    | NA                  | NA                        | NA                      |
+# | SEACR       | NA                  | NA                | norm.stringent.bed    | norm.relaxed.bed    | non.stringent.bed         | non.relaxed.bed         |
+# | GoPeaks     | narrowGo_peaks.bed  | broadGo_peaks.bed | NA                    | NA                  | NA                        | NA                      |
+## complete list:
+### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+## recommended list:
+### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+
+## macs2 additional option
+### macs2 can be run with or without the control. adding a control will increase peak specificity
+### default is "N"; selecting "Y" will run the paired control sample provided in the sample manifest
+macs2_control: "N"
+
+# qvalues
+## thresholds to be used for peak callers
+## must be a list of comma separated values. minimum of numeric value required.
+### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
+### default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
+### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
+quality_thresholds: "0.1, 0.05, 0.01"
+
+# annotations
+## rose parameters
+stitch_distance: 12500
+tss_distance: 2500
+
+## homer
+motif_size: 1000
+preparsedDir: "/data/CCBR_Pipeliner/db/PipeDB/homer/preparsedDir"
 
 #####################################################################################
 # References
+# NOTE: "gtf" is only required if TxDb is not avaiable for the species in 
+# Bioconductor eg. hs1
 #####################################################################################
 # references:
 reference:
   hg38:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/hg38.fa"
+    gtf: "tbd"
     blacklist: "PIPELINE_HOME/resources/blacklistbed/hg38.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
+    tss_bed: "PIPELINE_HOME/resources/tss_bed/hg38.tss.bed"
+    rose: "WORKDIR/annotation/hg38_refseq.ucsc"
+  hg19:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/hg19.fa"
+    gtf: "tbd"
+    blacklist: "PIPELINE_HOME/resources/blacklistbed/hg19.bed"
+    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
+    macs2_g: "hs"
+    tss_bed: "PIPELINE_HOME/resources/tss_bed/hg19.tss.bed"
+    rose: "WORKDIR/annotation/hg19_refseq.ucsc"
   mm10:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
+    gtf: "tbd"
     blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
+  hs1:
+    fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/hs1.fa"
+    gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
+    blacklist: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/T2T.excluderanges.bed"
+    tss_bed: "PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
+    regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
+    macs2_g: "3.1e+8"
+    rose: "WORKDIR/annotation/hs1_refseq.ucsc"
+# ref: https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html
+# used faCount from http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/ to get 3.1e+8 value above
 
 spikein_reference:
   ecoli:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
+  saccharomyces:
+    fa: "PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"

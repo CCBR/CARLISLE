@@ -1,66 +1,105 @@
 def get_contrast_init(wildcards):
     files=[]
     if "narrowPeak" in config["peaktype"]:
-        n=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(n)
     if "broadPeak" in config["peaktype"]:
-        b=expand(join(RESULTSDIR,"peaks","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(b)
     if "norm.stringent.bed" in config["peaktype"]:
-        s=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        s=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s)
     if "norm.relaxed.bed" in config["peaktype"]:
-        r=expand([join(RESULTSDIR,"peaks","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        r=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
     if "narrowGo_peaks.bed" in config["peaktype"]:
-        n=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        n=expand([join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS),
         files.extend(n)
     if "broadGo_peaks.bed" in config["peaktype"]:
-        b=expand([join(RESULTSDIR,"peaks","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,treatment=TREATMENTS,control=CONTROLS),
+        b=expand([join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.dedup.broadGo_peaks.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS),
         files.extend(b)
     return files
 
-localrules:contrast_init
-localrules:make_inputs
-localrules: venn
+localrules: contrast_init, make_inputs, diffbb, venn
 
 rule contrast_init:
+    """
+    TSV file should include 8 columns:
+    1)replicate     2)sample    3)dupstatus  4)peaktype           
+    53_H3K4me3_2	53_H3K4me3	dedup	     broadGo_peaks.bed
+    
+    5)bed
+    /results/peaks/gopeaks/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
+    
+    6)bedgraph                                     7)scaling factor (sf)
+    /results/bedgraph/53_H3K4me3_2.dedup.bedgraph	65.65988181221273801707	
+    
+    8)fragment_bed
+    /results/fragments/53_H3K4me3_2.dedup.fragments.bed
+    """
     input:
         unpack(get_contrast_init),
-        expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        join(RESULTSDIR,"replicate_sample.tsv"),
-        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+        frag_beds=expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        rep_file=join(RESULTSDIR,"replicate_sample.tsv"),
+        yamls=expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     output:
-        outtsv=join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"),
+        outtsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","bed_bedgraph_paths.tsv"),
     params:
-        resultsdir = RESULTSDIR,
-        bedgraphdir = join(RESULTSDIR,"bedgraph"),
+        peaksDir = join(RESULTSDIR,"peaks","{qthresholds}"),
+        bedgraphDir = join(RESULTSDIR,"bedgraph"),
+        fragDir = join(RESULTSDIR,"fragments"),
         dedup_list=DUPSTATUS,
-        peak_list=PEAKTYPE
+        peak_list=PEAKTYPE,
     shell:
         """
+        set +e
         while read replicate sample;do
             for dupstatus in {params.dedup_list};do
-                bedgraph=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
-                fragment_bed=$(find {params.resultsdir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
-                sf=$(cat {params.bedgraphdir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
+                bedgraph=$(find {params.bedgraphDir} -name "*${{replicate}}.${{dupstatus}}.bedgraph")
+                fragment_bed=$(find {params.fragDir} -name "*${{replicate}}.${{dupstatus}}.fragments.bed")
+                sf=$(cat {params.bedgraphDir}/${{replicate}}.${{dupstatus}}.sf.yaml | awk -F"=" '{{print $NF}}')
                 for peaktype in {params.peak_list}; do
                     if [[ $dupstatus == "dedup" ]];then
-                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
+                        bed=$(find {params.peaksDir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}" |grep -v no_dedup)
                     else
-                        bed=$(find {params.resultsdir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
+                        bed=$(find {params.peaksDir} -name "*${{replicate}}*${{dupstatus}}*${{peaktype}}")
                     fi
                     echo -ne "$replicate\\t$sample\\t$dupstatus\\t$peaktype\\t$bed\\t$bedgraph\\t$sf\\t$fragment_bed\\n"
                 done
             done
-        done < {params.resultsdir}/replicate_sample.tsv > {output.outtsv}    
+        done < {input.rep_file} > {output.outtsv}
+
+        exitcode=$?
+        if [ $exitcode -eq 1 ]
+        then
+            echo $exitcode
+            head {output.outtsv}
+            exit 0
+        else
+            exit 0
+        fi
+  
         """
 
 rule make_inputs:
+    """
+    TSV file should include 6 columns
+    1)condition     2)sample
+    53_H3K4me3	    53_H3K4me3_1 
+    
+    3)bed
+    /results/peaks/gopeaks/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
+    
+    4)bedgraph                                      5)scaling factor
+    /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176	
+    
+    6)bed
+    /results/fragments/53_H3K4me3_1.dedup.fragments.bed
+    """
     input:
-        join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"),
+        join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"),
     output:
-        inputs=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt"),
+        inputs=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt"),
     params:
         condition1 = "{c1}",
         condition2 = "{c2}",
@@ -84,11 +123,11 @@ rule make_inputs:
 
 rule make_counts_matrix:
     input:
-        inputs=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt"),
+        inputs=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_inputs.txt"),
     output:
-        cm=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
-        fcm=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
-        si=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
+        cm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
+        fcm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
+        si=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
     params:
         pyscript=join(SCRIPTSDIR,"_make_counts_matrix.py"),
         condition1 = "{c1}",
@@ -114,13 +153,13 @@ rule make_counts_matrix:
 
 rule DESeq:
     input:
-        bbpaths=join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
-        cm=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
-        si=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
+        bbpaths=join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
+        cm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
+        si=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
     output:
-        results=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
-        html=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html"),
-        elbowlimits=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
+        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
+        html=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html"),
+        elbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
     params:
         rscript=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
@@ -132,6 +171,7 @@ rule DESeq:
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
         species = config["genome"],
+        gtf=config["reference"][config["genome"]]["gtf"]
     envmodules:
         TOOLS["R"]
     shell:
@@ -164,18 +204,23 @@ rule DESeq:
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
-            --species {params.species}
+            --species {params.species} \\
+            --gtf {params.gtf}
+
+        # change elbow limits to provided log2fc if limit is set to .na.real
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
         """
 
 rule DESeq2:
     input:
-        bbpaths=join(RESULTSDIR,"peaks","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
-        cm=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
-        si=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
+        bbpaths=join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
+        cm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
+        si=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
     output:
-        results=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
-        html=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html"),
-        elbowlimits=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
+        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
+        html=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html"),
+        elbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
     params:
         rscript=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
@@ -187,13 +232,14 @@ rule DESeq2:
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
         species = config["genome"],
+        gtf=config["reference"][config["genome"]]["gtf"]
     envmodules:
         TOOLS["R"]
     shell:
         """
         set -exo pipefail
         dirname=$(basename $(mktemp))
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
         else
             TMPDIR="/dev/shm/$dirname"
@@ -219,21 +265,26 @@ rule DESeq2:
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
             --tmpdir $TMPDIR \\
-            --species {params.species}
+            --species {params.species} \\
+            --gtf {params.gtf}
+
+        # change elbow limits to provided log2fc if limit is set to .na.real
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
         """
 
 rule diffbb:
     input:
-        results=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
-        elbowlimits=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
-        fresults=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
-        felbowlimits=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
+        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
+        elbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
+        fresults=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
+        felbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        bed=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bed"),
-        bigbed=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed"),
-        fbed=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bed"),
-        fbigbed=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed"),
+        bed=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bed"),
+        bigbed=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.bigbed"),
+        fbed=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bed"),
+        fbigbed=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.bigbed"),
     params:
         fdr=FDRCUTOFF,
         lfc=LFCCUTOFF,
@@ -274,10 +325,10 @@ rule diffbb:
 
 rule venn:
     input:
-        results=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
-        fresults=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
+        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
+        fresults=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
     output:
-        pdf=join(RESULTSDIR,"peaks","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")
+        pdf=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_venn.pdf")
     params:
         rscript=join(SCRIPTSDIR,"_plot_results_venn.R"),
         condition1 = "{c1}",

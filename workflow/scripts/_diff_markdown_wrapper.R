@@ -47,9 +47,11 @@ parser$add_argument("--tmpdir", type="character", required=FALSE, default="/tmp"
                     help = "tmpdir")
 parser$add_argument("--species", type="character", required=TRUE,
                     help = "species")
-
+parser$add_argument("--gtf", type="character", required=FALSE,
+                    help = "gtf path - needed for HS1")
 args <- parser$parse_args()
 
+gtf <- args$gtf
 if (debug){
   rawcountsmatrix="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/counts_matrix.txt"
   coldata="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/sample_info.txt"
@@ -67,6 +69,7 @@ if (debug){
   htsfilter="Y"
   elbowlimits="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/elbow.yaml"
   tmpdir="/dev/shm"
+  gtf="~/../../Volumes/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
 } else {
   rawcountsmatrix=args$countsmatrix
   coldata=args$sampleinfo
@@ -86,6 +89,7 @@ if (debug){
   tmpdir=args$tmpdir
   if (args$htsfilter) {htsfilter="Y"} else {htsfilter="N"}
   species=args$species
+  gtf=args$gtf
 }
 
 
@@ -104,7 +108,8 @@ parameters=list(rawcountsmatrix=rawcountsmatrix,
             log2fc_cutoff=log2fc_cutoff,
             results=results,
             elbowlimits=elbowlimits,
-            species=species)
+            species=species,
+            gtf=gtf)
 
 rmarkdown::render(args$rmd,
   params=parameters,

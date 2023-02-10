@@ -52,6 +52,12 @@ spikein_reference:
 
 ```
 
+If it's determined that the amount of spike-in is not sufficient for the run, a library normaliaztion can be performed.
+1. Complete a CARLISLE run with spike-in set to "Y". This will allow for the complete assessment of the spike-in.
+2. Run inital QC analysis on the output data
+3. Add the alignment_stats dir to the configuration file.
+4. Re-run the CARLISLE pipeline 
+
 ##### 2.1.3.1.2 Duplication Status
 Users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) through the user parameter.
 ```
@@ -74,12 +80,29 @@ peaktype: "norm.stringent.bed, norm.relaxed.bed"
 peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
 ```
 A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
-```
-# Complete list
-peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
 
+| Peak Caller | Narrow | Broad | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+| --- | --- | --- | --- | --- | --- | --- |
+| Macs2 | narrowPeak | broadPeak | NA | NA | NA | NA |
+| SEACR | NA | NA | norm.stringent.bed | norm.relaxed.bed | non.stringent.bed | non.relaxed.bed |
+| GoPeaks | narrowGo_peaks.bed | broadGo_peaks.bed | NA | NA | NA | NA |
+
+```
 # Recommended list
 # peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+```
+##### 2.1.3.1.3.1 Macs2 additional option
+MACS2 can be run with or without the control. adding a control will increase peak specificity
+Selecting "Y" for the `macs2_control` will run the paired control sample provided in the sample manifest
+
+##### 2.1.3.1.4 Quality Tresholds
+Thresholds for quality can be controled through the `quality_tresholds` parameter. This must be a list of comma separated values. minimum of numeric value required.
+- default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
+- default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
+- default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
+```
+#default values
+quality_thresholds: "0.1, 0.05, 0.01"
 ```
 
 #### 2.1.3.2 References

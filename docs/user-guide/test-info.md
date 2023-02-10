@@ -22,29 +22,39 @@ bash ./path/to/dir/carlisle --runmode=testrun --workdir=/path/to/output/dir
 
 - An expected output for the `testrun` is as follows:
 ```
+Job stats:
 job                              count    min threads    max threads
 -----------------------------  -------  -------------  -------------
-DESeq                                6              1              1
-DESeq2                               6              1              1
-align                                6             56             56
-alignstats                           6              2              2
+DESeq                               60              1              1
+DESeq2                              60              1              1
+align                                9             56             56
+alignstats                           9              2              2
 all                                  1              1              1
-bam2bg                              12              2              2
-bed2bb                               5              2              2
-contrast_init                        1              1              1
+bam2bg                              18              4              4
+bed2bb_gopeaks                      48              2              2
+bed2bb_seacr                        48              2              2
+contrast_init                        3              1              1
 create_reference                     1             32             32
 create_replicate_sample_table        1              1              1
-diffbb                               6              1              1
-filter                              12              2              2
+diffbb                              60              1              1
+filter                              18              2              2
+findMotif                          240              6              6
 gather_alignstats                    1              1              1
-macs2                               12              2              2
-make_counts_matrix                   6              1              1
-make_inputs                          6              1              1
-peak2bb                             12              2              2
-seacr                                5              2              2
-trim                                 6             56             56
-venn                                 6              1              1
-total                              117              1             56
+gopeaks                             48              8              8
+macs2                               54              2              2
+make_counts_matrix                  60              1              1
+make_inputs                         60              1              1
+multiqc                              1              1              1
+peak2bb_macs2                       54              2              2
+peakAnnotation_macs2                54              1              1
+peakAnnotation_s_and_g             192              1              1
+qc_fastq_screen_validator            9              4              4
+qc_fastqc                            9              1              1
+rose                               240              2              2
+seacr                               48              2              2
+trim                                 9             56             56
+venn                                60              1              1
+total                             1475              1             56
 ```
 
 ## 5.3 Review outputs

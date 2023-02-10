@@ -232,30 +232,43 @@ rule alignstats:
             {input.filtered_no_dedup_alignment_idxstats} \\
             {input.filtered_dedup_alignment_idxstats} \\
             {output.outyaml}
-
         """
 
 localrules: gather_alignstats
 rule gather_alignstats:
     input:
-        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES)
+        stats=expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+        samples=config["samplemanifest"]
     output:
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
     params:
         rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
         spikein_scale = config["spikein_scale"],
+        library_file=join(WORKDIR,"clean_library_size.csv"),
+        use_spikein=SPIKED,
     envmodules:
         TOOLS["R"]
     shell:
         """
         set -exo pipefail
-        file1=$(echo {input} | awk '{{print $1}}')
+        file1=$(echo {input.stats} | awk '{{print $1}}')
         dir=$(dirname $file1)
         Rscript {params.rscript} \\
         --yamlDir $dir \\
         --excludeFromName ".alignment_stats.yaml" \\
         --scaleConstant {params.spikein_scale} \\
         --outTable {output}
+
+        # add information to library file for CONTROLS
+        if [[ {params.use_spikein} == "LIBRARY" ]]; then
+            controls=`cat {input.samples} | grep "Y" | awk \'{{print$1"_"$2}}\'`
+            for c in ${{controls[@]}}; do
+                val=`cat {output} | grep $c | awk \'{{print$5}}\'`
+                sub_name=`echo $c | cut -f1 -d"_"`
+                rep_num=`echo $c | cut -f2 -d"_"`
+                echo "$c,${{sub_name}}_${{rep_num}},$val,dedup">>{params.library_file}
+            done
+        fi
         """
 
 
@@ -304,8 +317,14 @@ rule bam2bg:
         if [[ "{params.spikein}" == "" ]];then
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f3 -d","`
-            spikein_scale=$(echo "$library_size / {params.spikein_scale}" | bc -l)
+            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f2 -d","`
+            
+            if [[ $library_size =~ "Inf" ]]; then 
+                spikein_scale=`head -n1 {params.library_file} | awk -F"," \'{{print $2}}\'`
+            else
+                spikein_scale=$(echo "$library_size / 1000000" | bc -l)
+            fi
+            
             echo "The spikein is generated from the library size $spikein_scale"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
@@ -321,6 +340,7 @@ rule bam2bg:
                 spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
             fi
         fi
+
         # create fragments file
         samtools view -b -@{threads} {input.bam} {params.regions} | samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
         bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed

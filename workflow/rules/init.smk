@@ -8,11 +8,8 @@ import yaml
 import pprint
 import shutil
 import uuid
-# import glob
-# import shutil
 pp = pprint.PrettyPrinter(indent=4)
 #########################################################
-
 
 #########################################################
 # FILE-ACTION FUNCTIONS 
@@ -68,8 +65,8 @@ if not os.path.exists(join(RESULTSDIR)):
     os.mkdir(join(RESULTSDIR))
 for f in ["samplemanifest"]:
     check_readaccess(config[f])
-#########################################################
 
+#########################################################
 
 #########################################################
 # CREATE SAMPLE DATAFRAME
@@ -116,6 +113,8 @@ print("# Treatment Control combinations:")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
+TREATMENT_CONTROL_LIST=[]
+TREAT_to_CONTRL_DICT=dict()
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
     c=crow.controlName+"_"+str(crow.controlReplicateNumber)
@@ -127,6 +126,8 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     process_replicates.extend([t,c])
     TREATMENTS.append(t)
     CONTROLS.append(c)
+    TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+    TREAT_to_CONTRL_DICT[t]=c
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
     not_to_process = set(REPLICATES) - set(process_replicates)
@@ -136,17 +137,20 @@ if len(process_replicates)!=len(REPLICATES):
     REPLICATES = process_replicates
 print("# Read access to all fastq files in confirmed!")
 
-# DUPSTATUS=["dedup","no_dedup"]
-# PEAKTYPE=["narrowPeak","broadPeak","norm.stringent.bed","norm.relaxed.bed"]
 DUPSTATUS=config["dupstatus"]
 PEAKTYPE=config["peaktype"]
 DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
 PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
 
+# set threshold settings
+FDRCUTOFF = config["contrasts_fdr_cutoff"]
+LFCCUTOFF = config["contrasts_lfc_cutoff"]
+QTRESHOLDS=config["quality_thresholds"]
+QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
+
+# set contrast settings
 if config["run_contrasts"] == "Y":
     print("# Checking constrasts to run...")
-    FDRCUTOFF = config["contrasts_fdr_cutoff"]
-    LFCCUTOFF = config["contrasts_lfc_cutoff"]
     contrasts_table = config["contrasts"]
     check_readaccess(contrasts_table)
     contrasts_df=pd.read_csv(contrasts_table,sep="\t",header=0)
@@ -156,6 +160,7 @@ if config["run_contrasts"] == "Y":
     C1s=[]
     C2s=[]
     DS=[]
+    QS=[]
     PT=[]
     SAMPLESINCONTRAST=list()
     for index, row in contrasts_df.iterrows():
@@ -169,12 +174,14 @@ if config["run_contrasts"] == "Y":
             exit()
         for ds in DUPSTATUS:
             for pt in PEAKTYPE:
-                C1s.append(c1)
-                C2s.append(c2)
-                DS.append(ds)
-                PT.append(pt)
-                contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
-                CONTRASTS[contrast_name]=[c1,c2,ds,pt]
+                for qt in QTRESHOLDS:
+                    QS.append(qt)
+                    C1s.append(c1)
+                    C2s.append(c2)
+                    DS.append(ds)
+                    PT.append(pt)
+                    contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
+                    CONTRASTS[contrast_name]=[c1,c2,ds,pt]
         SAMPLESINCONTRAST.append(c1)
         SAMPLESINCONTRAST.append(c2)
     SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
@@ -201,7 +208,16 @@ if config["run_contrasts"] == "Y":
         if os.path.exists(rg_file): os.remove(rg_file)
         # once file is removed it will be recreated by rule create_replicate_sample_table
 
-    
+#separate peak types into two lists
+macs_set=[]
+s_and_g_set=[]
+for pt in PEAKTYPE:
+    if pt == "narrowPeak" or pt == "broadPeak":
+        macs_set.append(pt)
+    else:
+        s_and_g_set.append(pt)
+MACS_TYPES=list(set(macs_set))
+S_AND_G_TYPES=list(set(s_and_g_set))
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
@@ -212,22 +228,20 @@ if config["run_contrasts"] == "Y":
 try:
     TOOLSYAML = config["tools"]
 except KeyError:
-    TOOLSYAML = join(WORKDIR,"tools.yaml")
+    TOOLSYAML = join(WORKDIR,"config","tools.yaml")
 check_readaccess(TOOLSYAML)
 with open(TOOLSYAML) as f:
     TOOLS = yaml.safe_load(f)
 #########################################################
 
-
 #########################################################
 # READ CLUSTER PER-RULE REQUIREMENTS
 #########################################################
-
 ## Load cluster.json
 try:
     CLUSTERYAML = config["CLUSTERYAML"]
 except KeyError:
-    CLUSTERYAML = join(WORKDIR,"cluster.yaml")
+    CLUSTERYAML = join(WORKDIR,"config","cluster.yaml")
 check_readaccess(CLUSTERYAML)
 with open(CLUSTERYAML) as json_file:
     CLUSTER = yaml.safe_load(json_file)
@@ -242,7 +256,6 @@ getmemG=lambda rname:getmemg(rname).replace("g","G")
 #########################################################
 # SET OTHER PIPELINE GLOBAL VARIABLES
 #########################################################
-
 print("# Pipeline Parameters:")
 print("#"*100)
 print("# Working dir :",WORKDIR)
@@ -274,9 +287,6 @@ if SPIKED == "Y":
 elif SPIKED == "LIBRARY":
     SPIKED_GENOMEFA="LIBRARY"
     LIBRARY_FILE=join(WORKDIR,"clean_library_size.csv")
-    check_readaccess(LIBRARY_FILE)
-    print("# Spike-in : using LIBRARY SIZE (DEPTH OF SEQ)")
-    print("# Spike-in library file : ",LIBRARY_FILE)
 else:
     print("# Spike-in : ")
 
@@ -288,10 +298,41 @@ refdata["blacklistbed"] = GENOMEBLACKLIST
 refdata["spiked"] = SPIKED
 refdata["spikein_genome"] = SPIKED_GENOMEFA
 
+# set annotation params
+S_DISTANCE=config["stitch_distance"]
 
 #########################################################
+# CHECK ACCESS TO OTHER RESOURCES
+#########################################################
+if GENOME == "hg38" or GENOME == "hg19" or GENOME == "hs1":
+    check_readaccess(config["reference"][GENOME]["tss_bed"])
+    check_readaccess(config["reference"][GENOME]["rose"])
 
-localrules: create_replicate_sample_table
+#########################################################
+# DEFINE LOCAL RULES
+#########################################################
+localrules: create_replicate_sample_table,create_library_size_file
+
+rule create_library_size_file:
+    input:
+    output:
+        library_file=join(WORKDIR,"clean_library_size.csv")
+    params:
+        library_path=config["library_path"]
+    shell:
+        """
+        # remove previous files
+        if [[ -f {output.library_file} ]]; then mv {output.library_file} {output.library_file}_archived; fi
+        touch {output.library_file}
+            
+        cd {params.library_path}
+        for f in *alignment_stats.yaml; do
+            # add file to output
+            sampleid=`echo $f | cut -f1 -d"."`
+            dedup_reads=`cat $f | grep "dedup_nreads_genome:" | grep -v "nodedup" | cut -f2 -d" "`
+            echo "$sampleid,$dedup_reads,dedup" >> {output.library_file}
+        done
+        """
 
 rule create_replicate_sample_table:
     input:
@@ -355,7 +396,7 @@ rule create_reference:
         mkdir -p {params.bowtie2_dir}/tmp
         echo {params.refdata} > {params.bowtie2_dir}/tmp/ref.yaml
 
-        if [[ "{params.spiked_output}" == "" ]];then
+        if [[ "{params.use_spikein}" != "Y" ]];then
         # there is NO SPIKEIN
 
             # create faidx for genome and spike fasta
@@ -370,7 +411,7 @@ rule create_reference:
             # create len files
             cut -f1,2 {output.genomefa}.fai > {output.ref_len}
             cp {output.ref_len} {output.genome_len}
-            touch {output.spikein_len}
+            echo -e "NA\t0" > {output.spikein_len}
 
         else
         # THERE is SPIKEIN
