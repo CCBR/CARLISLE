@@ -381,9 +381,11 @@ deg %>% rownames_to_column(var="Annotation") -> deg
 pander(deg)
 
 # add catch for hs1 which names SYMBOLS col as geneId
-lookup <- c(SYMBOL = "geneId")
-results_df=results_df %>%
-   dplyr::rename(any_of(lookup))
+if(params$species == "hs1"){
+  lookup <- c(SYMBOL = "geneId")
+  results_df=results_df %>%
+     dplyr::rename(any_of(lookup))
+}
 ```
 
 ### DESeq Volcano
