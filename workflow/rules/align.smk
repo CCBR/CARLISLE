@@ -317,10 +317,11 @@ rule bam2bg:
         if [[ "{params.spikein}" == "" ]];then
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f2 -d","`
+            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f2 -d"," | head -n1`
             
             if [[ $library_size =~ "Inf" ]]; then 
                 spikein_scale=`head -n1 {params.library_file} | awk -F"," \'{{print $2}}\'`
+                spikein_scale=$(echo "$spikein_scale / 1000000" | bc -l)
             else
                 spikein_scale=$(echo "$library_size / 1000000" | bc -l)
             fi
