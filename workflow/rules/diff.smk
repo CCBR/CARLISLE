@@ -1,17 +1,28 @@
 def get_contrast_init(wildcards):
     files=[]
+    # MACS2 options
     if "narrowPeak" in config["peaktype"]:
         n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(n)
     if "broadPeak" in config["peaktype"]:
         b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(b)
+    
+    # SEACR OPTIONS
     if "norm.stringent.bed" in config["peaktype"]:
         s=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s)
     if "norm.relaxed.bed" in config["peaktype"]:
         r=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
+    if "non.stringent.bed" in config["peaktype"]:
+        s=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s)
+    if "non.relaxed.bed" in config["peaktype"]:
+        r=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r)
+    
+    # GOPEAKS OPTIONS
     if "narrowGo_peaks.bed" in config["peaktype"]:
         n=expand([join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS),
         files.extend(n)
