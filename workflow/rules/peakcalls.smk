@@ -18,6 +18,7 @@ rule macs2:
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
+        broadtreshold = config["macs2_broad_peak_threshold"],
         control_flag = config["macs2_control"],
         control = get_cntrl_bed,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
@@ -38,12 +39,61 @@ rule macs2:
         if [[ ! -d {params.outdir} ]];then mkdir -p {params.outdir};fi
         cd {params.outdir}
 
+        # if running macs2 with an internal control
         if [[ {params.control_flag} == "Y" ]] && [[ {params.control} != "CONTROL" ]]; then
-            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+            # narrow peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -c {params.control} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --call-summits \\
+                --nomodel
+
+            # broad peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -c {params.control} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --broad --broad-cutoff {params.broadtreshold} \\
+                --nomodel
         else
-            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+            # narrow peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --call-summits \\
+                --nomodel
+
+            # broad peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --broad --broad-cutoff {params.broadtreshold} \\
+                --nomodel
         fi
         """
 
