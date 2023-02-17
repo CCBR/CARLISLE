@@ -1,17 +1,28 @@
 def get_contrast_init(wildcards):
     files=[]
+    # MACS2 options
     if "narrowPeak" in config["peaktype"]:
         n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(n)
     if "broadPeak" in config["peaktype"]:
         b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
         files.extend(b)
+    
+    # SEACR OPTIONS
     if "norm.stringent.bed" in config["peaktype"]:
         s=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s)
     if "norm.relaxed.bed" in config["peaktype"]:
         r=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
+    if "non.stringent.bed" in config["peaktype"]:
+        s=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s)
+    if "non.relaxed.bed" in config["peaktype"]:
+        r=expand([join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r)
+    
+    # GOPEAKS OPTIONS
     if "narrowGo_peaks.bed" in config["peaktype"]:
         n=expand([join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.dedup.narrowGo_peaks.bed")],zip,qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS),
         files.extend(n)
@@ -154,12 +165,16 @@ rule make_counts_matrix:
 rule DESeq:
     input:
         bbpaths=join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
-        cm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
+        cm_auc=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_countsmatrix.txt"),
+        cm_frag=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
         si=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
     output:
-        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
-        html=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html"),
-        elbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
+        results_auc=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffresults.txt"),
+        html_auc=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis.html"),
+        elbowlimits_auc=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_AUCbased_diffanalysis_elbowlimits.yaml"),
+        results_frag=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
+        html_frag=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html"),
+        elbowlimits_frag=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
     params:
         rscript=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
@@ -180,97 +195,73 @@ rule DESeq:
         dirname=$(basename $(mktemp))
         if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+            TMPDIR_AUC=$TMPDIR/AUC
+            TMPDIR_FRAG=$TMPDIR/FRAG
         else
             TMPDIR="/dev/shm/$dirname"
+            TMPDIR_AUC=$TMPDIR/AUC
+            TMPDIR_FRAG=$TMPDIR/FRAG
         fi
-        mkdir -p $TMPDIR
-        mkdir -p ${{TMPDIR}}/intermediates_dir
-        mkdir -p ${{TMPDIR}}/knit_root_dir
-        cd $TMPDIR
+        
+        ## Run AUC method
+        mkdir -p ${{TMPDIR_AUC}}
+        mkdir -p ${{TMPDIR_AUC}}/intermediates_dir
+        mkdir -p ${{TMPDIR_AUC}}/knit_root_dir
+        cd $TMPDIR_AUC
+
         Rscript {params.rscript} \\
             --rmd {params.rmd} \\
-            --countsmatrix {input.cm} \\
+            --countsmatrix {input.cm_auc} \\
             --sampleinfo {input.si} \\
             --dupstatus {params.ds} \\
             --condition1 {params.condition1} \\
             --condition2 {params.condition2} \\
             --fdr_cutoff {params.fdr_cutoff} \\
             --log2fc_cutoff {params.log2fc_cutoff} \\
-            --results {output.results} \\
-            --report {output.html} \\
-            --elbowlimits {output.elbowlimits} \\
+            --results {output.results_auc} \\
+            --report {output.html_auc} \\
+            --elbowlimits {output.elbowlimits_auc} \\
             --spiked {params.spiked} \\
             --rawcountsprescaled \\
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
-            --tmpdir $TMPDIR \\
+            --tmpdir $TMPDIR_AUC \\
             --species {params.species} \\
             --gtf {params.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
-        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
-        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
-        """
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_auc}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_auc}
 
-rule DESeq2:
-    input:
-        bbpaths=join(RESULTSDIR,"peaks","{qs}","contrasts","bed_bedgraph_paths.tsv"), # this has the scaling factors
-        cm=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentscountsmatrix.txt"),
-        si=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_sampleinfo.txt"),
-    output:
-        results=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffresults.txt"),
-        html=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis.html"),
-        elbowlimits=join(RESULTSDIR,"peaks","{qs}","contrasts","{c1}_vs_{c2}__{ds}__{pt}","{c1}_vs_{c2}__{ds}__{pt}_fragmentsbased_diffanalysis_elbowlimits.yaml"),
-    params:
-        rscript=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
-        rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
-        condition1 = "{c1}",
-        condition2 = "{c2}",
-        ds = "{ds}",
-        pt = "{pt}",
-        spiked = SPIKED, # "Y" for spiked
-        fdr_cutoff = FDRCUTOFF,
-        log2fc_cutoff = LFCCUTOFF,
-        species = config["genome"],
-        gtf=config["reference"][config["genome"]]["gtf"]
-    envmodules:
-        TOOLS["R"]
-    shell:
-        """
-        set -exo pipefail
-        dirname=$(basename $(mktemp))
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
-            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
-        else
-            TMPDIR="/dev/shm/$dirname"
-        fi
-        mkdir -p $TMPDIR
-        mkdir -p ${{TMPDIR}}/intermediates_dir
-        mkdir -p ${{TMPDIR}}/knit_root_dir
-        cd $TMPDIR
+        ## Run FRAG method
+        mkdir -p ${{TMPDIR_FRAG}}
+        mkdir -p ${{TMPDIR_FRAG}}/intermediates_dir
+        mkdir -p ${{TMPDIR_FRAG}}/knit_root_dir
+        cd $TMPDIR_FRAG
+
         # Do not use --rawcountsprescaled as these counts are not prescaled!
         Rscript {params.rscript} \\
             --rmd {params.rmd} \\
-            --countsmatrix {input.cm} \\
+            --countsmatrix {input.cm_frag} \\
             --sampleinfo {input.si} \\
             --dupstatus {params.ds} \\
             --condition1 {params.condition1} \\
             --condition2 {params.condition2} \\
             --fdr_cutoff {params.fdr_cutoff} \\
             --log2fc_cutoff {params.log2fc_cutoff} \\
-            --results {output.results} \\
-            --report {output.html} \\
-            --elbowlimits {output.elbowlimits} \\
+            --results {output.results_frag} \\
+            --report {output.html_frag} \\
+            --elbowlimits {output.elbowlimits_frag} \\
             --spiked {params.spiked} \\
             --scalesfbymean \\
             --bbpaths {input.bbpaths} \\
-            --tmpdir $TMPDIR \\
+            --tmpdir $TMPDIR_FRAG \\
             --species {params.species} \\
             --gtf {params.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
-        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits}
-        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits}
+        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_frag}
+        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_frag}
         """
 
 rule diffbb:
