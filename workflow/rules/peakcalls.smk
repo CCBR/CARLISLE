@@ -214,16 +214,17 @@ rule bed2bb_seacr:
         nonRelaxedBed = rules.seacr.output.nonRelaxedBed,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        normStringentBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed"),
-        normRelaxedBed= join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed"),
-        nonStringentBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed"),
-        nonRelaxedBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed"),
+        normStringentBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed.gz"),
+        normRelaxedBed= join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed.gz"),
+        nonStringentBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed.gz"),
+        nonRelaxedBed = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed.gz"),
     params:
         outdir = join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}"),
         memG = getmemG("bed2bb_seacr")
     threads: getthreads("bed2bb_seacr")
     envmodules:
-        TOOLS["ucsc"]
+        TOOLS["ucsc"],
+        TOOLS["samtools"]
     shell:
         """
         set -exo pipefail
@@ -240,7 +241,10 @@ rule bed2bb_seacr:
             bn="${{filename%.*}}"
             if [[ "$extension" == "bed" ]];then
                 cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
-                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
+                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} ${{TMPDIR}}/${{bn}}.bigbed
+
+                # zip files
+                bgzip ${{TMPDIR}}/${{bn}}.bigbed > {params.outdir}/${{bn}}.bigbed.gz
             fi
         done
         """
@@ -288,8 +292,8 @@ rule bed2bb_gopeaks:
         broadPeaks=rules.gopeaks.output.broadPeaks,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        narrowPeaks=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed"),
-        broadPeaks=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed"),
+        narrowPeaks=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.narrowGo_peaks.bigbed.gz"),
+        broadPeaks=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","{treatment}_vs_{control}.{dupstatus}.broadGo_peaks.bigbed.gz"),
     params:
         outdir = join(RESULTSDIR,"peaks","{qthresholds}","gopeaks"),
         dupstatus = "{dupstatus}",
@@ -297,7 +301,8 @@ rule bed2bb_gopeaks:
     threads: 
         getthreads("bed2bb_gopeaks")
     envmodules:
-        TOOLS["ucsc"]
+        TOOLS["ucsc"],
+        TOOLS["samtools"]
     shell:
         """
         set -exo pipefail
@@ -314,7 +319,10 @@ rule bed2bb_gopeaks:
             bn="${{filename%.*}}"
             if [[ "$extension" == "bed" ]];then
                 cut -f1-3 $fullpath | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/${{bn}}.bed
-                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} {params.outdir}/${{bn}}.bigbed    
+                bedToBigBed -type=bed3 ${{TMPDIR}}/${{bn}}.bed {input.genome_len} ${{TMPDIR}}/${{bn}}.bigbed
+
+                # zip files
+                bgzip ${{TMPDIR}}/${{bn}}.bigbed > {params.outdir}/${{bn}}.bigbed.gz
             fi
         done
         """
