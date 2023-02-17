@@ -30,10 +30,17 @@ rule peakAnnotation_macs2:
                 """
 
 def get_bed_s_and_g(wildcards):
+        # SEACR OPTIONS
         if wildcards.s_and_g_types =="norm.stringent.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.stringent.bed")
         if wildcards.s_and_g_types =="norm.relaxed.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".norm.relaxed.bed")
+        if wildcards.s_and_g_types =="non.stringent.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".non.stringent.bed")
+        if wildcards.s_and_g_types =="non.relaxed.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.t_and_c, wildcards.t_and_c + "." + wildcards.dupstatus + ".non.relaxed.bed")
+
+        #GOPEAKS OPTIONS
         if wildcards.s_and_g_types =="narrowGo_peaks.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.t_and_c + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
         if wildcards.s_and_g_types =="broadGo_peaks.bed":
@@ -71,14 +78,23 @@ def get_cntrl_bam(wildcards):
 
 def get_bed_all(wildcards):
         cntrl=TREAT_to_CONTRL_DICT[wildcards.treatment]
+        #MACS2 OPTIONS
         if wildcards.peak_types == "narrowPeak":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.narrowPeak")
         if wildcards.peak_types =="broadPeak":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2", wildcards.treatment, wildcards.treatment + "." + wildcards.dupstatus + "_peaks.broadPeak")
+        
+        #SEACR OPTIONS
         if wildcards.peak_types =="norm.stringent.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.stringent.bed")
         if wildcards.peak_types =="norm.relaxed.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".norm.relaxed.bed")
+        if wildcards.peak_types =="non.stringent.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".non.stringent.bed")
+        if wildcards.peak_types =="non.relaxed.bed":
+                bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr", wildcards.treatment + "_vs_" + cntrl, wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".non.relaxed.bed")
+        
+        #GOPEAKS OPTIONS
         if wildcards.peak_types =="narrowGo_peaks.bed":
                 bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks", wildcards.treatment + "_vs_" + cntrl + "." + wildcards.dupstatus + ".narrowGo_peaks.bed")
         if wildcards.peak_types =="broadGo_peaks.bed":
@@ -184,10 +200,10 @@ rule rose:
                         nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="{params.sampleID}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
                         paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
                 fi
-                ## correct GOPEAKS
+                ## correct SEACR
                 ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
                 ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
-                if [[ {params.peak_type} == "norm.stringent.bed" ]] || [[ {params.peak_type} == "norm.relaxed.bed" ]]; then
+                if [[ {params.peak_type} == "norm.stringent.bed" ]] || [[ {params.peak_type} == "norm.relaxed.bed" ]] || [[ {params.peak_type} == "non.relaxed.bed" ]] || [[ {params.peak_type} == "non.relaxed.bed" ]]; then
                         cp $TMPDIR/subset.bed $TMPDIR/save.bed
                         awk -v sample_id="{params.sampleID}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
                         paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed

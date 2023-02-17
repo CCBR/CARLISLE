@@ -18,6 +18,7 @@ rule macs2:
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
+        broadtreshold = config["macs2_broad_peak_threshold"],
         control_flag = config["macs2_control"],
         control = get_cntrl_bed,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
@@ -38,12 +39,61 @@ rule macs2:
         if [[ ! -d {params.outdir} ]];then mkdir -p {params.outdir};fi
         cd {params.outdir}
 
+        # if running macs2 with an internal control
         if [[ {params.control_flag} == "Y" ]] && [[ {params.control} != "CONTROL" ]]; then
-            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-            macs2 callpeak -t {input.fragments_bed} -c {params.control} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+            # narrow peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -c {params.control} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --call-summits \\
+                --nomodel
+
+            # broad peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -c {params.control} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --broad --broad-cutoff {params.broadtreshold} \\
+                --nomodel
         else
-            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --call-summits --nomodel
-            macs2 callpeak -t {input.fragments_bed} -f BED -g {params.macs2_genome} --keep-dup all -q {params.qthresholds} -n {params.replicate}.{params.dupstatus} --SPMR --shift 0 --broad --nomodel
+            # narrow peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --call-summits \\
+                --nomodel
+
+            # broad peak calling
+            macs2 callpeak \\
+                -t {input.fragments_bed} \\
+                -f BED \\
+                -g {params.macs2_genome} \\
+                --keep-dup all \\
+                -q {params.qthresholds} \\
+                -n {params.replicate}.{params.dupstatus} \\
+                --SPMR \\
+                --shift 0 \\
+                --broad --broad-cutoff {params.broadtreshold} \\
+                --nomodel
         fi
         """
 
@@ -55,15 +105,18 @@ rule peak2bb_macs2:
         broadPeak = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broadPeak"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        narrowbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),
-        broadbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),
+        narrowbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed.gz"),
+        broadbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed.gz"),
     params:
         replicate="{replicate}",
         dupstatus="{dupstatus}",
         memG = getmemG("peapeak2bb_macs2k2bb"),
+        narrowbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrow.bigbed"),
+        broadbb = join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.broad.bigbed"),
     threads: getthreads("peak2bb_macs2")
     envmodules:
-        TOOLS["ucsc"]
+        TOOLS["ucsc"],
+        TOOLS["samtools"]
     shell:
         """
         set -exo pipefail
@@ -74,10 +127,15 @@ rule peak2bb_macs2:
             TMPDIR="/dev/shm/$dirname"
             mkdir -p $TMPDIR
         fi
+        # create files
         cut -f1-3 {input.narrowPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed
-        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed {input.genome_len} {output.narrowbb}
+        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.narrow.bed {input.genome_len} {params.narrowbb}
         cut -f1-3 {input.broadPeak} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed
-        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {output.broadbb}
+        bedToBigBed -type=bed3 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.broad.bed {input.genome_len} {params.broadbb}
+
+        # zip files
+        bgzip {params.narrowbb} > {output.narrowbb}
+        bgzip {params.broadbb} > {output.broadbb}
         """ 
 
 def get_input_bedgraphs(wildcards):

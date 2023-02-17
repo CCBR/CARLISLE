@@ -30,15 +30,21 @@ def run_seacr(wildcards):
         files.extend(s)
         s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.stringent.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(s2)
-        s3=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
-        files.extend(s3)
+    if "non.stringent.bed" in PEAKTYPE:
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s)
+        s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.stringent.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(s2)
     if "norm.relaxed.bed" in PEAKTYPE:
         r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r)
         r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.norm.relaxed.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
         files.extend(r2)
-        r3=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
-        files.extend(r3)
+    if "non.relaxed.bed" in PEAKTYPE:
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r)
+        r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","{treatment}_vs_{control}","{treatment}_vs_{control}.{dupstatus}.non.relaxed.bigbed"),qthresholds=QTRESHOLDS,treatment=TREATMENTS,control=CONTROLS,dupstatus=DUPSTATUS),
+        files.extend(r2)
     return files
 
 def run_gopeaks(wildcards):
@@ -92,7 +98,7 @@ def get_annotation_macs2(wildcards):
 
 def get_annotation_s_and_g(wildcards):
     files=[]
-    if ("narrowGo_peaks.bed" in PEAKTYPE) or ("broadGo_peaks.bed" in PEAKTYPE) or ("norm.stringent.bed" in PEAKTYPE) or ("norm.relaxed.bed" in PEAKTYPE):
+    if ("narrowGo_peaks.bed" in PEAKTYPE) or ("broadGo_peaks.bed" in PEAKTYPE) or ("norm.stringent.bed" in PEAKTYPE) or ("norm.relaxed.bed" in PEAKTYPE) or ("non.stringent.bed" in PEAKTYPE) or ("non.relaxed.bed" in PEAKTYPE):
         f=expand(join(RESULTSDIR,"annotation","{qthresholds}","{s_and_g_types}","{t_and_c}","{t_and_c}.{dupstatus}.annotation.txt"),qthresholds=QTRESHOLDS,s_and_g_types=S_AND_G_TYPES,t_and_c=TREATMENT_CONTROL_LIST,dupstatus=DUPSTATUS)
         files.extend(f)
     return files
