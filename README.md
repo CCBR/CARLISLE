@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/img/CUTandRUN_Workflow.jpeg" width="65%" height="65%">
+  <img src="docs/img/CUTandRUN_Workflow.jpeg" width="85%" height="85%">
   
   [![GitHub releases](https://img.shields.io/github/release/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/releases)  [![GitHub issues](https://img.shields.io/github/issues/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/issues) [![GitHub license](https://img.shields.io/github/license/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/blob/master/LICENSE)  
 
