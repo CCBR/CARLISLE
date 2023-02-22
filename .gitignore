@@ -6,6 +6,8 @@ site/
 **/*.swp
 **/test.*
 
+*/._*
+*/*/._*
 *DS_Store
 *RData
 *Rhistory
