@@ -24,8 +24,6 @@ spiked: "Y" # If Y, then normalization will be performed based off of spike-in a
 ## if spiked ="Y"
 spikein_genome: "ecoli" # must be species found in spikein_reference below; ignored if spiked is set to N
 spikein_scale: 1000000
-## if spiked="LIBRARY"
-library_path: "WORKDIR/library/" #path to the dir where library norm stats was stored IE /carlisle/results/alignment_stats/
 
 # user parameters for alignment
 bowtie2_parameters: "--dovetail --phred33  --very-sensitive"

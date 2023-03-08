@@ -275,7 +275,6 @@ GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
 SPIKED = config["spiked"]
-LIBRARY_FILE=""
 SPIKED_GENOMEFA=""
 
 if SPIKED == "Y":
@@ -286,7 +285,6 @@ if SPIKED == "Y":
     print("# Spike-in genome : ",spikein_genome)
 elif SPIKED == "LIBRARY":
     SPIKED_GENOMEFA="LIBRARY"
-    LIBRARY_FILE=join(WORKDIR,"clean_library_size.csv")
 else:
     print("# Spike-in : ")
 
@@ -311,28 +309,7 @@ if GENOME == "hg38" or GENOME == "hg19" or GENOME == "hs1":
 #########################################################
 # DEFINE LOCAL RULES
 #########################################################
-localrules: create_replicate_sample_table,create_library_size_file
-
-rule create_library_size_file:
-    input:
-    output:
-        library_file=join(WORKDIR,"clean_library_size.csv")
-    params:
-        library_path=config["library_path"]
-    shell:
-        """
-        # remove previous files
-        if [[ -f {output.library_file} ]]; then mv {output.library_file} {output.library_file}_archived; fi
-        touch {output.library_file}
-            
-        cd {params.library_path}
-        for f in *alignment_stats.yaml; do
-            # add file to output
-            sampleid=`echo $f | cut -f1 -d"."`
-            dedup_reads=`cat $f | grep "dedup_nreads_genome:" | grep -v "nodedup" | cut -f2 -d" "`
-            echo "$sampleid,$dedup_reads,dedup" >> {output.library_file}
-        done
-        """
+localrules: create_replicate_sample_table
 
 rule create_replicate_sample_table:
     input:

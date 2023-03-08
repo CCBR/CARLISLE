@@ -238,14 +238,11 @@ localrules: gather_alignstats
 rule gather_alignstats:
     input:
         stats=expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
-        samples=config["samplemanifest"]
     output:
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
     params:
         rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
         spikein_scale = config["spikein_scale"],
-        library_file=join(WORKDIR,"clean_library_size.csv"),
-        use_spikein=SPIKED,
     envmodules:
         TOOLS["R"]
     shell:
@@ -258,19 +255,35 @@ rule gather_alignstats:
         --excludeFromName ".alignment_stats.yaml" \\
         --scaleConstant {params.spikein_scale} \\
         --outTable {output}
-
-        # add information to library file for CONTROLS
-        if [[ {params.use_spikein} == "LIBRARY" ]]; then
-            controls=`cat {input.samples} | grep "Y" | awk \'{{print$1"_"$2}}\'`
-            for c in ${{controls[@]}}; do
-                val=`cat {output} | grep $c | awk \'{{print$5}}\'`
-                sub_name=`echo $c | cut -f1 -d"_"`
-                rep_num=`echo $c | cut -f2 -d"_"`
-                echo "$c,${{sub_name}}_${{rep_num}},$val,dedup">>{params.library_file}
-            done
-        fi
         """
 
+localrules: create_library_norm_scales
+rule create_library_norm_scales:
+    input:
+        stats=expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+    output:
+        scalefile=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
+    params:
+        rscript = join(SCRIPTSDIR,"_make_library_norm_table.R"),
+    envmodules:
+        TOOLS["R"]
+    shell:
+        """
+        set -exo pipefail
+        file1=$(echo {input.stats} | awk '{{print $1}}')
+        dir=$(dirname $file1)
+        Rscript {params.rscript} \\
+        --yamlDir $dir \\
+        --excludeFromName ".alignment_stats.yaml" \\
+        --outTable {output.scalefile}
+        """
+
+def get_library_input(wildcards):
+    if (config["spiked"]=="LIBRARY"):
+        stats_file=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
+    else:
+        stats_file=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+    return(stats_file)
 
 rule bam2bg:
 # """
@@ -284,6 +297,7 @@ rule bam2bg:
         bamidxstats = rules.filter.output.bamidxstats,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
+        library_file = get_library_input
     output:
         fragments_bed = join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
@@ -296,8 +310,7 @@ rule bam2bg:
         fragment_len_filter = config["fragment_len_filter"],
         spikein_scale = config["spikein_scale"],
         regions = REGIONS,
-        memG = getmemG("bam2bg"),
-        library_file=LIBRARY_FILE
+        memG = getmemG("bam2bg")
     threads: getthreads("bam2bg")
     envmodules:
         TOOLS["bedtools"],
@@ -315,18 +328,11 @@ rule bam2bg:
         fi
 
         if [[ "{params.spikein}" == "" ]];then
+            echo "No spike-in scale was used"
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f2 -d"," | head -n1`
-            
-            if [[ $library_size =~ "Inf" ]]; then 
-                spikein_scale=`head -n1 {params.library_file} | awk -F"," \'{{print $2}}\'`
-                spikein_scale=$(echo "$spikein_scale / 1000000" | bc -l)
-            else
-                spikein_scale=$(echo "$library_size / 1000000" | bc -l)
-            fi
-            
-            echo "The spikein is generated from the library size $spikein_scale"
+            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`    
+            echo "The spike-in is generated from the library size"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
             
