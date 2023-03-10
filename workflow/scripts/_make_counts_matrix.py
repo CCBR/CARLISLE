@@ -8,7 +8,7 @@
 
 import subprocess,argparse,sys,pandas,os,functools,uuid
 parser = argparse.ArgumentParser(description='create counts matrix')
-parser.add_argument('--bedbedgraph', required=True, type=str, help="list of peak calls and scaled bedgraph file, tab delimited, group|sampleName|bedfile|bedgraph per line")
+parser.add_argument('--bedbedgraph', required=True, type=str, help="list of peak calls and scaled bedgraph file, tab delimited, group|sampleName|bedfile|bedgraph|scalingFactor|fragmentsBed per line")
 parser.add_argument('--tmpdir', required=True, type=str, help="TMP dir")
 parser.add_argument('--countsmatrix', required=True, type=str, help="bedgraph-AUC-based output counts matrix TSV")
 parser.add_argument('--fragmentscountsmatrix', required=True, type=str, help="fragmentsBed-based output counts matrix TSV")

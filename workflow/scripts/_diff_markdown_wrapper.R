@@ -9,20 +9,18 @@ path="/data/CCBR/projects/ccbr1155/CS030586_CARAP/diff"
 
 # create parser object
 parser <- ArgumentParser()
-
-
 parser$add_argument("--rmd", type="character", required=TRUE,
                     help="path to rmd")
 parser$add_argument("--spiked", type="character", required=TRUE, 
-                    help="if spike-in is present or not ... Y or N")
+                    help="type of normalization used")
 parser$add_argument("--rawcountsprescaled", action='store_true',
                     help="if counts are scaled by spike-in already ... Y (for AUC-based method) or N (for fragments-based method)")
 parser$add_argument("--scalesfbymean", action='store_true',
                     help="DESeq2 scaling factors are around 1. To ensure that spike-in scaling factors are also around 1 divide each scaling factor by mean of all scaling factors.")
 parser$add_argument("--htsfilter", action='store_true',
                     help="Use HTSFilter")
-parser$add_argument("--bbpaths", type="character", required=FALSE, default=NULL,
-                    help="bedbedgraph inputs file")
+parser$add_argument("--contrast_data", type="character", required=FALSE, default=NULL,
+                    help="contrast_data inputs file")
 parser$add_argument("--countsmatrix", type="character", required=TRUE,
                     help="countsmatrix as TSV")
 parser$add_argument("--sampleinfo", type="character", required=TRUE,
@@ -63,7 +61,7 @@ if (debug){
   log2fc_cutoff=0.59
   results="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/results.txt"
   report="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/report.html"
-  spiked="N"
+  spiked="LIBRARY"
   rawcountsprescaled="N"
   scalesfbymean="N"
   htsfilter="Y"
@@ -82,7 +80,7 @@ if (debug){
   results=args$results
   report=args$report
   spiked=args$spiked
-  bbpaths=args$bbpaths
+  contrast_data=args$contrast_data
   elbowlimits=args$elbowlimits
   if (args$rawcountsprescaled) {rawcountsprescaled="Y"} else {rawcountsprescaled="N"}
   if (args$scalesfbymean) {scalesfbymean="Y"} else {scalesfbymean="N"}
@@ -92,13 +90,12 @@ if (debug){
   gtf=args$gtf
 }
 
-
 parameters=list(rawcountsmatrix=rawcountsmatrix,
             coldata=coldata,
             spiked=spiked,
             rawcountsprescaled=rawcountsprescaled,
             scalesfbymean=scalesfbymean,
-            bbpaths=bbpaths,
+            contrast_data=contrast_data,
             dupstatus=dupstatus,
             condition1=condition1,
             condition2=condition2,
