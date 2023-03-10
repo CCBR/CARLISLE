@@ -1,11 +1,5 @@
 from os.path import join
 
-def qc(wildcards):
-    files=[]
-    q=expand(join(RESULTSDIR,'qc', 'multiqc_report.html'))
-    files.extend(q)
-    return files
-
 def run_library_norm(wildcards):
     files=[]
     if "LIBRARY" in SPIKED:
@@ -13,7 +7,27 @@ def run_library_norm(wildcards):
         files.extend(lib)
     return files
 
+def qc(wildcards):
+    files=[]
+    q=expand(join(RESULTSDIR,'qc', 'multiqc_report.html'))
+    files.extend(q)
+    return files
+
 def run_macs2(wildcards):
+    files=[]
+    if "narrowPeak" in PEAKTYPE:
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{treatment_list_controlflag}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,treatment_list_controlflag=TREATMENT_LIST_CONTROLFLAG,dupstatus=DUPSTATUS),
+        files.extend(n)
+        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{treatment_list_controlflag}.{dupstatus}_peaks.narrow.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_list_controlflag=TREATMENT_LIST_CONTROLFLAG,dupstatus=DUPSTATUS),
+        files.extend(n2)        
+    if "broadPeak" in PEAKTYPE:
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{treatment_list_controlflag}.{dupstatus}_peaks.broadPeak"),qthresholds=QTRESHOLDS,treatment_list_controlflag=TREATMENT_LIST_CONTROLFLAG,dupstatus=DUPSTATUS),
+        files.extend(b)
+        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{treatment_list_controlflag}.{dupstatus}_peaks.broad.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_list_controlflag=TREATMENT_LIST_CONTROLFLAG,dupstatus=DUPSTATUS),
+        files.extend(b2)
+    return files
+
+def old_run_macs2(wildcards):
     files=[]
     if "narrowPeak" in PEAKTYPE:
         n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","{replicate}","{replicate}.{dupstatus}_peaks.narrowPeak"),qthresholds=QTRESHOLDS,replicate=REPLICATES,dupstatus=DUPSTATUS),
@@ -132,24 +146,26 @@ rule all:
         ##########################################
         ### required files
         ##########################################        
-        # qc
-        unpack(qc),
-        
         ## alignment stats yaml files and stats table
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
-        unpack(run_library_norm),
+        
+        # norm table, if needed
+        # unpack(run_library_norm),
+
+        # qc
+        # unpack(qc),
 
         # ## PEAKCALLS rules
-        unpack(run_macs2),
-        unpack(run_seacr),
-        unpack(run_gopeaks),
-        unpack(run_contrasts),
+        # unpack(run_macs2),
+        # unpack(run_seacr),
+        # unpack(run_gopeaks),
+        # unpack(run_contrasts),
 
-        # # # ## ANNOTATION
-        unpack(get_annotation_macs2),
-        unpack(get_annotation_s_and_g),
-        unpack(get_motif_analysis),
+        # # # # ## ANNOTATION
+        # unpack(get_annotation_macs2),
+        # unpack(get_annotation_s_and_g),
+        # unpack(get_motif_analysis),
 
         ##########################################
         ### intermediate files
@@ -168,6 +184,6 @@ rule all:
         
         # # bedgraphs and bigwigs
         # expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         # expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
 

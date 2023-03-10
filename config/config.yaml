@@ -19,10 +19,13 @@ contrasts_lfc_cutoff: "0.59" # FC of 1.5
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 
-# spiking .. if this is changed then the reference bowtie2 index should be recreated
-spiked: "Y" # If Y, then normalization will be performed based off of spike-in aligned read count; if "LIRBARY" then library normalization will be performed; if N then no norm will be performed
-## if spiked ="Y"
-spikein_genome: "ecoli" # must be species found in spikein_reference below; ignored if spiked is set to N
+# normalization method
+## spikein: normalization will be performed based off of spike-in aligned read count; 
+## library: library normalization will be performed
+## none: no norm will be performed
+norm_method: "spikein" # method of normalization to be used; currently supports ["spikein","library","none"]
+## if norm_method ="spikein"
+spikein_genome: "ecoli" # must be species found in spikein_reference below
 spikein_scale: 1000000
 
 # user parameters for alignment
@@ -30,35 +33,38 @@ bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
 fragment_len_filter: "1000"
 
 # duplication status
-# users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup)
-# dupstatus: "dedup, no_dedup" # means run both deduplicated and non-deduplicated analysis 
-# dupstatus: "dedup" # means run deduplicated analysis only
-# dupstatus: "no_dedup" # means run non-deduplicated analysis only
-dupstatus: "dedup, no_dedup"
+## users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup)
+### dupstatus: "dedup" # means run deduplicated analysis only
+### dupstatus: "no_dedup" # means run non-deduplicated analysis only
+## complete list:
+### dupstatus: "dedup, no_dedup"
+## recommended list:
+### dupstatus: "dedup"
+dupstatus: "dedup"
 
 # which peaktypes to consider for differential analysis:
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | Macs2       | narrowPeak          | broadPeak         | NA                    | NA                  | NA                        | NA                      |
-## macs2 options: narrowPeak or broadPeak
+# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+## macs2 options: macs2_narrow, macs2_broad
 ### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | SEACR       | NA                  | NA                | norm.stringent.bed    | norm.relaxed.bed    | non.stringent.bed         | non.relaxed.bed         |
-## seacr options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
+## seacr options: macs2_norm_stringent, macs2_non_stringent, macs2_norm_relaxed, macs2_non_relaxed
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | GoPeaks     | narrowGo_peaks.bed  | broadGo_peaks.bed | NA                    | NA                  | NA                        | NA                      |
-## gopeaks options: narrowpeaks or broadpeaks
+# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+## gopeaks options: macs2_narrow, macs2_broad
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | Macs2       | narrowPeak          | broadPeak         | NA                    | NA                  | NA                        | NA                      |
-# | SEACR       | NA                  | NA                | norm.stringent.bed    | norm.relaxed.bed    | non.stringent.bed         | non.relaxed.bed         |
-# | GoPeaks     | narrowGo_peaks.bed  | broadGo_peaks.bed | NA                    | NA                  | NA                        | NA                      |
+# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
+# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
 ## complete list:
-### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, non.stringent.bed, non.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+### peaktype: "macs2_narrow, macs2_broad, seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed, gopeaks_narrow, gopeaks_broad"
 ## recommended list:
-### peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
-peaktype: "narrowPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+### peaktype: "macs2_narrow, macs2_broad, gopeaks_narrow, gopeaks_broad"
+peaktype: "macs2_narrow, macs2_broad, seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed, gopeaks_narrow, gopeaks_broad"
 
 ## macs2 additional option
 ### macs2 can be run with or without the control. adding a control will increase peak specificity
@@ -72,6 +78,7 @@ macs2_control: "N"
 ### default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
 ### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
 quality_thresholds: "0.1, 0.05, 0.01"
+
 ## MACS2, broad-peaks specific, quality threshold
 ### if broadPeak is seleted as a 'peaktype', an additional quality threshold can be used
 macs2_broad_peak_threshold: "0.01"
