@@ -304,19 +304,20 @@ REGIONS = config["reference"][GENOME]["regions"]
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
-SPIKED = config["spiked"]
-SPIKED_GENOMEFA=""
-
-if SPIKED == "Y":
+NORM_METHOD = config["norm_method"].upper()
+print("# Norm method : ",NORM_METHOD)
+if NORM_METHOD == "SPIKEIN":
     spikein_genome = config["spikein_genome"]
     SPIKED_GENOMEFA = config["spikein_reference"][spikein_genome]["fa"]
     check_readaccess(SPIKED_GENOMEFA)
-    print("# Spike-in : ",SPIKED)
     print("# Spike-in genome : ",spikein_genome)
-elif SPIKED == "LIBRARY":
+elif NORM_METHOD == "LIBRARY":
     SPIKED_GENOMEFA="LIBRARY"
+elif NORM_METHOD == "NONE":
+    SPIKED_GENOMEFA=""
 else:
-    print("# Spike-in : ")
+    print("User must select from one of the three available norm methods: spikein,library, none")
+    exit()
 
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
 refdata = dict()
@@ -372,7 +373,7 @@ rule create_reference:
     params:
         bt2_base=join(BOWTIE2_INDEX,"ref"),
         bowtie2_dir=BOWTIE2_INDEX,
-        use_spikein=SPIKED,
+        use_spikein=NORM_METHOD,
         spiked_source=SPIKED_GENOMEFA,
         spiked_output=join(BOWTIE2_INDEX,"spikein.fa"),
         refdata=refdata,
@@ -403,8 +404,9 @@ rule create_reference:
         mkdir -p {params.bowtie2_dir}/tmp
         echo {params.refdata} > {params.bowtie2_dir}/tmp/ref.yaml
 
-        if [[ "{params.use_spikein}" != "Y" ]];then
-        # there is NO SPIKEIN
+        # create reference dependent on whether or not a spikein control should be used
+        if [[ "{params.use_spikein}" != "SPIKEIN" ]];then
+            echo "creating ref without a spike-in control"
 
             # create faidx for genome and spike fasta
             samtools faidx {output.genomefa}
@@ -419,9 +421,8 @@ rule create_reference:
             cut -f1,2 {output.genomefa}.fai > {output.ref_len}
             cp {output.ref_len} {output.genome_len}
             echo -e "NA\t0" > {output.spikein_len}
-
         else
-        # THERE is SPIKEIN
+            echo "creating ref with a spike-in control"
 
             # create faidx for genome and spike fasta
             samtools faidx {output.genomefa}
@@ -438,7 +439,6 @@ rule create_reference:
             cp {output.ref_len} {output.genome_len}
             cut -f1,2 {params.spiked_output}.fai >> {output.ref_len}
             cut -f1,2 {params.spiked_output}.fai > {output.spikein_len}
-
         fi
 
         # copy ref.yaml only after successfully finishing ref index building
@@ -447,5 +447,3 @@ rule create_reference:
         fi
 
         """
-
-        
