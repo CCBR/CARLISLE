@@ -67,13 +67,13 @@ for f in ["samplemanifest"]:
     check_readaccess(config[f])
 
 #########################################################
-
-#########################################################
 # CREATE SAMPLE DATAFRAME
 #########################################################
 # each line in the samplemanifest is a replicate
 # multiple replicates belong to a sample
-# currently only 1,2,3 or 4 replicates per sample is supported
+# currently 1-4 replicates per sample are supported
+print("#"*100)
+print("# Checking Sample Manifest...")
 SAMPLE2REPLICATES = dict()
 REPLICATE2SAMPLE = dict()
 df=pd.read_csv(config["samplemanifest"],sep="\t",header=0)
@@ -100,20 +100,19 @@ for r in REPLICATES:
         os.symlink(r2,r2new)
     replicateName2R2[r]=r2new
 
-
-print("#"*100)
-print("# Checking Sample Manifest...")
-
 print("# Samples and their replicates")
 print("# SampleName        Replicates")
 for k,v in SAMPLE2REPLICATES.items():
     print("# "+k+"         "+",".join(v))
+print("# Read access to all fastq files in confirmed!")
+print("# Sample manifest is confirmed!")
 
-print("# Treatment Control combinations:")
+print("# Checking Contrast Manifest...:")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
 TREATMENT_CONTROL_LIST=[]
+TREATMENT_WITHOUTCONTROL_LIST=[]
 TREAT_to_CONTRL_DICT=dict()
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
@@ -127,6 +126,7 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     TREATMENTS.append(t)
     CONTROLS.append(c)
     TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+    TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
     TREAT_to_CONTRL_DICT[t]=c
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
@@ -135,12 +135,50 @@ if len(process_replicates)!=len(REPLICATES):
     for i in not_to_process:
         print("# "+i)
     REPLICATES = process_replicates
-print("# Read access to all fastq files in confirmed!")
+print("# Contrast manifest is confirmed!")
 
+# write out the treatment:cntrl 
+fpath=join(RESULTSDIR,"treatment_control_list.txt")
+originalDF = pd.DataFrame(TREAT_to_CONTRL_DICT.items()).rename(columns={0: 'key', 1: 'val'})
+split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
+finalDF = split_keysDF.join(originalDF['val'])
+finalDF.to_csv(fpath, '\t', header=False, index=False)
+
+# set treatment lists depending on whether controls were used for all peak callers
+# macs2 allows for with or without controls; all other callers require with controls
+if (config["macs2_control"] == "Y"):
+    TREATMENT_LIST_M=TREATMENT_CONTROL_LIST
+else:
+    TREATMENT_LIST_M=TREATMENT_WITHOUTCONTROL_LIST
+TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
+
+# create duplication and peaktype list
 DUPSTATUS=config["dupstatus"]
 PEAKTYPE=config["peaktype"]
 DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
 PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
+
+#separate peak types into caller lists
+macs_set=[]
+g_set=[]
+s_set=[]
+for pt in PEAKTYPE:
+    if pt == "macs2_narrow" or pt == "macs2_broad":
+        macs_set.append(pt)
+    elif pt == "gopeaks_narrow" or pt == "gopeaks_broad":
+        g_set.append(pt)
+    elif pt == "seacr_norm_stringent" or pt == "seacr_norm_relaxed" or pt == "seacr_non_stringent" or pt == "seacr_non_relaxed":
+        s_set.append(pt)
+    else:
+        print("A peak type combination was used that is non-compatiable")
+        print(pt)
+        exit()
+PEAKTYPE_M=list(set(macs_set))
+PEAKTYPE_G=list(set(g_set))
+PEAKTYPE_S=list(set(s_set))
+
+print("extra weird")
+print(PEAKTYPE_S)
 
 # set threshold settings
 FDRCUTOFF = config["contrasts_fdr_cutoff"]
@@ -162,6 +200,7 @@ if config["run_contrasts"] == "Y":
     DS=[]
     QS=[]
     PT=[]
+    CONTRAST_LIST=[]
     SAMPLESINCONTRAST=list()
     for index, row in contrasts_df.iterrows():
         c1 = row['condition1']
@@ -182,6 +221,7 @@ if config["run_contrasts"] == "Y":
                     PT.append(pt)
                     contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
                     CONTRASTS[contrast_name]=[c1,c2,ds,pt]
+                    CONTRAST_LIST.append(c1+"_vs_"+c2)
         SAMPLESINCONTRAST.append(c1)
         SAMPLESINCONTRAST.append(c2)
     SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
@@ -208,16 +248,6 @@ if config["run_contrasts"] == "Y":
         if os.path.exists(rg_file): os.remove(rg_file)
         # once file is removed it will be recreated by rule create_replicate_sample_table
 
-#separate peak types into two lists
-macs_set=[]
-s_and_g_set=[]
-for pt in PEAKTYPE:
-    if pt == "narrowPeak" or pt == "broadPeak":
-        macs_set.append(pt)
-    else:
-        s_and_g_set.append(pt)
-MACS_TYPES=list(set(macs_set))
-S_AND_G_TYPES=list(set(s_and_g_set))
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
@@ -293,7 +323,7 @@ refdata = dict()
 refdata["genome"] = GENOME
 refdata["genomefa"] = GENOMEFA
 refdata["blacklistbed"] = GENOMEBLACKLIST
-refdata["spiked"] = SPIKED
+refdata["norm_method"] = NORM_METHOD
 refdata["spikein_genome"] = SPIKED_GENOMEFA
 
 # set annotation params
