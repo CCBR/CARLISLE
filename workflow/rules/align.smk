@@ -279,7 +279,7 @@ rule create_library_norm_scales:
         """
 
 def get_library_input(wildcards):
-    if (config["spiked"]=="LIBRARY"):
+    if (NORM_METHOD=="LIBRARY"):
         stats_file=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
     else:
         stats_file=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
@@ -304,7 +304,7 @@ rule bam2bg:
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")
     params:
-        spikein = SPIKED_GENOMEFA,
+        spikein = NORM_METHOD,
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         fragment_len_filter = config["fragment_len_filter"],
@@ -327,7 +327,7 @@ rule bam2bg:
             mkdir -p $TMPDIR
         fi
 
-        if [[ "{params.spikein}" == "" ]];then
+        if [[ "{params.spikein}" == "NONE" ]];then
             echo "No spike-in scale was used"
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
