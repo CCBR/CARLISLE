@@ -1,28 +1,8 @@
 rule qc_fastqc:
     """
-    Runs FastQC report on each sample after adaptors have been removed
-    """
-    input:
-        R1 = rules.trim.output.R1,
-        R2 = rules.trim.output.R2,
-    params:
-        base = join(RESULTSDIR, 'qc', 'fastqc_raw'),
-    envmodules:
-        TOOLS['fastqc']
-    output:
-        htmlR1 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R1.trim_fastqc.html')),
-        htmlR2 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R2.trim_fastqc.html'))
-    shell:
-        """
-        set -exo pipefail
-        # run FASTQC
-        fastqc {input.R1} {input.R2} -o {params.base}
-        """
+    1) Runs FastQC report on each sample after adaptors have been removed
 
-
-rule qc_fastq_screen_validator:
-    """
-    #fastq screen
+    2) Runs FASTQ SCREEN & VALIDATOR
     - this will align first to human, mouse, bacteria
     - fastq validator
     Quality-control step to ensure the input FastQC files are not corrupted or
@@ -36,18 +16,21 @@ rule qc_fastq_screen_validator:
         R1 = rules.trim.output.R1,
         R2 = rules.trim.output.R2,
     params:
+        base = join(RESULTSDIR, 'qc', 'fastqc_raw'),
         conf_species = join(WORKDIR,'config','fqscreen_config.conf'),
         base_screen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
         R1="{replicate}_R1.fastq",
         R2="{replicate}_R2.fastq",
         base_val = join(RESULTSDIR,'qc'),
         fastq_val=TOOLS["fastq_val"],
-    threads: getthreads("qc_fastq_screen_validator")        
     envmodules:
+        TOOLS['fastqc'],
         TOOLS['bowtie2'],
         TOOLS['perl'],
         TOOLS['fastq_screen'],
     output:
+        htmlR1 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R1.trim_fastqc.html')),
+        htmlR2 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R2.trim_fastqc.html')),
         speciesR1 = temp(join(RESULTSDIR, 'qc', 'fqscreen_raw','{replicate}_R1_screen.txt')),
         speciesR2 = temp(join(RESULTSDIR, 'qc', 'fqscreen_raw','{replicate}_R2_screen.txt')),
         logR1 = join(RESULTSDIR,'qc','{replicate}.validated.fastqR1.log'),
@@ -62,7 +45,10 @@ rule qc_fastq_screen_validator:
             TMPDIR="/dev/shm/$dirname"
             mkdir -p $TMPDIR
         fi
-        
+
+        # run FASTQC
+        fastqc {input.R1} {input.R2} -o {params.base}
+ 
         # Gzip input files
         gunzip -c {input.R1} > ${{TMPDIR}}/{params.R1}
         gunzip -c {input.R2} > ${{TMPDIR}}/{params.R2}
@@ -102,8 +88,8 @@ rule multiqc:
     input:
         fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
         fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
-        screenR1=expand(rules.qc_fastq_screen_validator.output.speciesR1,replicate=REPLICATES),
-        screenR2=expand(rules.qc_fastq_screen_validator.output.speciesR2,replicate=REPLICATES),
+        screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
+        screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
         flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
         idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES)
     params:
