@@ -368,7 +368,7 @@ rule create_reference:
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         ref_len = join(BOWTIE2_INDEX,"ref.len"),
-        spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
+        spikein_len = join(BOWTIE2_INDEX,"spikein.len") ,
         refjson = join(BOWTIE2_INDEX,"ref.yaml")
     params:
         bt2_base=join(BOWTIE2_INDEX,"ref"),
@@ -398,7 +398,7 @@ rule create_reference:
         mkdir -p {params.bowtie2_dir}/ref
         ln -s {input.genomefa_source} {output.genomefa}
         ln -s {input.blacklist_source} {output.blacklist}
-        if [[ {params.use_spikein} == "Y" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
+        if [[ {params.use_spikein} == "SPIKEIN" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
 
         # create json file and store in "tmp" until the reference is built
         mkdir -p {params.bowtie2_dir}/tmp
