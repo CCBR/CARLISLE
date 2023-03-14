@@ -23,31 +23,6 @@ def get_peak_file(wildcards):
     
     return bed
 
-rule peakAnnotation:
-    """
-    Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
-    """
-    input:
-        peak_file=get_peak_file,
-    output:
-        annotation=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
-        annotation_summary=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary")
-    envmodules:
-        TOOLS["homer"],
-    params:
-        genome = config["genome"],
-        fa=config["reference"][config["genome"]]["fa"],
-        gtf = config["reference"][config["genome"]]["gtf"],
-    shell:
-        """
-        # run homer
-        if [[ {params.genome} == "hs1" ]]; then
-            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
-        else
-            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
-        fi
-        """
-
 rule findMotif:
     """
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
@@ -58,19 +33,29 @@ rule findMotif:
     """
     input:
         peak_file=get_peak_file,
+    output:
+        annotation=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        annotation_summary=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary"),
+        known_html=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
     threads: getthreads("findMotif")
     envmodules:
         TOOLS["homer"],
     params:
-        fa=config["reference"][config["genome"]]["fa"],
-        outDir=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
-         motif_size = config["motif_size"],
         genome = config["genome"],
+        fa=config["reference"][config["genome"]]["fa"],
+        gtf = config["reference"][config["genome"]]["gtf"],
+        outDir=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
+        motif_size = config["motif_size"],
         preparsedDir = config["preparsedDir"],
-    output:
-        known_html=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
     shell:
         """
+        # run homer
+        if [[ {params.genome} == "hs1" ]]; then
+            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+        else
+            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+        fi
+        
         # hs1 is not part of HOMER's config genome db. Must add it as a separate param
         if [[ {params.genome} == "hs1" ]]; then
             findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
