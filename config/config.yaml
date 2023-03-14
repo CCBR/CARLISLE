@@ -77,7 +77,7 @@ macs2_control: "N"
 ### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
 ### default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
 ### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
-quality_thresholds: "0.1, 0.05, 0.01"
+quality_thresholds: "0.1, 0.05"
 
 ## MACS2, broad-peaks specific, quality threshold
 ### if broadPeak is seleted as a 'peaktype', an additional quality threshold can be used
