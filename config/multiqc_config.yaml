@@ -4,6 +4,7 @@ report_header_info:
     - FASTQ Analysis: 'Analysis includes basic QC metrics'
     - FASTQScreen Analysis: 'Analysis includes human, mouse, and bacteria'
     - SAMStats Analysis: 'Analysis included flagstats and idxstats'
+    - GoPeaks: 'Analysis includes the number of peaks called per sample via the general table and the bar plot'
 
 #include fastqscreen
 fastqscreen_simpleplot: true
@@ -15,9 +16,12 @@ show_analysis_paths: False
 sp:
     fastq_screen:
         fn: '*_screen.txt'
+    gopeaks:
+        fn: '*/*_gopeaks.json'
 
 module_order:
 # Sample Quality control
     - 'fastqc'
     - 'fastq_screen'
     - 'samtools'
+    - 'gopeaks'

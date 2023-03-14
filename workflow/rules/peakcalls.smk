@@ -348,6 +348,7 @@ rule gopeaks_narrow:
     output:
         peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow_gopeaks.json")),
     shell:
         """
         set -exo pipefail
@@ -399,6 +400,7 @@ rule gopeaks_broad:
     output:
         peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad_gopeaks.json")),
     shell:
         """
         set -exo pipefail

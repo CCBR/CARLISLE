@@ -80,36 +80,76 @@ rule qc_fastqc:
             --file {input.R2} > {output.logR2};
         """
 
-rule multiqc:
-    """
-    merges FastQC reports for pre/post trimmed fastq files into MultiQC report
-    https://multiqc.info/docs/#running-multiqc
-    """
-    input:
-        fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
-        fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
-        screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
-        screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
-        flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
-        idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES)
-    params:
-        qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
-        dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
-        dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
-        dir_samtools = join(RESULTSDIR,"bam","raw"),
-        outDir = join(RESULTSDIR,'qc'),
-    envmodules:
-        TOOLS['multiqc']
-    output:
-        o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
-    shell:
+if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+    rule multiqc:
         """
-        set -exo pipefail
-        multiqc -f -v \\
-            -c {params.qc_config} \\
-            -d -dd 1 \\
-            {params.dir_fqc} \\
-            {params.dir_fqscreen} \\
-            {params.dir_samtools} \\
-            -o {params.outDir}
+        merges FastQC reports for pre/post trimmed fastq files into MultiQC report
+        https://multiqc.info/docs/#running-multiqc
         """
+        input:
+            fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
+            fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
+            screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
+            screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
+            flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
+            idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
+            gopeaks_broad=expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+            gopeaks_narrow=expand(rules.gopeaks_narrow.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS)
+        params:
+            qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
+            dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
+            dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
+            dir_samtools = join(RESULTSDIR,"bam","raw"),
+            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks"),
+            outDir = join(RESULTSDIR,'qc'),
+        envmodules:
+            TOOLS['multiqc']
+        output:
+            o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
+        shell:
+            """
+            set -exo pipefail
+            multiqc -f -v \\
+                -c {params.qc_config} \\
+                -d -dd 1 \\
+                {params.dir_fqc} \\
+                {params.dir_fqscreen} \\
+                {params.dir_samtools} \\
+                {params.dir_gopeaks} \\
+                -o {params.outDir}
+            """
+else:
+    rule multiqc:
+        """
+        merges FastQC reports for pre/post trimmed fastq files into MultiQC report
+        https://multiqc.info/docs/#running-multiqc
+        """
+        input:
+            fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
+            fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
+            screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
+            screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
+            flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
+            idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
+        params:
+            qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
+            dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
+            dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
+            dir_samtools = join(RESULTSDIR,"bam","raw"),
+            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks"),
+            outDir = join(RESULTSDIR,'qc'),
+        envmodules:
+            TOOLS['multiqc']
+        output:
+            o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
+        shell:
+            """
+            set -exo pipefail
+            multiqc -f -v \\
+                -c {params.qc_config} \\
+                -d -dd 1 \\
+                {params.dir_fqc} \\
+                {params.dir_fqscreen} \\
+                {params.dir_samtools} \\
+                -o {params.outDir}
+            """
