@@ -348,7 +348,7 @@ rule gopeaks_narrow:
     output:
         peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow_gopeaks.json")),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json")),
     shell:
         """
         set -exo pipefail
@@ -373,6 +373,7 @@ rule gopeaks_narrow:
 
         # mv output and rename for consistency
         mv $TMPDIR/narrow_peaks.bed {output.peak_file}
+        mv $TMPDIR/narrow_gopeaks.json {output.json}
 
         # create bigbed files
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/narrow_peaks.bed 
@@ -400,7 +401,7 @@ rule gopeaks_broad:
     output:
         peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad_gopeaks.json")),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.gopeaks.json")),
     shell:
         """
         set -exo pipefail
@@ -425,6 +426,7 @@ rule gopeaks_broad:
 
         # mv output and rename for consistency
         mv $TMPDIR/broad_peaks.bed {output.peak_file}
+        mv $TMPDIR/broad_gopeaks.json {output.json}
 
         # create bigbed files
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/broad.bed 
