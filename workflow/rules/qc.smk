@@ -93,19 +93,19 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
             screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
             flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
             idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
-            gopeaks_broad=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.gopeaks.json"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-            gopeaks_narrow=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS)
+            gopeaks_broad=expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+            gopeaks_narrow=expand(rules.gopeaks_narrow.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS)
         params:
             qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
             dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
             dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
             dir_samtools = join(RESULTSDIR,"bam","raw"),
-            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks"),
+            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output"),
             outDir = join(RESULTSDIR,'qc'),
         envmodules:
             TOOLS['multiqc']
         output:
-            o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
+            o1 = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
         shell:
             """
             set -exo pipefail
