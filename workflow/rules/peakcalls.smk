@@ -17,8 +17,8 @@ rule macs2_narrow:
         fragments_bed = expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
     output:
-        peak_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
-        bg_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
+        peak_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
+        bg_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -103,8 +103,8 @@ rule macs2_broad:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        peak_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
-        bg_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
+        peak_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
+        bg_file = join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -187,10 +187,10 @@ rule seacr_stringent:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        peak_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),
-        peak_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),
-        bg_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bigbed.gz"),
-        bg_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bigbed.gz"),
+        peak_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),
+        peak_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),
+        bg_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bigbed.gz"),
+        bg_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bigbed.gz"),
     params:
         bg_path=join(RESULTSDIR,"bedgraph"),
         frag_bed_path=join(RESULTSDIR,"fragments"),
@@ -260,10 +260,10 @@ rule seacr_relaxed:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        peak_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),
-        peak_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),
-        bg_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bigbed.gz"),
-        bg_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bigbed.gz"),
+        peak_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),
+        peak_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),
+        bg_file_norm = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bigbed.gz"),
+        bg_file_non = join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bigbed.gz"),
     params:
         bg_path=join(RESULTSDIR,"bedgraph"),
         frag_bed_path=join(RESULTSDIR,"fragments"),
@@ -346,9 +346,9 @@ rule gopeaks_narrow:
         TOOLS["ucsc"],
         TOOLS["samtools"]
     output:
-        peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
-        bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json")),
+        peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
+        bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json")),
     shell:
         """
         set -exo pipefail
@@ -399,9 +399,9 @@ rule gopeaks_broad:
         TOOLS["ucsc"],
         TOOLS["samtools"]
     output:
-        peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
-        bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","{treatment_control_list}.{dupstatus}.broad.gopeaks.json")),
+        peak_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
+        bg_file=join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
+        json=temp(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.gopeaks.json")),
     shell:
         """
         set -exo pipefail
