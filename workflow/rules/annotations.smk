@@ -120,6 +120,8 @@ rule rose:
         workdir=join(WORKDIR),
         file_base=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}"),
         control_flag = config["macs2_control"],
+        mapped_gff_dir=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","mappedGFF"),
+        gff_dir=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","gff"),
     output:
         no_tss_bed=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
         all=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
@@ -129,8 +131,6 @@ rule rose:
         super_great=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
         regular_summit=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
         super_summit=join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
-        gff_dir=temp(join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","gff")),
-        mapped_gff_dir=temp(join(RESULTSDIR,"annotation","{peak_caller}","{qthresholds}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","mappedGFF"))
     shell:
         """
         # set tmp
@@ -158,7 +158,7 @@ rule rose:
         cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
 
         # remove NC from bams and beds
-        echo "Cleaning"
+        echo "## Cleaning"
         samtools view -b ${{treat_bam}} {params.regions} > $TMPDIR/subset.bam
         samtools index $TMPDIR/subset.bam
         grep -v "NC_" {input.peak_file} > $TMPDIR/subset.bed
@@ -170,8 +170,9 @@ rule rose:
         ## correct GOPEAKS
         ### original: <chr>   <start> <end>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <0> <.>
-        echo "prep Rose"
+        echo "## Prep Rose"
         if [[ {params.peak_caller_type} == "gopeaks_narrow" ]] || [[ {params.peak_caller_type} == "gopeaks_broad" ]]; then
+            echo "#### Fixing GoPeaks"
             cp $TMPDIR/subset.bed $TMPDIR/save.bed
             nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="${{treatment}}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
             paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
@@ -181,27 +182,30 @@ rule rose:
         ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
         if [[ {params.peak_caller_type} == "seacr_norm_stringent" ]] || [[ {params.peak_caller_type} == "seacr_norm_relaxed" ]] || [[ {params.peak_caller_type} == "seacr_non_relaxed" ]] || [[ {params.peak_caller_type} == "seacr_non_relaxed" ]]; then
+            echo "#### Fixing SECAR"
             cp $TMPDIR/subset.bed $TMPDIR/save.bed
             awk -v sample_id="${{treatment}}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
             paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
         fi
 
         # bedtools
-        echo "intersects"
+        echo "## Intersecting"
         bedtools intersect -a $TMPDIR/subset.bed -b {params.tss_bed} -v > $TMPDIR/tmp.bed
         bedtools merge -i $TMPDIR/tmp.bed -d {params.stitch_distance} -c 4,5,6 -o distinct,sum,distinct > {output.no_tss_bed}
 
         # if there are less than 5 peaks, annotation will fail
         # if there are more, run ROSE
         num_of_peaks=`cat {output.no_tss_bed} | wc -l`
-        if [[ $num_of_peaks -gt 5 ]]; then
-            echo "rose"
+        if [[ ${{num_of_peaks}} -gt 5 ]]; then
+            echo "## More than 5 usable peaks detected ${{num_of_peaks}} - Running rose"
             cd {params.workdir}
             
             # if macs2 control is off, there will be no macs2 control to annotate
             if [[ {params.control_flag} == "N" ]] & [[ {params.peak_caller_type} == "macs2_narrow" ]] || [[ {params.peak_caller_type} == "macs2_broad" ]]; then
+                echo "#### No control was used"
                 rose_files="$TMPDIR/subset.bam"  
             else
+                echo "#### A control used ${{cntrl_bam}}"
                 rose_files="$TMPDIR/subset.bam ${{cntrl_bam}}"
             fi
 
@@ -217,14 +221,14 @@ rule rose:
                 ROSE_main.py \
                     -i {output.no_tss_bed} \
                     -g {params.genome} \
-                    -r $${{rose_files}} \
+                    -r ${{rose_files}} \
                     -t {params.tss_distance} \
                     -s {params.stitch_distance} \
                     -o {params.file_base}
             fi
                         
             # rose to bed file
-            echo "convert bed"
+            echo "## Convert bed"
             # developed from https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/scripts/roseTable2Bed.sh
             grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==0 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/regular
             bedtools sort -i $TMPDIR/regular > {output.regular}
@@ -233,13 +237,25 @@ rule rose:
             bedtools sort -i $TMPDIR/super > {output.super}
                         
             # cut rose output files, create summits
-            echo "cut and summit"
+            echo "## Cut and summit"
             cut -f1-3 {output.regular} > {output.regular_great}
             cut -f1-3 {output.super} > {output.super_great}
             bedtools intersect -wa -a {input.peak_file} -b {output.regular} > {output.regular_summit}
             bedtools intersect -wa -a {input.peak_file} -b {output.super} > {output.super_summit}
+
+            # cleanup
+            echo "## Cleaning up"
+            rm -r {params.mapped_gff_dir}
+            rm -r {params.gff_dir}
         else
-            echo "Less than 5 usable peaks detected ($num_of_peaks)" > {output.regular_summit}
-            echo "Less than 5 usable peaks detected ($num_of_peaks)" > {output.super_summit}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})"
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.no_tss_bed}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_great}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_great}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_summit}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
