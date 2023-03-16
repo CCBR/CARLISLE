@@ -17,7 +17,7 @@ sp:
     fastq_screen:
         fn: '*_screen.txt'
     gopeaks:
-        fn: '*/*_gopeaks.json'
+        fn: '*/*gopeaks.json'
 
 module_order:
 # Sample Quality control
