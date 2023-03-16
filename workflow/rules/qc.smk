@@ -145,12 +145,10 @@ else:
             dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
             dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
             dir_samtools = join(RESULTSDIR,"bam","raw"),
-            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks"),
-            outDir = join(RESULTSDIR,'qc'),
         envmodules:
             TOOLS['multiqc']
         output:
-            report = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
+            report = join(RESULTSDIR,'qc','multiqc_report.html')
         shell:
             """
             set -exo pipefail

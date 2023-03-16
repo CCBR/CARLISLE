@@ -9,7 +9,10 @@ def run_library_norm(wildcards):
 
 def run_qc(wildcards):
     files=[]
-    q=expand(join(RESULTSDIR,'qc', 'multiqc_report_{qthresholds}.html'),qthresholds=QTRESHOLDS)
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        q=expand(join(RESULTSDIR,'qc', 'multiqc_report_{qthresholds}.html'),qthresholds=QTRESHOLDS)
+    else:
+        q=join(RESULTSDIR,'qc', 'multiqc_report.html')
     files.extend(q)
     return files
 
