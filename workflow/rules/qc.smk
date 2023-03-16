@@ -101,14 +101,21 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
             dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
             dir_samtools = join(RESULTSDIR,"bam","raw"),
             dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output"),
-            outDir = join(RESULTSDIR,'qc'),
         envmodules:
             TOOLS['multiqc']
         output:
-            o1 = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
+            report = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
         shell:
             """
             set -exo pipefail
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+                TMPDIR="/lscratch/$SLURM_JOB_ID"
+            else
+                dirname=$(basename $(mktemp))
+                TMPDIR="/dev/shm/$dirname"
+                mkdir -p $TMPDIR
+            fi
+
             multiqc -f -v \\
                 -c {params.qc_config} \\
                 -d -dd 1 \\
@@ -116,7 +123,9 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
                 {params.dir_fqscreen} \\
                 {params.dir_samtools} \\
                 {params.dir_gopeaks} \\
-                -o {params.outDir}
+                -o $TMPDIR/qc
+
+            mv $TMPDIR/qc/multiqc_report.html {output.report}
             """
 else:
     rule multiqc:
@@ -141,15 +150,25 @@ else:
         envmodules:
             TOOLS['multiqc']
         output:
-            o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
+            report = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
         shell:
             """
             set -exo pipefail
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+                TMPDIR="/lscratch/$SLURM_JOB_ID"
+            else
+                dirname=$(basename $(mktemp))
+                TMPDIR="/dev/shm/$dirname"
+                mkdir -p $TMPDIR
+            fi
+
             multiqc -f -v \\
                 -c {params.qc_config} \\
                 -d -dd 1 \\
                 {params.dir_fqc} \\
                 {params.dir_fqscreen} \\
                 {params.dir_samtools} \\
-                -o {params.outDir}
+                -o $TMPDIR/qc
+
+            mv $TMPDIR/qc/multiqc_report.html {output.report}
             """
