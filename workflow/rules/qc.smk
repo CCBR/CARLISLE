@@ -100,7 +100,7 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
             dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
             dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
             dir_samtools = join(RESULTSDIR,"bam","raw"),
-            dir_gopeaks = join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output"),
+            dir_gopeaks = join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output"),
         envmodules:
             TOOLS['multiqc']
         output:

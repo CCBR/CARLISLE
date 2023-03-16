@@ -30,7 +30,7 @@ rule create_contrast_data_files:
         peak_caller_type="{peak_caller_type}",
         control_flag = config["macs2_control"],
     output:
-        contrast_data=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt")
+        contrast_data=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt")
     shell:
         """
         # pull conditions
@@ -63,7 +63,7 @@ rule create_contrast_data_files:
                 treatment_control=`cat {input.t_control_list} | grep "${{rep}}"`
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
-            peakfile="{params.peak_dir}/${{peak_caller}}/{params.qthresholds}/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
+            peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
             bedgraphfile="{params.bedgraph_dir}/${{rep}}.{params.dupstatus}.bedgraph"
             sf=`cat {input.align_stats} | grep "${{treatment}}" | awk '{{print $5}}'`
             fragmentbed="{params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed"
@@ -82,7 +82,7 @@ rule create_contrast_data_files:
                 treatment_control="${{rep}}_vs_nocontrol"
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
-            peakfile="{params.peak_dir}/${{peak_caller}}/{params.qthresholds}/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
+            peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
             bedgraphfile="{params.bedgraph_dir}/${{rep}}.{params.dupstatus}.bedgraph"
             sf=`cat {input.align_stats} | grep "${{treatment}}" | awk '{{print $5}}'`
             fragmentbed="{params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed"
@@ -98,9 +98,9 @@ rule make_counts_matrix:
     input:
         contrast_data=rules.create_contrast_data_files.output.contrast_data,
     output:
-        cm=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),
-        fcm=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),
-        si=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.csv"),
+        cm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),
+        fcm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),
+        si=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.csv"),
     params:
         pyscript=join(SCRIPTSDIR,"_make_counts_matrix.py"),
     envmodules:
@@ -127,13 +127,13 @@ rule DESeq:
         cm_frag=rules.make_counts_matrix.output.fcm,
         si=rules.make_counts_matrix.output.si
     output:
-        results_auc=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),
-        html_auc=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffanalysis.html"),
-        elbowlimits_auc=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffanalysis_elbowlimits.yaml"),
-        results_frag=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.csv"),
-        html_frag=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffanalysis.html"),
-        elbowlimits_frag=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffanalysis_elbowlimits.yaml"),
-        pdf=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.venn.pdf")
+        results_auc=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),
+        html_auc=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffanalysis.html"),
+        elbowlimits_auc=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffanalysis_elbowlimits.yaml"),
+        results_frag=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.csv"),
+        html_frag=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffanalysis.html"),
+        elbowlimits_frag=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffanalysis_elbowlimits.yaml"),
+        pdf=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.venn.pdf")
     params:
         rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
@@ -245,10 +245,10 @@ rule diffbb:
         felbowlimits=rules.DESeq.output.elbowlimits_frag,
         genome_len=join(BOWTIE2_INDEX,"genome.len"),
     output:
-        bed=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),
-        bigbed=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bigbed"),
-        fbed=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),
-        fbigbed=join(RESULTSDIR,"peaks","contrasts","{qthresholds}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bigbed"),
+        bed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),
+        bigbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bigbed"),
+        fbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),
+        fbigbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bigbed"),
     params:
         script = join(SCRIPTSDIR,"_make_results_bed.py"),
         fdr=FDRCUTOFF,

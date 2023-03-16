@@ -19,52 +19,52 @@ def run_qc(wildcards):
 def run_macs2(wildcards):
     files=[]
     if "macs2_narrow" in PEAKTYPE:
-        n=expand(join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(n)
-        n2=expand(join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(n2)
     if "macs2_broad" in PEAKTYPE:
-        b=expand(join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(b)
-        b2=expand(join(RESULTSDIR,"peaks","macs2","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(b2)
     return files
 
 def run_seacr(wildcards):
     files=[]
     if "seacr_norm_stringent" in PEAKTYPE:
-        s=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(s)
-        s2=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(s2)
     if "seacr_non_stringent" in PEAKTYPE:
-        s=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(s)
-        s2=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(s2)
     if "seacr_norm_relaxed" in PEAKTYPE:
-        r=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(r)
-        r2=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(r2)
     if "seacr_non_relaxed" in PEAKTYPE:
-        r=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(r)
-        r2=expand(join(RESULTSDIR,"peaks","seacr","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(r2)
     return files
 
 def run_gopeaks(wildcards):
     files=[]
     if "gopeaks_narrow" in PEAKTYPE:
-        n=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(n)
-        n2=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(n2)
     if "gopeaks_broad" in PEAKTYPE:
-        b=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(b)
-        b2=expand(join(RESULTSDIR,"peaks","gopeaks","{qthresholds}","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(b2)
     return files
 
@@ -74,59 +74,59 @@ def run_contrasts(wildcards):
         files.append(join(RESULTSDIR,"replicate_sample.tsv"))
         
         # inputs for matrix
-        inputs=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        inputs=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(inputs)
 
         # counts matrix outputs
-        cms=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        cms=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(cms)
-        fcm=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        fcm=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(fcm)
-        si=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        si=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(si)
 
         #DESEQ outputs
-        resultsa=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        resultsa=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(resultsa)
-        resultsf=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        resultsf=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(resultsf)
 
         #diffbb outputs
-        abed=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        abed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(abed)
-        fbed=expand(join(RESULTSDIR,"peaks","contrasts","{qthresholds}","peak_output","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        fbed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(fbed)
     return files
 
 def get_motifs(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-        anno_m=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
+        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
         files.extend(anno_m)
-        anno_m=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
+        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
         files.extend(anno_m)
     if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-        anno_g=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
+        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
         files.extend(anno_g)
-        anno_g=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
+        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
         files.extend(anno_g)
     if ("seacr_norm_stringent" in PEAKTYPE) or ("seacr_norm_relaxed" in PEAKTYPE) or ("seacr_non_stringent" in PEAKTYPE) or ("seacr_non_relaxed" in PEAKTYPE):
-        anno_s=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
+        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
         files.extend(anno_s)
-        anno_s=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
+        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
         files.extend(anno_s)
     return files
 
 def get_rose(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-        anno_m=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE),
+        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE),
         files.extend(anno_m)
     if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-        anno_g=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE),
+        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE),
         files.extend(anno_g)
     if ("seacr_norm_stringent" in PEAKTYPE) or ("seacr_norm_relaxed" in PEAKTYPE) or ("seacr_non_stringent" in PEAKTYPE) or ("seacr_non_relaxed" in PEAKTYPE):
-        anno_s=expand(join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE),
+        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE),
         files.extend(anno_s)
     return files
 

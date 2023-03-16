@@ -1,25 +1,25 @@
 def get_peak_file(wildcards):
     # MACS2 OPTIONS
     if wildcards.peak_caller_type == "macs2_narrow":
-        bed=join(RESULTSDIR,"peaks","macs2",wildcards.qthresholds,"peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
     if wildcards.peak_caller_type == "macs2_broad":
-        bed=join(RESULTSDIR,"peaks","macs2",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
 
     # SEACR OPTIONS
     if wildcards.peak_caller_type =="seacr_norm_stringent":
-        bed=join(RESULTSDIR,"peaks","seacr",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
     if wildcards.peak_caller_type =="seacr_norm_relaxed":
-        bed=join(RESULTSDIR,"peaks","seacr",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
     if wildcards.peak_caller_type =="seacr_non_stringent":
-        bed=join(RESULTSDIR,"peaks","seacr",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
     if wildcards.peak_caller_type =="seacr_non_relaxed":
-        bed=join(RESULTSDIR,"peaks","seacr",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
 
     #GOPEAKS OPTIONS
     if wildcards.peak_caller_type =="gopeaks_narrow":
-        bed=join(RESULTSDIR,"peaks","gopeaks",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
     if wildcards.peak_caller_type =="gopeaks_broad":
-        bed=join(RESULTSDIR,"peaks","gopeaks",wildcards.qthresholds,"peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     
     return bed
 
@@ -34,9 +34,9 @@ rule findMotif:
     input:
         peak_file=get_peak_file,
     output:
-        annotation=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
-        annotation_summary=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary"),
-        known_html=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        annotation_summary=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary"),
+        known_html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
     threads: getthreads("findMotif")
     envmodules:
         TOOLS["homer"],
@@ -44,7 +44,7 @@ rule findMotif:
         genome = config["genome"],
         fa=config["reference"][config["genome"]]["fa"],
         gtf = config["reference"][config["genome"]]["gtf"],
-        outDir=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
         motif_size = config["motif_size"],
         preparsedDir = config["preparsedDir"],
     shell:
@@ -118,19 +118,19 @@ rule rose:
         dupstatus = "{dupstatus}",
         bam_path=join(RESULTSDIR,"bam"),
         workdir=join(WORKDIR),
-        file_base=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}"),
+        file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}"),
         control_flag = config["macs2_control"],
-        mapped_gff_dir=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","mappedGFF"),
-        gff_dir=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","gff"),
+        mapped_gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","mappedGFF"),
+        gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","gff"),
     output:
-        no_tss_bed=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
-        all=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
-        regular=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
-        super=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
-        regular_great=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
-        super_great=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
-        regular_summit=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
-        super_summit=join(RESULTSDIR,"peaks","{peak_caller}","{qthresholds}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
+        no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
+        all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
+        regular=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
+        super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
+        regular_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
+        super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
+        regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
+        super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","{treatment_control_list}.{dupstatus}.{peak_caller_type}.ROSE.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
     shell:
         """
         # set tmp
