@@ -177,9 +177,6 @@ PEAKTYPE_M=list(set(macs_set))
 PEAKTYPE_G=list(set(g_set))
 PEAKTYPE_S=list(set(s_set))
 
-print("extra weird")
-print(PEAKTYPE_S)
-
 # set threshold settings
 FDRCUTOFF = config["contrasts_fdr_cutoff"]
 LFCCUTOFF = config["contrasts_lfc_cutoff"]
