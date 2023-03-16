@@ -45,7 +45,7 @@ rule create_contrast_data_files:
         peak_caller=`echo {params.peak_caller_type} | cut -d"_" -f1`
         if [[ ${{peak_caller}} == "seacr" ]]; then
             peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2"_"$3}}'`
-        else;
+        else
             peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2}}'`
         fi
 
