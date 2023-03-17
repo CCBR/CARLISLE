@@ -60,7 +60,7 @@ rule create_contrast_data_files:
                 treatment_control="${{rep}}_vs_nocontrol"
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             else
-                treatment_control=`cat {input.t_control_list} | grep "${{rep}}"`
+                treatment_control=`cat {input.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
             peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
@@ -75,11 +75,11 @@ rule create_contrast_data_files:
         # for each replicate in contrast 2
         for rep in ${{replicates2[@]}}; do
             # set variables
-            if [[ {params.control_flag} == "Y" ]] && [[ ${{peak_caller}} == "macs2" ]]; then
-                treatment_control=`cat {input.t_control_list} | grep "${{rep}}"`
+            if [[ {params.control_flag} == "N" ]] && [[ ${{peak_caller}} == "macs2" ]]; then
+                treatment_control="${{rep}}_vs_nocontrol"
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             else
-                treatment_control="${{rep}}_vs_nocontrol"
+                treatment_control=`cat {input.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
             peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
@@ -253,7 +253,6 @@ rule diffbb:
         script = join(SCRIPTSDIR,"_make_results_bed.py"),
         fdr=FDRCUTOFF,
         lfc=LFCCUTOFF,
-        randstr = RANDOMSTR,
     envmodules:
         TOOLS["ucsc"],
         TOOLS["python37"]
