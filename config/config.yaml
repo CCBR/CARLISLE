@@ -19,6 +19,9 @@ contrasts_lfc_cutoff: "0.59" # FC of 1.5
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 
+# alignment quality threshold
+mapping_quality: 2 #only report alignment records with mapping quality of at least N (>= N).
+
 # normalization method
 ## spikein: normalization will be performed based off of spike-in aligned read count; 
 ## library: library normalization will be performed

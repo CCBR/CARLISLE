@@ -69,7 +69,8 @@ rule align:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
         bt2_base = join(BOWTIE2_INDEX,"ref"),
-        pyscript = join(SCRIPTSDIR,"_filter_bam.py")
+        pyscript = join(SCRIPTSDIR,"_filter_bam.py"),
+        qfilter = config["mapping_quality"],
     threads: getthreads("align")
     envmodules:
         TOOLS["bowtie2"],
@@ -90,6 +91,7 @@ rule align:
             -x {params.bt2_base}  \\
             -1 {input.R1} -2 {input.R2}  | \\
             samtools view -bS - |  \\
+            samtools view -f 0x2 -q {params.qfilter} \\
             samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam}
         samtools index {output.bam}
         samtools flagstat {output.bam} > {output.bamflagstat}
