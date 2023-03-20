@@ -1,5 +1,11 @@
 from os.path import join
 
+def run_pipe_prep(wildcards):
+    files=[]
+    n=expand(join(RESULTSDIR,"treatment_control_list.txt"))
+    files.extend(n)
+    return files
+
 def run_library_norm(wildcards):
     files=[]
     if "LIBRARY" in NORM_METHOD:
@@ -143,6 +149,9 @@ rule all:
         ##########################################
         ### required files
         ##########################################
+        # manifests
+        unpack(run_pipe_prep),
+        
         # norm table, if needed
         unpack(run_library_norm),
         

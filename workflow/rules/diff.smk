@@ -19,8 +19,8 @@ rule create_contrast_data_files:
     input:
         replicate_tsv = join(RESULTSDIR,"replicate_sample.tsv"),
         align_stats = rules.gather_alignstats.output,
-        t_control_list = join(RESULTSDIR,"treatment_control_list.txt")
     params:
+        t_control_list = join(RESULTSDIR,"treatment_control_list.txt"),
         contrast_list="{contrast_list}",
         peak_dir=join(RESULTSDIR,"peaks"),
         bedgraph_dir=join(RESULTSDIR,"bedgraph"),
@@ -60,7 +60,7 @@ rule create_contrast_data_files:
                 treatment_control="${{rep}}_vs_nocontrol"
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             else
-                treatment_control=`cat {input.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
+                treatment_control=`cat {params.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
             peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
@@ -79,7 +79,7 @@ rule create_contrast_data_files:
                 treatment_control="${{rep}}_vs_nocontrol"
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             else
-                treatment_control=`cat {input.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
+                treatment_control=`cat {params.t_control_list} | grep "${{rep}}" | awk \'{{print $1\"_vs_\"$2}}\'`
                 treatment=`echo ${{treatment_control}} | awk -F"_vs_" '{{print $1}}'`
             fi
             peakfile="{params.peak_dir}/{params.qthresholds}/${{peak_caller}}/peak_output/${{treatment_control}}.{params.dupstatus}.${{peak_type}}.peaks.bed"
@@ -91,6 +91,8 @@ rule create_contrast_data_files:
             echo -ne "${{condition2}}\\t${{rep}}\\t${{peakfile}}\\t${{bedgraphfile}}\\t${{sf}}\\t${{fragmentbed}}\\n" >> {output.contrast_data}
         done
         """
+
+localrules: make_counts_matrix
 
 rule make_counts_matrix:
     """

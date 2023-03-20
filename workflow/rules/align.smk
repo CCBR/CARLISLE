@@ -90,8 +90,7 @@ rule align:
             {params.bowtie2_parameters} \\
             -x {params.bt2_base}  \\
             -1 {input.R1} -2 {input.R2}  | \\
-            samtools view -bS - |  \\
-            samtools view -f 0x2 -q {params.qfilter} \\
+            samtools view -f 0x2 -q {params.qfilter} -bS - |  \\
             samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam}
         samtools index {output.bam}
         samtools flagstat {output.bam} > {output.bamflagstat}
