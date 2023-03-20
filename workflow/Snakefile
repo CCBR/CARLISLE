@@ -136,6 +136,19 @@ def get_rose(wildcards):
         files.extend(anno_s)
     return files
 
+def get_enrichment(wildcards):
+    files=[]
+    if (GENOME == "hg19") or (GENOME == "hg38"):
+        if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+            s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment","{treatment_control_list}.{dupstatus}.{peak_caller}.go_enrichment_report.{geneset_id}.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,geneset_id=GENESET_ID)
+            files.extend(s)
+        if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+            s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment","{treatment_control_list}.{dupstatus}.{peak_caller}.go_enrichment_report.{geneset_id}.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,geneset_id=GENESET_ID)
+            files.extend(s)
+        #  if ("seacr_norm_stringent" in PEAKTYPE) or ("seacr_norm_relaxed" in PEAKTYPE) or ("seacr_non_stringent" in PEAKTYPE) or ("seacr_non_relaxed" in PEAKTYPE):
+        #     s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment","{treatment_control_list}.{dupstatus}.{peak_caller}.go_enrichment_report.{geneset_id}.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,geneset_id=GENESET_ID)
+        #     files.extend(s)
+    return files
 
 include: "rules/init.smk"
 include: "rules/align.smk"
@@ -172,7 +185,8 @@ rule all:
         
         # ANNOTATION
         unpack(get_motifs),
-        unpack(get_rose)
+        unpack(get_rose),
+        unpack(get_enrichment)
 """
         ##########################################
         ### intermediate files

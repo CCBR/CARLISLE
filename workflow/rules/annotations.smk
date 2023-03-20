@@ -20,8 +20,42 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
     if wildcards.peak_caller_type =="gopeaks_broad":
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-    
     return bed
+
+def get_peak_lists(wildcards):
+    files=""
+    # MACS2 OPTIONS
+    if wildcards.peak_caller == "macs2":
+        if ("macs2_narrow" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+            files = bed + " " + files
+        if ("macs2_broad" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+            files = bed + " " + files
+    # SEACR OPTIONS
+    if wildcards.peak_caller == "seacr":
+        if ("seacr_norm_stringent" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
+            files = bed + " " + files
+        if ("seacr_norm_relaxed" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
+            files = bed + " " + files
+        if ("seacr_non_stringent" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
+            files = bed + " " + files
+        if ("seacr_non_relaxed" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+            files = bed + " " + files
+    #GOPEAKS OPTIONS
+    if wildcards.peak_caller == "gopeaks":
+        if ("gopeaks_narrow" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+            files = bed + " " + files
+        if ("gopeaks_broad" in PEAKTYPE):
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+            files = bed + " " + files
+    
+    return files.strip()
 
 rule findMotif:
     """
@@ -259,3 +293,41 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
+
+rule go_enrichment:
+    input:
+        peak_files=get_peak_lists,
+    output:
+        html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment","{treatment_control_list}.{dupstatus}.{peak_caller}.go_enrichment_report.{geneset_id}.html"),
+    params:
+        rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
+        rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
+        rscript_functions=join(SCRIPTSDIR,"_go_enrichment_functions.R"),
+        output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment"),
+        species = config["genome"],
+        geneset_id = "{geneset_id}"
+    envmodules:
+        TOOLS["R"]
+    shell:
+        """
+        set -exo pipefail
+        dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+            TMPDIR="/dev/shm/$dirname"
+        fi
+        cd $TMPDIR
+
+        if [[ ! -d {params.output_dir} ]]; then mkdir {params.output_dir}; fi
+
+        Rscript {params.rscript_wrapper} \\
+            --rmd {params.rmd} \\
+            --sourcefile {params.rscript_functions} \\
+            --output_dir {params.output_dir} \\
+            --tmpdir $TMPDIR \\
+            --report {output.html} \\
+            --peak_list "{input.peak_files}" \\
+            --species {params.species} \\
+            --geneset_id {params.geneset_id}
+        """

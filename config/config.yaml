@@ -95,6 +95,11 @@ tss_distance: 2500
 motif_size: 1000
 preparsedDir: "/data/CCBR_Pipeliner/db/PipeDB/homer/preparsedDir"
 
+## GO Enrichment
+## enrichment analysis can be performed on hg19 or hg38 samples
+## one option may be chosen for each project
+geneset_id: "GOBP" # ["GOBP" "GOCC" "GOMF" "KEGG"]
+
 #####################################################################################
 # References
 # NOTE: "gtf" is only required if TxDb is not avaiable for the species in 

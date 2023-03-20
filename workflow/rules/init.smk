@@ -326,6 +326,7 @@ refdata["spikein_genome"] = SPIKED_GENOMEFA
 
 # set annotation params
 S_DISTANCE=config["stitch_distance"]
+GENESET_ID=config["geneset_id"]
 
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES
