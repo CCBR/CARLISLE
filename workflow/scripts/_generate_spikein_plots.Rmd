@@ -49,8 +49,8 @@ if (debug=="Y"){
   bam_list=""
 }
 
-# set up peak list
-bam_list=as.list(strsplit(gsub("[\r\n]", " ", bam_list), '\\s+'))[[1]]
+# set up bam list
+bam_list==as.list(strsplit(peak_list, '\\s+'))[[1]]
 
 # source functions file
 source(sourcefile)
