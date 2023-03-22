@@ -281,7 +281,6 @@ rule create_contrast_peakcaller_files:
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
         else
             TMPDIR="/dev/shm/$dirname"
-            # TMPDIR="/data/sevillas2/tmp/goenrich"
         fi
 
         # for each of the file, find matches to the peak_type
@@ -304,8 +303,6 @@ rule create_contrast_peakcaller_files:
 
         # save to output
         cat $TMPDIR/merge.txt | sort | uniq > {output.peak_contrast_files}
-        # cat $TMPDIR/merge.txt > $TMPDIR/${{contrast_list}}_${{qthresholds}}_${{dupstatus}}_${{peak_caller}}_PRE.txt
-        # cat $TMPDIR/merge.txt | sort | uniq > $TMPDIR/${{contrast_list}}_${{qthresholds}}_${{dupstatus}}_${{peak_caller}}_POST.txt
         rm $TMPDIR/merge.txt
         """
 
