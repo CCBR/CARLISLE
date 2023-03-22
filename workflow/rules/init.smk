@@ -107,6 +107,7 @@ for k,v in SAMPLE2REPLICATES.items():
 print("# Read access to all fastq files in confirmed!")
 print("# Sample manifest is confirmed!")
 
+print("#"*100)
 print("# Checking Contrast Manifest...:")
 process_replicates = []
 TREATMENTS = []
@@ -185,6 +186,7 @@ QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 
 # set contrast settings
 if config["run_contrasts"] == "Y":
+    print("#"*100)
     print("# Checking constrasts to run...")
     contrasts_table = config["contrasts"]
     check_readaccess(contrasts_table)
@@ -283,8 +285,8 @@ getmemG=lambda rname:getmemg(rname).replace("g","G")
 #########################################################
 # SET OTHER PIPELINE GLOBAL VARIABLES
 #########################################################
-print("# Pipeline Parameters:")
 print("#"*100)
+print("# Pipeline Parameters:")
 print("# Working dir :",WORKDIR)
 print("# Results dir :",RESULTSDIR)
 print("# Scripts dir :",SCRIPTSDIR)

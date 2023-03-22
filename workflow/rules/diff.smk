@@ -1,5 +1,38 @@
+def get_all_peak_files(wildcards):
+    files=[]
+    # MACS2 OPTIONS
+    if "macs2_narrow" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        files.extend(bed)
+    if "macs2_broad" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        files.extend(bed)
 
-localrules: create_contrast_data_files
+    # SEACR OPTIONS
+    if "seacr_norm_stringent" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
+        files.extend(bed)
+    if "seacr_norm_relaxed" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
+        files.extend(bed)
+    if "seacr_non_stringent" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
+        files.extend(bed)
+    if "seacr_non_relaxed" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+        files.extend(bed)
+
+    #GOPEAKS OPTIONS
+    if "gopeaks_narrow" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        files.extend(bed)
+    if "gopeaks_broad" in PEAKTYPE:
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        files.extend(bed)
+    return files
+
+
+localrules: create_contrast_data_files,make_counts_matrix
 
 rule create_contrast_data_files:
     """
@@ -92,13 +125,12 @@ rule create_contrast_data_files:
         done
         """
 
-localrules: make_counts_matrix
-
 rule make_counts_matrix:
     """
     """
     input:
         contrast_data=rules.create_contrast_data_files.output.contrast_data,
+        peak_files=get_all_peak_files
     output:
         cm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),
         fcm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),
