@@ -3,32 +3,32 @@ def get_all_peak_files(wildcards):
     # MACS2 OPTIONS
     if "macs2_narrow" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     if "macs2_broad" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
 
     # SEACR OPTIONS
     if "seacr_norm_stringent" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     if "seacr_norm_relaxed" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     if "seacr_non_stringent" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     if "seacr_non_relaxed" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
 
     #GOPEAKS OPTIONS
     if "gopeaks_narrow" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     if "gopeaks_broad" in PEAKTYPE:
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-        files.extend(bed)
+        files.append(bed)
     return files
 
 
@@ -51,7 +51,7 @@ rule create_contrast_data_files:
     """
     input:
         replicate_tsv = join(RESULTSDIR,"replicate_sample.tsv"),
-        align_stats = rules.gather_alignstats.output,
+        align_stats = rules.gather_alignstats.output.table,
     params:
         t_control_list = join(RESULTSDIR,"treatment_control_list.txt"),
         contrast_list="{contrast_list}",
