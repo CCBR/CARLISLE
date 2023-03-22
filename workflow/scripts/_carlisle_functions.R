@@ -1,3 +1,38 @@
+########################################################################
+# SPIKE IN PLOT
+########################################################################
+GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
+  for (rowid in rownames(input_df,spike_type)){
+    # spike_type="NC_000913.3"
+    
+    # read in file
+    stats=read.table(input_df[rowid,"bam"])
+    stats=stats[,c("V1","V3")]
+    colnames(stats)=c("location","read_count")
+    
+    # add metadata
+    stats$sampleid=input_df[rowid,"repid"]
+    stats$groupid=input_df[rowid,"sampleid"]
+    
+    if(nrow(spike_df)==0){
+      spike_df=subset(stats,location==spike_type)
+    } else{
+      spike_df=rbind(subset(stats,location==spike_type),
+                     spike_df)
+    }
+  }
+  
+  p=ggplot(data=spike_df,aes(x=sampleid,y=read_count,fill=groupid)) + 
+    geom_bar(stat="identity")
+  p_final=p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
+    ggtitle(paste0("Spike-in control values\n", spike_type))
+  print(p_final)
+}
+
+########################################################################
+# GO ENRICHMENT
+########################################################################
+
 READ_PEAK_FILE<-function(peak_file_in){
   peak_df=read.csv(peak_file_in,sep="\t",header=FALSE)[,c("V1","V2","V3")]
   colnames(peak_df)=c("chrom","start","end")
