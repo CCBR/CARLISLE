@@ -276,11 +276,10 @@ rule create_contrast_peakcaller_files:
     shell:
         """
         set -exo pipefail
-        dirname=$(basename $(mktemp))
         if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
-            TMPDIR="/dev/shm/$dirname"
+            TMPDIR="/dev/shm"
         fi
 
         # for each of the file, find matches to the peak_type
