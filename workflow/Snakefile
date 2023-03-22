@@ -1,4 +1,5 @@
 from os.path import join
+import itertools
 
 def run_pipe_prep(wildcards):
     files=[]
@@ -83,7 +84,7 @@ def run_contrasts(wildcards):
         inputs=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(inputs)
 
-        # counts matrix outputs
+        # # counts matrix outputs
         cms=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(cms)
         fcm=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
