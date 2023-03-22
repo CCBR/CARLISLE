@@ -80,6 +80,53 @@ rule qc_fastqc:
             --file {input.R2} > {output.logR2};
         """
 
+rule spikein_assessment:
+    """
+    Runs assessment on bam.idxstats files to ensure that spikein control amounts are uniform amongst replicates
+
+    @Input:
+        Bamidxstats files
+    @Output:
+        R HTML Report of spike in control values samples
+    """
+    input:
+        bams = expand(rules.align.output.bamidxstats,replicate=REPLICATES,dupstatus=DUPSTATUS),
+    params:
+        rscript_wrapper=join(SCRIPTSDIR,"_generate_spikein_wrapper.R"),
+        rmd=join(SCRIPTSDIR,"_generate_spikein_plots.Rmd"),
+        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+        spikein=config["spikein_genome"],
+    envmodules:
+        TOOLS['R'],
+    output:
+        html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
+    shell:
+        """
+        set -exo pipefail
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p $TMPDIR
+        fi
+
+        if [[ $spikein == "ecoli" ]]; then $spikein="NC_000913.3"; else $spikein=""; fi
+        
+        # get sample list
+        sample_list="{input.bams}"
+        nw_strr="${{sample_list//$'\n'/ }}"
+
+        # rum script       
+        Rscript {params.rscript_wrapper} \\
+            --rmd {params.rmd} \\
+            --sourcefile {params.rscript_functions} \\
+            --tmpdir $TMPDIR \\
+            --report {output.html} \\
+            --bam_list "$nw_strr" \\
+            --spikein_control {params.spikein}
+        """
+
 if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
     rule multiqc:
         """

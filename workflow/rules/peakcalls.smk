@@ -348,7 +348,7 @@ rule gopeaks_narrow:
     output:
         peak_file=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json")),
+        json=temp(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","narrow","{treatment_control_list}.{dupstatus}.narrow.gopeaks.json")),
     shell:
         """
         set -exo pipefail
@@ -401,7 +401,7 @@ rule gopeaks_broad:
     output:
         peak_file=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
         bg_file=join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
-        json=temp(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.gopeaks.json")),
+        json=temp(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","broad","{treatment_control_list}.{dupstatus}.broad.gopeaks.json")),
     shell:
         """
         set -exo pipefail
