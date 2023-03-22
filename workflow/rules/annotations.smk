@@ -22,41 +22,78 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
 
-def get_peak_lists(wildcards):
+def defunct(wildcards):
     files=""
     # MACS2 OPTIONS
     if wildcards.peak_caller == "macs2":
-        if ("macs2_narrow" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        if "macs2_narrow" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
             files = bed + " " + files
-        if ("macs2_broad" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        if "macs2_broad" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
             files = bed + " " + files
+
     # SEACR OPTIONS
     if wildcards.peak_caller == "seacr":
-        if ("seacr_norm_stringent" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
+        if "seacr_norm_stringent" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
             files = bed + " " + files
-        if ("seacr_norm_relaxed" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
+        if "seacr_norm_relaxed" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
             files = bed + " " + files
-        if ("seacr_non_stringent" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
+        if "seacr_non_stringent" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
             files = bed + " " + files
-        if ("seacr_non_relaxed" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+        if "seacr_non_relaxed" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
             files = bed + " " + files
+
     #GOPEAKS OPTIONS
     if wildcards.peak_caller == "gopeaks":
-        if ("gopeaks_narrow" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        if "gopeaks_narrow" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
             files = bed + " " + files
-        if ("gopeaks_broad" in PEAKTYPE):
-            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-            files = bed + " " + files
-    
+        if "gopeaks_broad" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+            files = bed + " " + files    
     return files.strip()
 
+def get_peak_lists(wildcards):
+    files=[]
+    # MACS2 OPTIONS
+    if wildcards.peak_caller == "macs2":
+        if "macs2_narrow" in PEAKTYPE:
+            bed=expand(join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed"))
+            files.extend(bed)
+        if "macs2_broad" in PEAKTYPE:
+            bed=expand(join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed"))
+            files.extend(bed)
+
+    # SEACR OPTIONS
+    if wildcards.peak_caller == "seacr":
+        if "seacr_norm_stringent" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
+            files.extend(bed)
+        if "seacr_norm_relaxed" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
+            files.extend(bed)
+        if "seacr_non_stringent" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
+            files.extend(bed)
+        if "seacr_non_relaxed" in PEAKTYPE:
+            bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+            files.extend(bed)
+
+    # #GOPEAKS OPTIONS
+    # if "gopeaks_narrow" in PEAKTYPE:
+    #     bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+    #     files.extend(bed)
+    # if "gopeaks_broad" in PEAKTYPE:
+    #     bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+    #     files.extend(bed)
+    return files
+
+# localrules: create_contrast_peakcaller_files
 rule findMotif:
     """
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
@@ -294,18 +331,70 @@ rule rose:
         fi
     """
 
-rule go_enrichment:
+rule create_contrast_peakcaller_files:
+    """
+    Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
+    """
     input:
-        peak_files=get_peak_lists,
+        contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+    params:
+        qthresholds = "{qthresholds}",
+        contrast_list = "{contrast_list}",
+        dupstatus = "{dupstatus}",
+        peak_caller = "{peak_caller}"
     output:
-        html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment","{treatment_control_list}.{dupstatus}.{peak_caller}.go_enrichment_report.{geneset_id}.html"),
+        peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
+    shell:
+        """
+        set -exo pipefail
+        dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+            TMPDIR="/dev/shm/$dirname"
+            # TMPDIR="/data/sevillas2/tmp/goenrich"
+        fi
+
+        # for each of the file, find matches to the peak_type
+        if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
+
+        for f in {input.contrast_files}; do
+            touch $TMPDIR/merge.txt
+
+            # pull peaktype: macs2, seacr, gopeaks
+            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
+            qthresholds=`echo $f | cut -f10 -d"/"`
+            contrast_list=`echo $f | cut -f12 -d"/" | cut -f1 -d"."`
+            dupstatus=`echo $f | cut -f12 -d"/" | cut -f2 -d"."`
+            peak_caller=`echo $f | cut -f13 -d"/" | cut -f3 -d"." | cut -f1 -d"_"`
+
+            if [[ $qthresholds == {params.qthresholds} ]] && [[ $contrast_list == {params.contrast_list} ]] && [[ $dupstatus == {params.dupstatus} ]] && [[ $peak_caller == {params.peak_caller} ]]; then
+                cat $f >> $TMPDIR/merge.txt
+            fi
+        done
+
+        # save to output
+        cat $TMPDIR/merge.txt | sort | uniq > {output.peak_contrast_files}
+        # cat $TMPDIR/merge.txt > $TMPDIR/${{contrast_list}}_${{qthresholds}}_${{dupstatus}}_${{peak_caller}}_PRE.txt
+        # cat $TMPDIR/merge.txt | sort | uniq > $TMPDIR/${{contrast_list}}_${{qthresholds}}_${{dupstatus}}_${{peak_caller}}_POST.txt
+        rm $TMPDIR/merge.txt
+        """
+
+rule go_enrichment:
+    """
+    https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html#peak-distance-to-tss-distribution
+    """
+    input:
+        contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
+    output:
+        html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
     params:
         rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
         rscript_functions=join(SCRIPTSDIR,"_go_enrichment_functions.R"),
-        output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","go_enrichment"),
+        output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
         species = config["genome"],
-        geneset_id = "{geneset_id}"
+        geneset_id = GENESET_ID
     envmodules:
         TOOLS["R"]
     shell:
@@ -321,13 +410,17 @@ rule go_enrichment:
 
         if [[ ! -d {params.output_dir} ]]; then mkdir {params.output_dir}; fi
 
+        # get sample list
+        sample_list=`awk '{{print $3}}' {input.contrast_file}`
+
+        # rum script       
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --sourcefile {params.rscript_functions} \\
             --output_dir {params.output_dir} \\
             --tmpdir $TMPDIR \\
             --report {output.html} \\
-            --peak_list "{input.peak_files}" \\
+            --peak_list "$sample_list" \\
             --species {params.species} \\
             --geneset_id {params.geneset_id}
         """
