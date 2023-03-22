@@ -22,7 +22,7 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
 
-# localrules: create_contrast_peakcaller_files
+localrules: create_contrast_peakcaller_files
 rule findMotif:
     """
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
