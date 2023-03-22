@@ -5,9 +5,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
 params:
-  sourcefile: "~/../../Volumes/data/carlisle/v2.0/scripts/_carlisle_functions.R"
-  output_dir: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.1/gopeaks/annotation/go_enrichment"
-  peak_list: ""
+  sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  output_dir: "~/../../Volumes/data/tmp/go"
+  peak_list: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
   species: "hg38"
   geneset_id: "GOBP"
 editor_options: 
@@ -42,7 +42,7 @@ if(length(new.packages)) {
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) {
   print(new.packages)
-  install.packages(new.packages, INSTALL_opts = '--no-lock')
+  install.packages(new.packages, INSTALL_opts = '--no-lock',repos = "http://cran.us.r-project.org")
 }
 
 # load packages
@@ -63,15 +63,11 @@ geneset_id=params$geneset_id
 
 if (debug=="Y"){
   speciesID="hg19"
-  functionFile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_go_enrichment_functions.R"
+  functionFile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   output_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/go_enrichment"
   peak_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/"
   peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
   geneset_id="GOBP" # supported_genesets() c("GOBP", "GOCC", "GOMF")
-
-  # peak_list="gopeaks/peak_output/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bed gopeaks/peak_output/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bed gopeaks/peak_output/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bed gopeaks/peak_output/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bed"
-  
-  # peak_list="seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.non_stringent.peaks.bed seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.norm_relaxed.peaks.bed seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.norm_stringent.peaks.bed seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.non_relaxed.peaks.bed seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.non_stringent.peaks.bed seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.norm_relaxed.peaks.bed seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.norm_stringent.peaks.bed seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.non_relaxed.peaks.bed"
 }
 
 # set up peak list
@@ -122,7 +118,8 @@ for (rowid in rownames(peak_df[c(1:max_samples),])){
                peak_df[rowid,"peak_type"]," **"))
 
   print("--QC Step 1")
-  tss_obj=plot_dist_to_tss(peaks = READ_PEAK_FILE(peak_df[rowid,"peak_bed"]), genome = speciesID)
+  tss_obj=plot_dist_to_tss(peaks = READ_PEAK_FILE(peak_file_in=peak_df[rowid,"peak_bed"]), 
+                           genome = speciesID)
   print(tss_obj)
   
   # create df from values to determine locust
@@ -131,7 +128,7 @@ for (rowid in rownames(peak_df[c(1:max_samples),])){
   locus_loc=subset(ts_df,y==ts_max)$x
   
   peak_df[rowid,"locus_loc_def"]=SET_LOCUST_DEF(locus_loc)
-  peak_df[rowid,"locusdf_list"]=SET_LOCUST_LIST(locus_loc)
+  peak_df[rowid,"locusdf_list"]=paste(SET_LOCUST_LIST(locus_loc),collapse=",")
   peak_df[rowid,"locus_loc_short"]=SET_LOCUST_LIST(locus_loc)[[1]]
 }
 ```
@@ -157,7 +154,7 @@ for (rowid in rownames(peak_df[c(1:max_samples),])){
                peak_df[rowid,"peak_type"]," **"))
 
   print("--QC Step 2")
-  PLOT_QC_MAIN("spline",rowid)
+  PLOT_QC_MAIN(function_in="spline",rowid_in=rowid)
 }
 ```
 

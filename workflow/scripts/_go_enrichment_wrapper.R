@@ -1,9 +1,6 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages(library("argparse"))
 
-debug="FALSE"
-path="/data/CCBR/projects/ccbr1155/CS030586_CARAP/diff"
-
 # create parser object
 parser <- ArgumentParser()
 parser$add_argument("--rmd", type="character", required=TRUE,
@@ -12,8 +9,6 @@ parser$add_argument("--sourcefile", type="character", required=TRUE,
                     help="path to function file")
 parser$add_argument("--output_dir", type="character", required=FALSE,
                     help = "output_dir")
-parser$add_argument("--tmpdir", type="character", required=FALSE, default="/tmp",
-                    help = "tmpdir")
 parser$add_argument("--report", type="character", required=TRUE,
                     help = "HTML report")
 parser$add_argument("--peak_list", type="character", required=TRUE,
@@ -24,10 +19,10 @@ parser$add_argument("--geneset_id", type="character", required=FALSE, default="G
                     help = "geneset_id")
 args <- parser$parse_args()
 
+debug="FALSE"
 if (debug){
   sourcefile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_go_enrichment_functions.R"
   output_dir="~/../../Volumes/data/tmp"
-  tmpdir="/dev/shm"
   report="~/../../Volumes/data/tmp/carlisle/report.html"
   peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
   species="hg38"
@@ -35,7 +30,6 @@ if (debug){
 } else {
   sourcefile=args$sourcefile
   output_dir=args$output_dir
-  tmpdir=args$tmpdir
   report=args$report
   peak_list=args$peak_list
   species=args$species
@@ -50,6 +44,4 @@ parameters=list(sourcefile=sourcefile,
 
 rmarkdown::render(args$rmd,
                   params=parameters,
-                  output_file = report,
-                  intermediates_dir = paste(tmpdir,"intermediates_dir",sep="/"),
-                  knit_root_dir = paste(tmpdir,"knit_root_dir",sep="/"))
+                  output_file = report)

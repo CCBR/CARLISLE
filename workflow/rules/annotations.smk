@@ -325,23 +325,18 @@ rule go_enrichment:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            TMPDIR="/dev/shm"
-        fi
 
         # get sample list
         sample_list=`awk '{{print $3}}' {input.contrast_file}`
+        clean_sample_list="${{sample_list//$'\n'/ }}"
 
         # rum script       
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --sourcefile {params.rscript_functions} \\
             --output_dir {params.output_dir} \\
-            --tmpdir $TMPDIR \\
             --report {output.html} \\
-            --peak_list "$sample_list" \\
+            --peak_list "$clean_sample_list" \\
             --species {params.species} \\
             --geneset_id {params.geneset_id}
         """

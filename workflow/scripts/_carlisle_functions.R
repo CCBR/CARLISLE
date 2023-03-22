@@ -91,9 +91,9 @@ PLOT_QC_FUNCTIONS<-function(function_in,rowid_in,l_id){
 }
 
 PLOT_QC_MAIN<-function(function_in,rowid_in){
-  locusdf_list=c(peak_df[rowid_in,"locusdf_list"],"nearest_tss","nearest_gene")
-  locusdf_list=locusdf_list[locusdf_list != "none"]     
-
+  locusdf_list=c(strsplit(peak_df[1,"locusdf_list"],",")[[1]],"nearest_tss","nearest_gene")
+  locusdf_list=locusdf_list[locusdf_list != "none"]
+  
   counter=1
   legend_text=""
   row_count=1; col_count=1
@@ -130,6 +130,10 @@ PLOT_QC_MAIN<-function(function_in,rowid_in){
     plot(c(p[[1]],p[[2]]))
   } else if (n==3){
     plot(c(p[[1]],p[[2]],p[[3]]))
+  } else if (n==4){
+    plot(c(p[[1]],p[[2]],p[[3]],p[[4]]))
+  } else if (n==5){
+    plot(c(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]]))
   } else if (n==6){
     plot(c(p[[1]],p[[2]],p[[3]],p[[4]],p[[5]],p[[6]]))
   } else{
