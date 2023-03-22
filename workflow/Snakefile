@@ -21,6 +21,10 @@ def run_qc(wildcards):
     else:
         q=join(RESULTSDIR,'qc', 'multiqc_report.html')
     files.extend(q)
+
+    if ("SPIKEIN" == NORM_METHOD) and ("ecoli" == spikein_genome):
+        html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
+        files.extend(html)
     return files
 
 def run_macs2(wildcards):
