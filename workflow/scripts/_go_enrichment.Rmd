@@ -5,9 +5,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
 params:
-  sourcefile: "~/../../Volumes/Pipelines-1/CARLISLE_dev/workflow/scripts/_go_enrichment_functions.R"
-  output_dir: "~/../../Volumes/data/sevillas2/carlisle/v2.0/results/peaks/0.1/gopeaks/go_enrichment"
-  peak_list: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H4K20me3_1_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H4K20me3_1_vs_nocontrol.dedup.narrow.peaks.bed"
+  sourcefile: "~/../../Volumes/data/carlisle/v2.0/scripts/_carlisle_functions.R"
+  output_dir: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.1/gopeaks/annotation/go_enrichment"
+  peak_list: ""
   species: "hg38"
   geneset_id: "GOBP"
 editor_options: 
@@ -51,7 +51,7 @@ invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 ```
 
 
-```{r params, include=FALSE}
+```{r params}
 # set params
 speciesID=params$species
 output_dir=params$output_dir
@@ -75,8 +75,8 @@ if (debug=="Y"){
 }
 
 # set up peak list
-peak_list=as.list(strsplit(gsub(“[\r\n]”, “ ”, peak_list), '\\s+'))
-  
+peak_list=as.list(strsplit(peak_list, '\\s+'))[[1]]
+
 for (i in 1:length(peak_list[[1]])){
   peak_list[[1]][i]=paste0(peak_dir,peak_list[[1]][i])
 }

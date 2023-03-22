@@ -316,7 +316,7 @@ rule go_enrichment:
     params:
         rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
-        rscript_functions=join(SCRIPTSDIR,"_go_enrichment_functions.R"),
+        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
         output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
         species = config["genome"],
         geneset_id = GENESET_ID
@@ -325,15 +325,11 @@ rule go_enrichment:
     shell:
         """
         set -exo pipefail
-        dirname=$(basename $(mktemp))
         if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
-            TMPDIR="/dev/shm/$dirname"
+            TMPDIR="/dev/shm"
         fi
-        cd $TMPDIR
-
-        if [[ ! -d {params.output_dir} ]]; then mkdir {params.output_dir}; fi
 
         # get sample list
         sample_list=`awk '{{print $3}}' {input.contrast_file}`
