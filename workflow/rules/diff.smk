@@ -1,36 +1,32 @@
 def get_all_peak_files(wildcards):
     files=[]
-    # MACS2 OPTIONS
     if "macs2_narrow" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
-        files.append(bed)
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        files.extend(n)
     if "macs2_broad" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-        files.append(bed)
-
-    # SEACR OPTIONS
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        files.extend(b)
     if "seacr_norm_stringent" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
-        files.append(bed)
-    if "seacr_norm_relaxed" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
-        files.append(bed)
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(s)
     if "seacr_non_stringent" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
-        files.append(bed)
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(s)
+    if "seacr_norm_relaxed" in PEAKTYPE:
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(r)
     if "seacr_non_relaxed" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
-        files.append(bed)
-
-    #GOPEAKS OPTIONS
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(r)
     if "gopeaks_narrow" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
-        files.append(bed)
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(n)
     if "gopeaks_broad" in PEAKTYPE:
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.contrast_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
-        files.append(bed)
-    return files
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(b)
 
+    files_list=list(itertools.chain.from_iterable(files))
+    return files_list
 
 localrules: create_contrast_data_files,make_counts_matrix
 
@@ -52,6 +48,7 @@ rule create_contrast_data_files:
     input:
         replicate_tsv = join(RESULTSDIR,"replicate_sample.tsv"),
         align_stats = rules.gather_alignstats.output.table,
+        peaks = get_all_peak_files
     params:
         t_control_list = join(RESULTSDIR,"treatment_control_list.txt"),
         contrast_list="{contrast_list}",
@@ -129,8 +126,7 @@ rule make_counts_matrix:
     """
     """
     input:
-        contrast_data=rules.create_contrast_data_files.output.contrast_data,
-        peak_files=get_all_peak_files
+        contrast_data=rules.create_contrast_data_files.output.contrast_data
     output:
         cm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),
         fcm=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),
