@@ -31,9 +31,8 @@ The pipeline allows for the use of a species specific spike-in control, or the u
 For example for ecoli spike-in:
 ```
 run_contrasts: "Y"
-
+norm_method: "spikein"
 spikein_genome: "ecoli"
-
 spikein_reference:
   ecoli:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
@@ -43,9 +42,8 @@ spikein_reference:
 For example for drosophila spike-in:
 ```
 run_contrasts: "Y"
-
+norm_method: "spikein"
 spikein_genome: "drosophila"
-
 spikein_reference:
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
@@ -69,27 +67,39 @@ Three peak callers are available for deployment within the pipeline, with differ
 
 1. [MACS2](https://github.com/macs3-project/MACS) is available with two peak calling options: narrowPeak or broadPeak. NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
 ```
-peaktype: "narrowPeak, broadPeak"
+peaktype: "macs2_narrow, macs2_broad,"
 ```
 2. [SEACR](https://github.com/FredHutch/SEACR) is available with four peak calling options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
 ```
-peaktype: "norm.stringent.bed, norm.relaxed.bed"
+peaktype: "seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed"
 ```
 3. [GOPEAKS](https://github.com/maxsonBraunLab/gopeaks) is available with two peak calling options: narrowpeaks or broadpeaks
 ```
-peaktype: "narrowGo_peaks.bed, broadGo_peaks.bed"
+peaktype: "gopeaks_narrow, gopeaks_broad"
 ```
 A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
 
-| Peak Caller | Narrow | Broad | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-| --- | --- | --- | --- | --- | --- | --- |
-| Macs2 | narrowPeak | broadPeak | NA | NA | NA | NA |
-| SEACR | NA | NA | norm.stringent.bed | norm.relaxed.bed | non.stringent.bed | non.relaxed.bed |
-| GoPeaks | narrowGo_peaks.bed | broadGo_peaks.bed | NA | NA | NA | NA |
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+## macs2 options: macs2_narrow, macs2_broad
+### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
+
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
+## seacr options: macs2_norm_stringent, macs2_non_stringent, macs2_norm_relaxed, macs2_non_relaxed
+
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+## gopeaks options: macs2_narrow, macs2_broad
+
+# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
+# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
 
 ```
 # Recommended list
-# peaktype: "narrowPeak, broadPeak, norm.stringent.bed, norm.relaxed.bed, narrowGo_peaks.bed, broadGo_peaks.bed"
+### peaktype: "macs2_narrow, macs2_broad, gopeaks_narrow, gopeaks_broad"
 ```
 ##### 2.1.3.1.3.1 Macs2 additional option
 MACS2 can be run with or without the control. adding a control will increase peak specificity
