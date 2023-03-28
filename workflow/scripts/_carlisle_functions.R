@@ -99,7 +99,13 @@ PLOT_QC_MAIN<-function(function_in,rowid_in){
   row_count=1; col_count=1
   p=list()
   for (l_id in locusdf_list){
-    p[[counter]]=PLOT_QC_FUNCTIONS(function_in,rowid_in,l_id)
+    failed_flag="N"
+    p[[counter]]=try(PLOT_QC_FUNCTIONS(function_in,rowid_in,l_id))
+    
+    if("try-error" %in% class(p[[counter]])) {
+      p[[counter]] = plot(0, type = 'n', axes = FALSE, ann = FALSE)
+      failed_flag="Y"
+    }
     counter=counter+1
     
     # if true, this is a new row
@@ -119,6 +125,10 @@ PLOT_QC_MAIN<-function(function_in,rowid_in){
       legend_text=paste0(legend_text," | Col 3 (",l_id,")\n")
       col_count=1
       row_count=row_count+1
+    }
+    
+    if (failed_flag=="Y"){
+      legend_text=gsub(l_id,"failed",legend_text)  
     }
   }
   

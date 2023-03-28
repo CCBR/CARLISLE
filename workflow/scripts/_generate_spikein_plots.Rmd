@@ -5,6 +5,7 @@ date: "`r Sys.Date()`"
 output:
   html_document:
 params:
+  sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   bam_list: ""
   spikein_control: "NC_000913.3"
 editor_options: 
@@ -42,6 +43,7 @@ invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 # set params
 bam_list=params$bam_list
 spikein_control=params$spikein_control
+sourcefile=params$sourcefile
 debug="N"
 
 if (debug=="Y"){
