@@ -1,3 +1,4 @@
+localrules: spikein_assessment
 rule qc_fastqc:
     """
     1) Runs FastQC report on each sample after adaptors have been removed
@@ -102,19 +103,19 @@ rule spikein_assessment:
         html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
     shell:
         """
-        if [[ {params.spikein} == "ecoli" ]]; then {params.spikein}="NC_000913.3"; else {params.spikein}=""; fi
+        if [[ {params.spikein} == "ecoli" ]]; then species_name="NC_000913.3"; else species_name=""; fi
         
         # get sample list
         sample_list="{input.bams}"
-        nw_strr="${{sample_list//$'\n'/ }}"
+        clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
 
         # rum script       
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --sourcefile {params.rscript_functions} \\
             --report {output.html} \\
-            --bam_list "$nw_strr" \\
-            --spikein_control {params.spikein}
+            --bam_list "$clean_sample_list" \\
+            --spikein_control $species_name
         """
 
 if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
