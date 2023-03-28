@@ -79,28 +79,20 @@ peaktype: "gopeaks_narrow, gopeaks_broad"
 ```
 A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
 
-# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-## macs2 options: macs2_narrow, macs2_broad
-### NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
-
-# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
-## seacr options: macs2_norm_stringent, macs2_non_stringent, macs2_norm_relaxed, macs2_non_relaxed
-
-# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-## gopeaks options: macs2_narrow, macs2_broad
-
-# | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-# | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-# | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
-# | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-
 ```
+| Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+| SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
+| GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+
 # Recommended list
 ### peaktype: "macs2_narrow, macs2_broad, gopeaks_narrow, gopeaks_broad"
+
+# Available list
+### peaktype: "macs2_narrow, macs2_broad, seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed, gopeaks_narrow, gopeaks_broad"
 ```
+
 ##### 2.1.3.1.3.1 Macs2 additional option
 MACS2 can be run with or without the control. adding a control will increase peak specificity
 Selecting "Y" for the `macs2_control` will run the paired control sample provided in the sample manifest
