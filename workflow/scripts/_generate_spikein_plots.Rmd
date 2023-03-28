@@ -6,7 +6,7 @@ output:
   html_document:
 params:
   sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
-  bam_list: ""
+  bam_list: "~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_IgG_rabbit_negative_control_1.bam.idxstats"
   spikein_control: "NC_000913.3"
 editor_options: 
   chunk_output_type: console
@@ -52,38 +52,41 @@ if (debug=="Y"){
 }
 
 # set up bam list
-bam_list==as.list(strsplit(peak_list, 'xxx'))[[1]]
+bam_list=as.list(strsplit(bam_list, 'xxx'))[[1]]
 
 # source functions file
 source(sourcefile)
 ```
 
 
-```{r df, include=FALSE}
+```{r df, echo=FALSE}
 # input list of all bams
 # /data/sevillas2/carlisle/v2.0/results/bam/HN6_H4K20me3_2.dedup.bam.idxstats
 
 # create df
 proj_df=data.frame()
 for (bam in bam_list){
+  total_str_length=length(strsplit(bam,"/")[[1]])
+  
   # example: # /data/sevillas2/carlisle/v2.0/results/bam/HN6_H4K20me3_2.dedup.bam.idxstats
   proj_df[nrow(proj_df)+1,"bam"]=bam
   
   # example: HN6_H4K20me3_2.dedup.bam.idxstats
-  ext=strsplit(bam,"/")[[1]][length(strsplit(bam,"/"))]
+  ext=strsplit(bam,"/")[[1]][total_str_length]
   
   # example: HN6_H4K20me3_2
-  proj_df[rowid,"repid"]=strsplit(ext,".")[[1]][1]
+  proj_df[nrow(proj_df),"repid"]=strsplit(ext,"[.]")[[1]][1]
   
   # example: HN6_H4K20me3
-  proj_df[rowid,"sampleid"]=strsplit(proj_df[rowid,"repid"],"_")
+  proj_df[nrow(proj_df),"sampleid"]=gsub("_[1,2,3]","",proj_df[nrow(proj_df),"repid"])
 }
 
 DT::datatable(proj_df)
 ```
 
-```{r spikeplot, include=FALSE}
-GENERATE_SPIKEIN_PLOT(input_df=proj_df,
+```{r spikeplot, echo=FALSE}
+spike_df=GENERATE_SPIKEIN_PLOT(input_df=proj_df,
                       spike_type=spikein_control)
+DT::datatable(spike_df)
 ```
 

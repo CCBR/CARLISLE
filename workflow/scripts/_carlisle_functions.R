@@ -2,6 +2,7 @@
 # SPIKE IN PLOT
 ########################################################################
 GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
+  spike_df=data.frame()
   for (rowid in rownames(input_df,spike_type)){
     # spike_type="NC_000913.3"
     
@@ -14,7 +15,7 @@ GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
     stats$sampleid=input_df[rowid,"repid"]
     stats$groupid=input_df[rowid,"sampleid"]
     
-    if(nrow(spike_df)==0){
+    if(nrow(stats)==0){
       spike_df=subset(stats,location==spike_type)
     } else{
       spike_df=rbind(subset(stats,location==spike_type),
@@ -27,6 +28,8 @@ GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
   p_final=p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))+
     ggtitle(paste0("Spike-in control values\n", spike_type))
   print(p_final)
+
+  return(spike_df)
 }
 
 ########################################################################
