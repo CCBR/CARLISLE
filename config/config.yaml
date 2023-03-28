@@ -53,11 +53,11 @@ dupstatus: "dedup"
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
 # | SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
-## seacr options: macs2_norm_stringent, macs2_non_stringent, macs2_norm_relaxed, macs2_non_relaxed
+## seacr options: seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
 # | GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-## gopeaks options: macs2_narrow, macs2_broad
+## gopeaks options: gopeaks_narrow, gopeaks_broad
 
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
 # | Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
