@@ -67,13 +67,13 @@ for f in ["samplemanifest"]:
     check_readaccess(config[f])
 
 #########################################################
-
-#########################################################
 # CREATE SAMPLE DATAFRAME
 #########################################################
 # each line in the samplemanifest is a replicate
 # multiple replicates belong to a sample
-# currently only 1,2,3 or 4 replicates per sample is supported
+# currently 1-4 replicates per sample are supported
+print("#"*100)
+print("# Checking Sample Manifest...")
 SAMPLE2REPLICATES = dict()
 REPLICATE2SAMPLE = dict()
 df=pd.read_csv(config["samplemanifest"],sep="\t",header=0)
@@ -100,20 +100,20 @@ for r in REPLICATES:
         os.symlink(r2,r2new)
     replicateName2R2[r]=r2new
 
-
-print("#"*100)
-print("# Checking Sample Manifest...")
-
 print("# Samples and their replicates")
 print("# SampleName        Replicates")
 for k,v in SAMPLE2REPLICATES.items():
     print("# "+k+"         "+",".join(v))
+print("# Read access to all fastq files in confirmed!")
+print("# Sample manifest is confirmed!")
 
-print("# Treatment Control combinations:")
+print("#"*100)
+print("# Checking Contrast Manifest...:")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
 TREATMENT_CONTROL_LIST=[]
+TREATMENT_WITHOUTCONTROL_LIST=[]
 TREAT_to_CONTRL_DICT=dict()
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
@@ -127,6 +127,7 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     TREATMENTS.append(t)
     CONTROLS.append(c)
     TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+    TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
     TREAT_to_CONTRL_DICT[t]=c
 process_replicates=list(set(process_replicates))
 if len(process_replicates)!=len(REPLICATES):
@@ -135,12 +136,47 @@ if len(process_replicates)!=len(REPLICATES):
     for i in not_to_process:
         print("# "+i)
     REPLICATES = process_replicates
-print("# Read access to all fastq files in confirmed!")
+print("# Contrast manifest is confirmed!")
 
+# write out the treatment:cntrl 
+fpath=join(RESULTSDIR,"treatment_control_list.txt")
+originalDF = pd.DataFrame(TREAT_to_CONTRL_DICT.items()).rename(columns={0: 'key', 1: 'val'})
+split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
+finalDF = split_keysDF.join(originalDF['val'])
+finalDF.to_csv(fpath, '\t', header=False, index=False)
+
+# set treatment lists depending on whether controls were used for all peak callers
+# macs2 allows for with or without controls; all other callers require with controls
+if (config["macs2_control"] == "Y"):
+    TREATMENT_LIST_M=TREATMENT_CONTROL_LIST
+else:
+    TREATMENT_LIST_M=TREATMENT_WITHOUTCONTROL_LIST
+TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
+
+# create duplication and peaktype list
 DUPSTATUS=config["dupstatus"]
 PEAKTYPE=config["peaktype"]
 DUPSTATUS=list(map(lambda x:x.strip(),DUPSTATUS.split(",")))
 PEAKTYPE=list(map(lambda x:x.strip(),PEAKTYPE.split(",")))
+
+#separate peak types into caller lists
+macs_set=[]
+g_set=[]
+s_set=[]
+for pt in PEAKTYPE:
+    if pt == "macs2_narrow" or pt == "macs2_broad":
+        macs_set.append(pt)
+    elif pt == "gopeaks_narrow" or pt == "gopeaks_broad":
+        g_set.append(pt)
+    elif pt == "seacr_norm_stringent" or pt == "seacr_norm_relaxed" or pt == "seacr_non_stringent" or pt == "seacr_non_relaxed":
+        s_set.append(pt)
+    else:
+        print("A peak type combination was used that is non-compatiable")
+        print(pt)
+        exit()
+PEAKTYPE_M=list(set(macs_set))
+PEAKTYPE_G=list(set(g_set))
+PEAKTYPE_S=list(set(s_set))
 
 # set threshold settings
 FDRCUTOFF = config["contrasts_fdr_cutoff"]
@@ -150,6 +186,7 @@ QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 
 # set contrast settings
 if config["run_contrasts"] == "Y":
+    print("#"*100)
     print("# Checking constrasts to run...")
     contrasts_table = config["contrasts"]
     check_readaccess(contrasts_table)
@@ -162,6 +199,7 @@ if config["run_contrasts"] == "Y":
     DS=[]
     QS=[]
     PT=[]
+    CONTRAST_LIST=[]
     SAMPLESINCONTRAST=list()
     for index, row in contrasts_df.iterrows():
         c1 = row['condition1']
@@ -182,6 +220,7 @@ if config["run_contrasts"] == "Y":
                     PT.append(pt)
                     contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
                     CONTRASTS[contrast_name]=[c1,c2,ds,pt]
+                    CONTRAST_LIST.append(c1+"_vs_"+c2)
         SAMPLESINCONTRAST.append(c1)
         SAMPLESINCONTRAST.append(c2)
     SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
@@ -208,16 +247,6 @@ if config["run_contrasts"] == "Y":
         if os.path.exists(rg_file): os.remove(rg_file)
         # once file is removed it will be recreated by rule create_replicate_sample_table
 
-#separate peak types into two lists
-macs_set=[]
-s_and_g_set=[]
-for pt in PEAKTYPE:
-    if pt == "narrowPeak" or pt == "broadPeak":
-        macs_set.append(pt)
-    else:
-        s_and_g_set.append(pt)
-MACS_TYPES=list(set(macs_set))
-S_AND_G_TYPES=list(set(s_and_g_set))
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE
@@ -256,8 +285,8 @@ getmemG=lambda rname:getmemg(rname).replace("g","G")
 #########################################################
 # SET OTHER PIPELINE GLOBAL VARIABLES
 #########################################################
-print("# Pipeline Parameters:")
 print("#"*100)
+print("# Pipeline Parameters:")
 print("# Working dir :",WORKDIR)
 print("# Results dir :",RESULTSDIR)
 print("# Scripts dir :",SCRIPTSDIR)
@@ -274,30 +303,32 @@ REGIONS = config["reference"][GENOME]["regions"]
 GENOMEBLACKLIST = config["reference"][GENOME]["blacklist"]
 check_readaccess(GENOMEBLACKLIST)
 
-SPIKED = config["spiked"]
-SPIKED_GENOMEFA=""
-
-if SPIKED == "Y":
+NORM_METHOD = config["norm_method"].upper()
+print("# Norm method : ",NORM_METHOD)
+if NORM_METHOD == "SPIKEIN":
     spikein_genome = config["spikein_genome"]
     SPIKED_GENOMEFA = config["spikein_reference"][spikein_genome]["fa"]
     check_readaccess(SPIKED_GENOMEFA)
-    print("# Spike-in : ",SPIKED)
     print("# Spike-in genome : ",spikein_genome)
-elif SPIKED == "LIBRARY":
+elif NORM_METHOD == "LIBRARY":
     SPIKED_GENOMEFA="LIBRARY"
+elif NORM_METHOD == "NONE":
+    SPIKED_GENOMEFA=""
 else:
-    print("# Spike-in : ")
+    print("User must select from one of the three available norm methods: spikein,library, none")
+    exit()
 
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
 refdata = dict()
 refdata["genome"] = GENOME
 refdata["genomefa"] = GENOMEFA
 refdata["blacklistbed"] = GENOMEBLACKLIST
-refdata["spiked"] = SPIKED
+refdata["norm_method"] = NORM_METHOD
 refdata["spikein_genome"] = SPIKED_GENOMEFA
 
 # set annotation params
 S_DISTANCE=config["stitch_distance"]
+GENESET_ID=config["geneset_id"]
 
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES
@@ -337,12 +368,12 @@ rule create_reference:
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         ref_len = join(BOWTIE2_INDEX,"ref.len"),
-        spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
+        spikein_len = join(BOWTIE2_INDEX,"spikein.len") ,
         refjson = join(BOWTIE2_INDEX,"ref.yaml")
     params:
         bt2_base=join(BOWTIE2_INDEX,"ref"),
         bowtie2_dir=BOWTIE2_INDEX,
-        use_spikein=SPIKED,
+        use_spikein=NORM_METHOD,
         spiked_source=SPIKED_GENOMEFA,
         spiked_output=join(BOWTIE2_INDEX,"spikein.fa"),
         refdata=refdata,
@@ -367,14 +398,15 @@ rule create_reference:
         mkdir -p {params.bowtie2_dir}/ref
         ln -s {input.genomefa_source} {output.genomefa}
         ln -s {input.blacklist_source} {output.blacklist}
-        if [[ {params.use_spikein} == "Y" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
+        if [[ {params.use_spikein} == "SPIKEIN" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
 
         # create json file and store in "tmp" until the reference is built
         mkdir -p {params.bowtie2_dir}/tmp
         echo {params.refdata} > {params.bowtie2_dir}/tmp/ref.yaml
 
-        if [[ "{params.use_spikein}" != "Y" ]];then
-        # there is NO SPIKEIN
+        # create reference dependent on whether or not a spikein control should be used
+        if [[ "{params.use_spikein}" != "SPIKEIN" ]];then
+            echo "creating ref without a spike-in control"
 
             # create faidx for genome and spike fasta
             samtools faidx {output.genomefa}
@@ -389,9 +421,8 @@ rule create_reference:
             cut -f1,2 {output.genomefa}.fai > {output.ref_len}
             cp {output.ref_len} {output.genome_len}
             echo -e "NA\t0" > {output.spikein_len}
-
         else
-        # THERE is SPIKEIN
+            echo "creating ref with a spike-in control"
 
             # create faidx for genome and spike fasta
             samtools faidx {output.genomefa}
@@ -408,7 +439,6 @@ rule create_reference:
             cp {output.ref_len} {output.genome_len}
             cut -f1,2 {params.spiked_output}.fai >> {output.ref_len}
             cut -f1,2 {params.spiked_output}.fai > {output.spikein_len}
-
         fi
 
         # copy ref.yaml only after successfully finishing ref index building
@@ -417,5 +447,3 @@ rule create_reference:
         fi
 
         """
-
-        

@@ -1,0 +1,282 @@
+---
+title: "GO Enrichment"
+author: "Samantha Sevilla"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+params:
+  sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  output_dir: "~/../../Volumes/data/tmp/go"
+  peak_list: "~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/HN6_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/HN6_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/HN6_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data//carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/HN6_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bed"
+  species: "hg38"
+  geneset_id: "GOBP"
+  dedup_status: "dedup"
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+# reference
+#https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# list packages
+list.of.packages=c("latticeExtra","pdp")
+list.of.bioconductor.packages=c("chipenrich")
+
+## add extra packages for HS1
+if (params$species=="hs1"){
+  print("going to install")
+  #https://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0.html
+  list.of.bioconductor.packages=c(list.of.bioconductor.packages,"BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
+}
+
+#install as needed
+new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
+
+if(length(new.packages)) {
+  print(new.packages)
+  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
+}
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) {
+  print(new.packages)
+  install.packages(new.packages, INSTALL_opts = '--no-lock',repos = "http://cran.us.r-project.org")
+}
+
+# load packages
+invisible(lapply(list.of.packages, library, character.only = TRUE))
+invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
+```
+
+
+```{r params}
+# set params
+speciesID=params$species
+output_dir=params$output_dir
+peak_dir=params$peak_dir
+#peak_list=params$peak_list
+sourcefile=params$sourcefile
+debug="N"
+geneset_id=params$geneset_id
+dedup_status=params$dedup_status
+
+if (debug=="Y"){
+  speciesID="hg19"
+  functionFile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  output_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/go_enrichment"
+  peak_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/"
+  peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
+  geneset_id="GOBP" # supported_genesets() c("GOBP", "GOCC", "GOMF")
+}
+
+# set up peak list
+peak_list=as.list(strsplit(params$peak_list, 'xxx'))[[1]]
+print("HERE")
+print(peak_list)
+
+for (i in 1:length(peak_list[[1]])){
+  peak_list[[1]][i]=paste0(peak_dir,peak_list[[1]][i])
+}
+
+# source functions file
+source(sourcefile)
+```
+
+## Sample Information
+
+```{r peakdf, include=FALSE}
+# create df for peak info
+peak_df=data.frame(peak_list)
+colnames(peak_df)="peak_bed"
+
+# pull sampleID's
+for (rowid in rownames(peak_df)){
+  total_string_length=length(strsplit(peak_df[rowid,"peak_bed"],"/")[[1]])
+  strsplit(peak_df[rowid,"peak_bed"],"/")[[1]][total_string_length]
+  
+  peak_df[rowid,"threshold"]=strsplit(peak_df[rowid,"peak_bed"]
+                                      ,"/")[[1]][total_string_length-3]
+  peak_df[rowid,"peak_caller"]=strsplit(peak_df[rowid,"peak_bed"],
+                                        "/")[[1]][total_string_length-2]
+  peak_df[rowid,"sampleid"]=strsplit(strsplit(peak_df[rowid,"peak_bed"],
+                                              "/")[[1]][total_string_length],"[.]")[[1]][1]
+  peak_df[rowid,"peak_type"]=strsplit(strsplit(peak_df[rowid,"peak_bed"],
+                                               "/")[[1]][total_string_length],"[.]")[[1]][3]
+  peak_df[rowid,"dedup_status"]=strsplit(strsplit(peak_df[rowid,"peak_bed"],
+                                                  "/")[[1]][total_string_length],"[.]")[[1]][2]
+}
+
+if (debug=="Y"){
+  max_samples=2
+} else{
+  max_samples=nrow(peak_df)
+}
+
+print(peak_df)
+```
+
+## Analysis
+### QC analysis
+#### 1: Peak midpoints to the TSSs
+This plot gives a distribution of the distance of the peak midpoints to the TSSs. It can help in selecting a locus definition. For example, if genes are primarily within 5kb of TSSs, then the 5kb locus definition may be a good choice. In contrast, if most genes fall far from TSSs, the nearest_tss locus definition may be a good choice.
+
+```{r qc1, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  print(paste0("** ",peak_df[rowid,"sampleid"]," | ", 
+               peak_df[rowid,"peak_caller"], " | ", 
+               peak_df[rowid,"peak_type"]," **"))
+
+  print("--QC Step 1")
+  tss_obj=plot_dist_to_tss(peaks = READ_PEAK_FILE(peak_file_in=peak_df[rowid,"peak_bed"]), 
+                           genome = speciesID)
+  print(tss_obj)
+  
+  # create df from values to determine locust
+  ts_df=data.frame(x=tss_obj$panel.args[[1]]$x,y=tss_obj$panel.args[[1]]$y)
+  ts_max=max(ts_df$y)
+  locus_loc=subset(ts_df,y==ts_max)$x
+  
+  peak_df[rowid,"locus_loc_def"]=SET_LOCUST_DEF(locus_loc)
+  peak_df[rowid,"locusdf_list"]=paste(SET_LOCUST_LIST(locus_loc),collapse=",")
+  peak_df[rowid,"locus_loc_short"]=SET_LOCUST_LIST(locus_loc)[[1]]
+}
+```
+
+#### 2: Presence of peak versus locus length
+This plot visualizes the relationship between the presence of at least one peak in a gene locus and the locus length (on the log10 scale). For clarity of visualization, each point represents 25 gene loci binned after sorting by locus length. The expected fit under the assumptions of Fisher’s Exact Test (horizontal line), and a binomial-based test (gray curve) are displayed to indicate how the dataset being enriched conforms to the assumption of each. The empirical spline used in the chipenrich method is in orange.
+
+Several plots are generated:
+- nearest_tss: The locus is the region spanning the midpoints between the TSSs of adjacent genes.
+- nearest_gene: The locus is the region spanning the midpoints between the boundaries of each gene, where a gene is defined as the region between the furthest upstream TSS and furthest downstream TES for that gene. If two gene loci overlap each other, we take the midpoint of the overlap as the boundary between the two loci. When a gene locus is completely nested within another, we create a disjoint set of 3 intervals, where the outermost gene is separated into 2 intervals broken apart at the endpoints of the nested gene.
+- exon: Each gene has multiple loci corresponding to its exons. Overlaps between different genes are allowed.
+- intron: Each gene has multiple loci corresponding to its introns. Overlaps between different genes are allowed.
+
+If the defined locus is within 1, 5, or 10kb, then the following three plots are also generated:
+- Nkb (1,5,10): The locus is the region within Nkb of any of the TSSs belonging to a gene. If TSSs from two adjacent genes are within 2xN kb of each other, we use the midpoint between the two TSSs as the boundary for the locus for each gene.
+- Nkb_outside_upstream: The locus is the region more than Nkb upstream from a TSS to the midpoint between the adjacent TSS.
+- Nkb_outside:The locus is the region more than Nkb upstream or downstream from a TSS to the midpoint between the adjacent TSS.
+
+```{r qc2, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  print(paste0("** ",peak_df[rowid,"sampleid"]," | ", 
+               peak_df[rowid,"peak_caller"], " | ", 
+               peak_df[rowid,"peak_type"]," **"))
+
+  print("--QC Step 2")
+  PLOT_QC_MAIN(function_in="spline",rowid_in=rowid)
+}
+```
+
+#### 3: Number of peaks versus locus length
+This plot visualizes the relationship between the number of peaks assigned to a gene and the locus length (on the log10 scale). For clarity of visualization, each point represents 25 gene loci binned after sorting by locus length. The empirical spline used in the polyenrich method is in orange.
+
+If many gene loci have multiple peaks assigned to them, polyenrich is likely an appropriate method. If there are a low number of peaks per gene, then chipenrich() may be the appropriate method.
+
+```{r qc3, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  print(paste0("** ",peak_df[rowid,"sampleid"]," | ", 
+               peak_df[rowid,"peak_caller"], " | ", 
+               peak_df[rowid,"peak_type"]," **"))
+
+  print("--QC Step 3")
+  PLOT_QC_MAIN("polyenrich",rowid)
+}
+```
+
+#### 4: Gene coverage versus locus length
+This plot visualizes the relationship between proportion of the gene locus covered by peaks and the locus length (on the log10 scale). For clarity of visualization, each point represents 25 gene loci binned after sorting by locus length.
+
+```{r qc4, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  print(paste0("** ",peak_df[rowid,"sampleid"]," | ", 
+               peak_df[rowid,"peak_caller"], " | ", 
+               peak_df[rowid,"peak_type"]," **"))
+
+  print("--QC Step 4")
+  PLOT_QC_MAIN("cov",rowid)
+}
+```
+
+### Peak-width non-specifc analysis (ALL peak calling methods)
+The hybrid method is used when one is unsure of which method, between ChIP-Enrich or Poly-Enrich, is the optimal method, and the most statistically powerful results are desired for each gene set.
+
+The hybrid p-value is given as 2*min(chipenrich_pvalue, polyenrich_pvalue). This test will retain the same Type 1 level and will be a consistent test if one of chipenrich or polyenrich is consistent. This can be extended to any number of tests, but currently we only allow a hybrid test for chipenrich and polyenrich. Currently this method is only employed for SEACR analysis.
+
+```{r peak_h, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  peak_caller=peak_df[rowid,"peak_caller"]
+  if (peak_caller=="seacr"){
+    GO_ANALYSIS_MAIN(rowid,"hybrid") 
+  }
+}
+```
+
+### BROAD Analysis (BROAD peak calling methods only)
+Broad-Enrich is designed for use with broad peaks that may intersect multiple gene loci, and/or cumulatively cover greater than 5% of the genome. For example, ChIP-seq experiments for histone modifications or large sets of copy number alterations.
+
+The Broad-Enrich method uses the cumulative peak coverage of genes in its logistic regression model for enrichment: GO ~ ratio + s(log10_length). Here, GO is a binary vector indicating whether a gene is in the gene set being tested, ratio is a numeric vector indicating the ratio of the gene covered by peaks, and s(log10_length) is a binomial cubic smoothing spline which adjusts for the relationship between gene coverage and locus length. Currently, only MACS2 and GOPEAKS utilize this method.
+```{r peak_b, include=FALSE}
+# set flag to run broad
+# run BROAD
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  peaktype=peak_df[rowid,"peak_type"]
+  if(peaktype=="broad"){
+    GO_ANALYSIS_MAIN(rowid,"broad")
+  }
+}
+```
+
+### NARROW Analysis (NARROW peak calling methods only)
+#### Method 1: ChIP-Enrich
+ChIP-Enrich is designed for use with 1,000s or 10,000s of narrow genomic regions which results in a relatively small percent of genes being assigned a genomic region. For example, many ChIP-seq experiments for transcription factors.
+
+The ChIP-Enrich method uses the presence of a peak in its logistic regression model for enrichment: peak ~ GO + s(log10_length). Here, GO is a binary vector indicating whether a gene is in the gene set being tested, peak is a binary vector indicating the presence of a peak in a gene, and s(log10_length) is a binomial cubic smoothing spline which adjusts for the relationship between the presence of a peak and locus length. Currently, only MACS2 and GOPEAKS utilize this method.
+```{r narrow1, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  peaktype=peak_df[rowid,"peak_type"]
+  if(peaktype=="narrow"){
+    GO_ANALYSIS_MAIN(rowid,"enrich")
+  }
+}
+```
+
+#### Method 2: Poly-Enrich
+###### Sub-method A: Without linking distal enhancers
+Poly-Enrich is also designed for narrow peaks, for experiments with 100,000s of peaks, or in cases where the number of binding sites per gene affects its regulation. 
+
+The Poly-Enrich method uses the number of peaks in genes in its negative binomial regression model for enrichment: num_peaks ~ GO + s(log10_length). Here, GO is a binary vector indicating whether a gene is in the gene set being tested, num_peaks is a numeric vector indicating the number of peaks in each gene, and s(log10_length) is a negative binomial cubic smoothing spline which adjusts for the relationship between the number of peaks in a gene and locus length. Currently, only MACS2 and GOPEAKS utilize this method.
+```{r narrow2a, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  peaktype=peak_df[rowid,"peak_type"]
+  if(peaktype=="narrow"){
+    GO_ANALYSIS_MAIN(rowid,"poly")
+  }
+}
+```
+
+###### Sub-method B: Linking distal enhancers
+Poly-Enrich can also be used for linking human distal enhancer regions to their target genes, which are not necessarily the adjacent genes. We optimized human distal enhancer to target gene locus definitions (locusdef=“enhancer” or locusdef=“enhancer_plus5kb”). locusdef=“enhancer” uses only distal regions >5kb from a TSS, while locusdef=“enhancer_plus5kb” combines distal enhancers (>5kb from a TSS) with promoters (<=5kb from a TSS) to capture all genomic regions. Poly-Enrich is strongly recommended when using either the ‘enhancer’ or ‘enhancer_plus5kb’ gene locus definition, because only polyenrich is able to properly split the weight of genomic regions that are assigned to multiple genes (multiAssign=TRUE). The performance of Poly-Enrich using the enhancer locusdefs can be found in our recent study (details in reference 5). Like chipenrich, polyenrich is designed for narrow peaks, but for experiments with > ~50,000 genomic regions, or in cases where the number of binding sites per gene is thought to be important.
+
+Poly-Enrich also allows weighting of individual genomic regions based on a score, which can be useful for differential methylation enrichment analysis and ChIP-seq. Currently the options are: signalValue and logsignalValue. signalValue weighs each genomic region or peak based on the Signal Value given in the narrowPeak format or a user-supplied column (column name should be signalValue), while logsignalValue takes the log of these values. Currently, only MACS2 and GOPEAKS utilize this method.
+```{r narrow2b, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+    peaktype=peak_df[rowid,"peak_type"]
+  if(peaktype=="narrow"){
+    GO_ANALYSIS_MAIN(rowid,"poly_weighted")
+  }
+}
+```
+
+### Regulatory Analysis (All peak calling methods)
+The proximity to regulatory regions (proxReg) test is a complementary test to any gene set enrichment test on a set of genomic regions, not just exclusive to the methods in this package. It tests if the genomic regions tend to be closer to (or farther from) gene transcription start sites or enhancer regions in each gene set tested. Currently, testing proximity to enhancer regions is only compatible with the hg19 genome. The purpose of ProxReg is to provide additional information for interpreting gene set enrichment test results, as a gene set enrichment test alone does not give information about whether the genomic regions occur near promoter or enhancer regions.
+
+ProxReg first calculates the distance between the midpoints of peaks and the nearest transcription start site or the nearest enhancer region midpoint for each genomic region. Each genomic region is then assigned to the gene with the nearest transcription start site. The distances are then classified according to whether the gene is in the gene set or not, and a signed Wilcoxon rank-sum test is used to calculate if the regions are closer or farther in the gene set than average.
+
+```{r reg, include=FALSE}
+for (rowid in rownames(peak_df[c(1:max_samples),])){
+  GO_ANALYSIS_MAIN(rowid,"reglocation")
+}
+```
