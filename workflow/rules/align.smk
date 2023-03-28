@@ -5,15 +5,25 @@ def get_input_fastqs(wildcards):
     d["R2"] = replicateName2R2[wildcards.replicate]
     return d
 
+def get_library_input(wildcards):
+    if (NORM_METHOD=="LIBRARY"):
+        stats_file=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
+    else:
+        stats_file=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+    return(stats_file)
+
+
 # check adapters
 check_readaccess(config["adapters"])
 
+localrules: gather_alignstats, create_library_norm_scales
+
 rule trim:
-# """
-# Remove adapters using cutadapt:
-# * min read length is 35
-# * min avg. sliding window quality score of 10 per 10 bp window is required
-# """
+    """
+    Remove adapters using cutadapt:
+    * min read length is 35
+    * min avg. sliding window quality score of 10 per 10 bp window is required
+    """
     input:
         unpack(get_input_fastqs)
     output:
@@ -50,12 +60,12 @@ rule trim:
         """
 
 rule align:
-# """
-# Align using bowtie:
-# * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
-# Cut and Run where overlapping R1 and R2 alignments are expected
-# BAM is sorted and indexed, and stats are collected using flagstat and idxstats
-# """
+    """
+    Align using bowtie:
+    * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
+    Cut and Run where overlapping R1 and R2 alignments are expected
+    BAM is sorted and indexed, and stats are collected using flagstat and idxstats
+    """
     input:
         R1 = rules.trim.output.R1,
         R2 = rules.trim.output.R2,
@@ -69,7 +79,8 @@ rule align:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
         bt2_base = join(BOWTIE2_INDEX,"ref"),
-        pyscript = join(SCRIPTSDIR,"_filter_bam.py")
+        pyscript = join(SCRIPTSDIR,"_filter_bam.py"),
+        qfilter = config["mapping_quality"],
     threads: getthreads("align")
     envmodules:
         TOOLS["bowtie2"],
@@ -89,7 +100,7 @@ rule align:
             {params.bowtie2_parameters} \\
             -x {params.bt2_base}  \\
             -1 {input.R1} -2 {input.R2}  | \\
-            samtools view -bS - |  \\
+            samtools view -f 0x2 -q {params.qfilter} -bS - |  \\
             samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam}
         samtools index {output.bam}
         samtools flagstat {output.bam} > {output.bamflagstat}
@@ -97,13 +108,13 @@ rule align:
         """
 
 rule filter:
-# """
-# Raw alignment BAMs are filtered for:
-# * duplicates only in spikein regions for no_dedup DUPSTATUS
-# * all duplicates removed for all regions for dedup DUPSTATUS
-# * alignments which are not proper pairs are removed.
-# * alignments with fragment length larger than "fragment_len_filter" from config.yaml are removed.
-# """
+    """
+    Raw alignment BAMs are filtered for:
+    * duplicates only in spikein regions for no_dedup DUPSTATUS
+    * all duplicates removed for all regions for dedup DUPSTATUS
+    * alignments which are not proper pairs are removed.
+    * alignments with fragment length larger than "fragment_len_filter" from config.yaml are removed.
+    """
     input:
         bam=rules.align.output.bam,
         bai=rules.align.output.bai,
@@ -189,13 +200,13 @@ rule filter:
         """
 
 rule alignstats:
-# """
-# Number of reads stats collected in per_replicate YAML file:
-# * nreads in fastq
-# * nreads aligned (to genome and spikein)
-# * nreads aligned (to genome and spikein) after fragment_len_filter filtering no_dedup DUPSTATUS
-# * nreads aligned (to genome and spikein) after fragment_len_filter and duplicate filtering dedup DUPSTATUS
-# """
+    """
+    Number of reads stats collected in per_replicate YAML file:
+    * nreads in fastq
+    * nreads aligned (to genome and spikein)
+    * nreads aligned (to genome and spikein) after fragment_len_filter filtering no_dedup DUPSTATUS
+    * nreads aligned (to genome and spikein) after fragment_len_filter and duplicate filtering dedup DUPSTATUS
+    """
     input:
         R1 = rules.trim.output.R1,
         raw_alignment_idxstats = rules.align.output.bamidxstats,
@@ -234,18 +245,14 @@ rule alignstats:
             {output.outyaml}
         """
 
-localrules: gather_alignstats
 rule gather_alignstats:
     input:
         stats=expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
-        samples=config["samplemanifest"]
     output:
-        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+        table=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
     params:
         rscript = join(SCRIPTSDIR,"_make_alignment_stats_table.R"),
         spikein_scale = config["spikein_scale"],
-        library_file=join(WORKDIR,"clean_library_size.csv"),
-        use_spikein=SPIKED,
     envmodules:
         TOOLS["R"]
     shell:
@@ -257,47 +264,55 @@ rule gather_alignstats:
         --yamlDir $dir \\
         --excludeFromName ".alignment_stats.yaml" \\
         --scaleConstant {params.spikein_scale} \\
-        --outTable {output}
-
-        # add information to library file for CONTROLS
-        if [[ {params.use_spikein} == "LIBRARY" ]]; then
-            controls=`cat {input.samples} | grep "Y" | awk \'{{print$1"_"$2}}\'`
-            for c in ${{controls[@]}}; do
-                val=`cat {output} | grep $c | awk \'{{print$5}}\'`
-                sub_name=`echo $c | cut -f1 -d"_"`
-                rep_num=`echo $c | cut -f2 -d"_"`
-                echo "$c,${{sub_name}}_${{rep_num}},$val,dedup">>{params.library_file}
-            done
-        fi
+        --outTable {output.table}
         """
 
+rule create_library_norm_scales:
+    input:
+        stats=expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+    output:
+        scalefile=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
+    params:
+        rscript = join(SCRIPTSDIR,"_make_library_norm_table.R"),
+    envmodules:
+        TOOLS["R"]
+    shell:
+        """
+        set -exo pipefail
+        file1=$(echo {input.stats} | awk '{{print $1}}')
+        dir=$(dirname $file1)
+        Rscript {params.rscript} \\
+        --yamlDir $dir \\
+        --excludeFromName ".alignment_stats.yaml" \\
+        --outTable {output.scalefile}
+        """
 
 rule bam2bg:
-# """
-# Converted filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
-# sf = Constant / [ Nreads aligning to spikein (deduped)] where Constant is defined as "spikein_scale" in config.yaml
-# The above sf (scaling factor) is used to scale the bedgraph file. Scaled bedgraph is then converted to bigwig.
-# """
+    """
+    Converted filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
+    sf = Constant / [ Nreads aligning to spikein (deduped)] where Constant is defined as "spikein_scale" in config.yaml
+    The above sf (scaling factor) is used to scale the bedgraph file. Scaled bedgraph is then converted to bigwig.
+    """
     input:
         bam = rules.filter.output.bam,
         bai = rules.filter.output.bai,
         bamidxstats = rules.filter.output.bamidxstats,
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
+        library_file = get_library_input
     output:
         fragments_bed = join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")
     params:
-        spikein = SPIKED_GENOMEFA,
+        spikein = NORM_METHOD,
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",
         fragment_len_filter = config["fragment_len_filter"],
         spikein_scale = config["spikein_scale"],
         regions = REGIONS,
-        memG = getmemG("bam2bg"),
-        library_file=LIBRARY_FILE
+        memG = getmemG("bam2bg")
     threads: getthreads("bam2bg")
     envmodules:
         TOOLS["bedtools"],
@@ -314,19 +329,12 @@ rule bam2bg:
             mkdir -p $TMPDIR
         fi
 
-        if [[ "{params.spikein}" == "" ]];then
+        if [[ "{params.spikein}" == "NONE" ]];then
+            echo "No spike-in scale was used"
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            library_size=`cat {params.library_file} | grep {params.replicate} | cut -f2 -d"," | head -n1`
-            
-            if [[ $library_size =~ "Inf" ]]; then 
-                spikein_scale=`head -n1 {params.library_file} | awk -F"," \'{{print $2}}\'`
-                spikein_scale=$(echo "$spikein_scale / 1000000" | bc -l)
-            else
-                spikein_scale=$(echo "$library_size / 1000000" | bc -l)
-            fi
-            
-            echo "The spikein is generated from the library size $spikein_scale"
+            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`    
+            echo "The spike-in is generated from the library size"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
             

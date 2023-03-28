@@ -16,7 +16,7 @@ params:
   spiked: "Y"
   rawcountsprescaled: "N"
   scalesfbymean: "Y"
-  bbpaths: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
+  contrast_data: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/bed_bedgraph_paths.tsv"
   elbowlimits: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffanalysis_elbowlimits.yaml"
   species: "hg38"
   gtf: ""
@@ -153,8 +153,6 @@ log2fc_cutoff=as.double(params$log2fc_cutoff)
 ```
 
 Total Peaks: `r nrow(rawcounts)` 
-
-
 Total Samples: `r ncol(rawcounts)`
 
 ```{r fdr_check}
@@ -177,19 +175,17 @@ ggplot(cpm_melt,aes(x=samplename,y=log2cpm)) +
 dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
                                 colData = sampleinfo[,c("samplename","group")],
                                 design = ~ group)
-if (params$spiked=="Y" & !is.null(params$bbpaths)) {
-  bbpaths_df = read.csv(params$bbpaths,
+if (params$spiked=="SPIKEIN" & !is.null(params$contrast_data)) {
+  bbpaths_df = read.csv(params$contrast_data,
                       header = FALSE,sep="\t",
                       comment.char = "#", 
                       strip.white = TRUE)
-  colnames(bbpaths_df)=c("replicate",
-                        "sample",
-                        "dupstatus",
-                        "peaktype",
-                        "peakfile",
+  colnames(bbpaths_df)=c("sample",
+                        "replicate",
+                        "bedfile",
                         "bedgraph",
-                        "scalingfactor")
-  # bbpaths_df$cm_col_names=gsub(pattern = ".bedgraph",replacement = "", basename(bbpaths_df$bedgraph))
+                        "scalingfactor",
+                        "bed")
   sf_df=unique(bbpaths_df[,c("replicate","scalingfactor")])
   dds_cols=colnames(dds)
   sfs=c()
