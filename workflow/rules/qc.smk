@@ -1,28 +1,9 @@
+localrules: spikein_assessment
 rule qc_fastqc:
     """
-    Runs FastQC report on each sample after adaptors have been removed
-    """
-    input:
-        R1 = rules.trim.output.R1,
-        R2 = rules.trim.output.R2,
-    params:
-        base = join(RESULTSDIR, 'qc', 'fastqc_raw'),
-    envmodules:
-        TOOLS['fastqc']
-    output:
-        htmlR1 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R1.trim_fastqc.html')),
-        htmlR2 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R2.trim_fastqc.html'))
-    shell:
-        """
-        set -exo pipefail
-        # run FASTQC
-        fastqc {input.R1} {input.R2} -o {params.base}
-        """
+    1) Runs FastQC report on each sample after adaptors have been removed
 
-
-rule qc_fastq_screen_validator:
-    """
-    #fastq screen
+    2) Runs FASTQ SCREEN & VALIDATOR
     - this will align first to human, mouse, bacteria
     - fastq validator
     Quality-control step to ensure the input FastQC files are not corrupted or
@@ -36,18 +17,21 @@ rule qc_fastq_screen_validator:
         R1 = rules.trim.output.R1,
         R2 = rules.trim.output.R2,
     params:
+        base = join(RESULTSDIR, 'qc', 'fastqc_raw'),
         conf_species = join(WORKDIR,'config','fqscreen_config.conf'),
         base_screen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
         R1="{replicate}_R1.fastq",
         R2="{replicate}_R2.fastq",
         base_val = join(RESULTSDIR,'qc'),
         fastq_val=TOOLS["fastq_val"],
-    threads: getthreads("qc_fastq_screen_validator")        
     envmodules:
+        TOOLS['fastqc'],
         TOOLS['bowtie2'],
         TOOLS['perl'],
         TOOLS['fastq_screen'],
     output:
+        htmlR1 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R1.trim_fastqc.html')),
+        htmlR2 = temp(join(RESULTSDIR, 'qc','fastqc_raw','{replicate}.R2.trim_fastqc.html')),
         speciesR1 = temp(join(RESULTSDIR, 'qc', 'fqscreen_raw','{replicate}_R1_screen.txt')),
         speciesR2 = temp(join(RESULTSDIR, 'qc', 'fqscreen_raw','{replicate}_R2_screen.txt')),
         logR1 = join(RESULTSDIR,'qc','{replicate}.validated.fastqR1.log'),
@@ -62,7 +46,10 @@ rule qc_fastq_screen_validator:
             TMPDIR="/dev/shm/$dirname"
             mkdir -p $TMPDIR
         fi
-        
+
+        # run FASTQC
+        fastqc {input.R1} {input.R2} -o {params.base}
+ 
         # Gzip input files
         gunzip -c {input.R1} > ${{TMPDIR}}/{params.R1}
         gunzip -c {input.R2} > ${{TMPDIR}}/{params.R2}
@@ -94,36 +81,130 @@ rule qc_fastq_screen_validator:
             --file {input.R2} > {output.logR2};
         """
 
-rule multiqc:
+rule spikein_assessment:
     """
-    merges FastQC reports for pre/post trimmed fastq files into MultiQC report
-    https://multiqc.info/docs/#running-multiqc
+    Runs assessment on bam.idxstats files to ensure that spikein control amounts are uniform amongst replicates
+
+    @Input:
+        Bamidxstats files
+    @Output:
+        R HTML Report of spike in control values samples
     """
     input:
-        fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
-        fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
-        screenR1=expand(rules.qc_fastq_screen_validator.output.speciesR1,replicate=REPLICATES),
-        screenR2=expand(rules.qc_fastq_screen_validator.output.speciesR2,replicate=REPLICATES),
-        flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
-        idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES)
+        bams = expand(rules.align.output.bamidxstats,replicate=REPLICATES,dupstatus=DUPSTATUS),
     params:
-        qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
-        dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
-        dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
-        dir_samtools = join(RESULTSDIR,"bam","raw"),
-        outDir = join(RESULTSDIR,'qc'),
+        rscript_wrapper=join(SCRIPTSDIR,"_generate_spikein_wrapper.R"),
+        rmd=join(SCRIPTSDIR,"_generate_spikein_plots.Rmd"),
+        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+        spikein=config["spikein_genome"],
     envmodules:
-        TOOLS['multiqc']
+        TOOLS['R'],
     output:
-        o1 = join(RESULTSDIR,'qc', 'multiqc_report.html')
+        html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
     shell:
         """
-        set -exo pipefail
-        multiqc -f -v \\
-            -c {params.qc_config} \\
-            -d -dd 1 \\
-            {params.dir_fqc} \\
-            {params.dir_fqscreen} \\
-            {params.dir_samtools} \\
-            -o {params.outDir}
+        if [[ {params.spikein} == "ecoli" ]]; then species_name="NC_000913.3"; else species_name=""; fi
+        
+        # get sample list
+        sample_list="{input.bams}"
+        clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
+
+        # rum script       
+        Rscript {params.rscript_wrapper} \\
+            --rmd {params.rmd} \\
+            --sourcefile {params.rscript_functions} \\
+            --report {output.html} \\
+            --bam_list "$clean_sample_list" \\
+            --spikein_control $species_name
         """
+
+if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+    rule multiqc:
+        """
+        merges FastQC reports for pre/post trimmed fastq files into MultiQC report
+        https://multiqc.info/docs/#running-multiqc
+        """
+        input:
+            fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
+            fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
+            screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
+            screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
+            flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
+            idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
+            gopeaks_broad=expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+            gopeaks_narrow=expand(rules.gopeaks_narrow.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS)
+        params:
+            qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
+            dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
+            dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
+            dir_samtools = join(RESULTSDIR,"bam","raw"),
+            dir_gopeaks = join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output"),
+        envmodules:
+            TOOLS['multiqc']
+        output:
+            report = join(RESULTSDIR,'qc','multiqc_report_{qthresholds}.html')
+        shell:
+            """
+            set -exo pipefail
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+                TMPDIR="/lscratch/$SLURM_JOB_ID"
+            else
+                dirname=$(basename $(mktemp))
+                TMPDIR="/dev/shm/$dirname"
+                mkdir -p $TMPDIR
+            fi
+
+            multiqc -f -v \\
+                -c {params.qc_config} \\
+                -d -dd 1 \\
+                {params.dir_fqc} \\
+                {params.dir_fqscreen} \\
+                {params.dir_samtools} \\
+                {params.dir_gopeaks} \\
+                -o $TMPDIR/qc
+
+            mv $TMPDIR/qc/multiqc_report.html {output.report}
+            """
+else:
+    rule multiqc:
+        """
+        merges FastQC reports for pre/post trimmed fastq files into MultiQC report
+        https://multiqc.info/docs/#running-multiqc
+        """
+        input:
+            fqR1=expand(rules.qc_fastqc.output.htmlR1,replicate=REPLICATES),
+            fqR2=expand(rules.qc_fastqc.output.htmlR2,replicate=REPLICATES),
+            screenR1=expand(rules.qc_fastqc.output.speciesR1,replicate=REPLICATES),
+            screenR2=expand(rules.qc_fastqc.output.speciesR2,replicate=REPLICATES),
+            flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
+            idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
+        params:
+            qc_config = join(WORKDIR,'config','multiqc_config.yaml'),
+            dir_fqc = join(RESULTSDIR, 'qc', 'fastqc_raw'),
+            dir_fqscreen = join(RESULTSDIR, 'qc', 'fqscreen_raw'),
+            dir_samtools = join(RESULTSDIR,"bam","raw"),
+        envmodules:
+            TOOLS['multiqc']
+        output:
+            report = join(RESULTSDIR,'qc','multiqc_report.html')
+        shell:
+            """
+            set -exo pipefail
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+                TMPDIR="/lscratch/$SLURM_JOB_ID"
+            else
+                dirname=$(basename $(mktemp))
+                TMPDIR="/dev/shm/$dirname"
+                mkdir -p $TMPDIR
+            fi
+
+            multiqc -f -v \\
+                -c {params.qc_config} \\
+                -d -dd 1 \\
+                {params.dir_fqc} \\
+                {params.dir_fqscreen} \\
+                {params.dir_samtools} \\
+                -o $TMPDIR/qc
+
+            mv $TMPDIR/qc/multiqc_report.html {output.report}
+            """
