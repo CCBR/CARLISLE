@@ -23,7 +23,6 @@ if (debug){
   spikein_control="NC_000913.3"
 } else {
   sourcefile=args$sourcefile
-  tmpdir=args$tmpdir
   report=args$report
   bam_list=args$bam_list
   spikein_control=args$spikein_control

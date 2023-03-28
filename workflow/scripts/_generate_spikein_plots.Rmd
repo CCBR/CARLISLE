@@ -50,7 +50,7 @@ if (debug=="Y"){
 }
 
 # set up bam list
-bam_list==as.list(strsplit(peak_list, '\\s+'))[[1]]
+bam_list==as.list(strsplit(peak_list, 'xxx'))[[1]]
 
 # source functions file
 source(sourcefile)

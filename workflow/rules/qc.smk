@@ -102,16 +102,7 @@ rule spikein_assessment:
         html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
     shell:
         """
-        set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            dirname=$(basename $(mktemp))
-            TMPDIR="/dev/shm/$dirname"
-            mkdir -p $TMPDIR
-        fi
-
-        if [[ $spikein == "ecoli" ]]; then $spikein="NC_000913.3"; else $spikein=""; fi
+        if [[ {params.spikein} == "ecoli" ]]; then {params.spikein}="NC_000913.3"; else {params.spikein}=""; fi
         
         # get sample list
         sample_list="{input.bams}"
@@ -121,7 +112,6 @@ rule spikein_assessment:
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --sourcefile {params.rscript_functions} \\
-            --tmpdir $TMPDIR \\
             --report {output.html} \\
             --bam_list "$nw_strr" \\
             --spikein_control {params.spikein}

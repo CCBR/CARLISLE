@@ -270,7 +270,8 @@ rule create_contrast_peakcaller_files:
         qthresholds = "{qthresholds}",
         contrast_list = "{contrast_list}",
         dupstatus = "{dupstatus}",
-        peak_caller = "{peak_caller}"
+        peak_caller = "{peak_caller}",
+        search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts")
     output:
         peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
     shell:
@@ -285,19 +286,10 @@ rule create_contrast_peakcaller_files:
         # for each of the file, find matches to the peak_type
         if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
 
-        for f in {input.contrast_files}; do
-            touch $TMPDIR/merge.txt
-
-            # pull peaktype: macs2, seacr, gopeaks
-            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
-            qthresholds=`echo $f | cut -f10 -d"/"`
-            contrast_list=`echo $f | cut -f12 -d"/" | cut -f1 -d"."`
-            dupstatus=`echo $f | cut -f12 -d"/" | cut -f2 -d"."`
-            peak_caller=`echo $f | cut -f13 -d"/" | cut -f3 -d"." | cut -f1 -d"_"`
-
-            if [[ $qthresholds == {params.qthresholds} ]] && [[ $contrast_list == {params.contrast_list} ]] && [[ $dupstatus == {params.dupstatus} ]] && [[ $peak_caller == {params.peak_caller} ]]; then
+        # pull file list
+        # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
+        for f in {params.search_dir}/{params.contrast_list}.{params.dupstatus}/{params.contrast_list}.{params.dupstatus}.{params.peak_caller}*.txt; do
                 cat $f >> $TMPDIR/merge.txt
-            fi
         done
 
         # save to output
@@ -319,7 +311,8 @@ rule go_enrichment:
         rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
         output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
         species = config["genome"],
-        geneset_id = GENESET_ID
+        geneset_id = GENESET_ID,
+        dedup_status =  "{dupstatus}"
     envmodules:
         TOOLS["R"]
     shell:
@@ -328,7 +321,7 @@ rule go_enrichment:
 
         # get sample list
         sample_list=`awk '{{print $3}}' {input.contrast_file}`
-        clean_sample_list="${{sample_list//$'\n'/ }}"
+        clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
 
         # rum script       
         Rscript {params.rscript_wrapper} \\
@@ -338,5 +331,6 @@ rule go_enrichment:
             --report {output.html} \\
             --peak_list "$clean_sample_list" \\
             --species {params.species} \\
-            --geneset_id {params.geneset_id}
+            --geneset_id {params.geneset_id} \\
+            --dedup_status {params.dedup_status}
         """

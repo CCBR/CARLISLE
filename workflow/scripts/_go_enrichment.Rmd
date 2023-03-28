@@ -7,12 +7,14 @@ output:
 params:
   sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   output_dir: "~/../../Volumes/data/tmp/go"
-  peak_list: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed ~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/macs2/peak_output/HN6_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
+  peak_list: "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.1/gopeaks/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bed"
   species: "hg38"
   geneset_id: "GOBP"
+  dedup_status: "dedup"
 editor_options: 
   chunk_output_type: console
 ---
+--peak_list --species hg38 --geneset_id GOBP --dedup_status dedup
 
 ```{r setup, include=FALSE}
 # reference
@@ -56,10 +58,11 @@ invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 speciesID=params$species
 output_dir=params$output_dir
 peak_dir=params$peak_dir
-peak_list=params$peak_list
+#peak_list=params$peak_list
 sourcefile=params$sourcefile
 debug="N"
 geneset_id=params$geneset_id
+dedup_status=params$dedup_status
 
 if (debug=="Y"){
   speciesID="hg19"
@@ -71,7 +74,9 @@ if (debug=="Y"){
 }
 
 # set up peak list
-peak_list=as.list(strsplit(peak_list, '\\s+'))[[1]]
+peak_list=as.list(strsplit(params$peak_list, 'xxx'))[[1]]
+print("HERE")
+print(peak_list)
 
 for (i in 1:length(peak_list[[1]])){
   peak_list[[1]][i]=paste0(peak_dir,peak_list[[1]][i])
