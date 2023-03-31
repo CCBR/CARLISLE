@@ -259,78 +259,78 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
-
-rule create_contrast_peakcaller_files:
-    """
-    Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
-    """
-    input:
-        contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
-    params:
-        qthresholds = "{qthresholds}",
-        contrast_list = "{contrast_list}",
-        dupstatus = "{dupstatus}",
-        peak_caller = "{peak_caller}",
-        search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts")
-    output:
-        peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
-    shell:
+if config["run_contrasts"] == "Y":
+    rule create_contrast_peakcaller_files:
         """
-        set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            TMPDIR="/dev/shm"
-        fi
-
-        # for each of the file, find matches to the peak_type
-        if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
-
-        # pull file list
-        # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
-        for f in {params.search_dir}/{params.contrast_list}.{params.dupstatus}/{params.contrast_list}.{params.dupstatus}.{params.peak_caller}*.txt; do
-                cat $f >> $TMPDIR/merge.txt
-        done
-
-        # save to output
-        cat $TMPDIR/merge.txt | sort | uniq > {output.peak_contrast_files}
-        rm $TMPDIR/merge.txt
+        Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
         """
+        input:
+            contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        params:
+            qthresholds = "{qthresholds}",
+            contrast_list = "{contrast_list}",
+            dupstatus = "{dupstatus}",
+            peak_caller = "{peak_caller}",
+            search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts")
+        output:
+            peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
+        shell:
+            """
+            set -exo pipefail
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+                TMPDIR="/lscratch/$SLURM_JOB_ID"
+            else
+                TMPDIR="/dev/shm"
+            fi
 
-rule go_enrichment:
-    """
-    https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html#peak-distance-to-tss-distribution
-    """
-    input:
-        contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
-    output:
-        html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
-    params:
-        rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
-        rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
-        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-        output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
-        species = config["genome"],
-        geneset_id = GENESET_ID,
-        dedup_status =  "{dupstatus}"
-    envmodules:
-        TOOLS["R"]
-    shell:
+            # for each of the file, find matches to the peak_type
+            if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
+
+            # pull file list
+            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
+            for f in {params.search_dir}/{params.contrast_list}.{params.dupstatus}/{params.contrast_list}.{params.dupstatus}.{params.peak_caller}*.txt; do
+                    cat $f >> $TMPDIR/merge.txt
+            done
+
+            # save to output
+            cat $TMPDIR/merge.txt | sort | uniq > {output.peak_contrast_files}
+            rm $TMPDIR/merge.txt
+            """
+
+    rule go_enrichment:
         """
-        set -exo pipefail
-
-        # get sample list
-        sample_list=`awk '{{print $3}}' {input.contrast_file}`
-        clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
-
-        # rum script       
-        Rscript {params.rscript_wrapper} \\
-            --rmd {params.rmd} \\
-            --sourcefile {params.rscript_functions} \\
-            --output_dir {params.output_dir} \\
-            --report {output.html} \\
-            --peak_list "$clean_sample_list" \\
-            --species {params.species} \\
-            --geneset_id {params.geneset_id} \\
-            --dedup_status {params.dedup_status}
+        https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html#peak-distance-to-tss-distribution
         """
+        input:
+            contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
+        output:
+            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
+        params:
+            rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
+            rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
+            rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+            output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
+            species = config["genome"],
+            geneset_id = GENESET_ID,
+            dedup_status =  "{dupstatus}"
+        envmodules:
+            TOOLS["R"]
+        shell:
+            """
+            set -exo pipefail
+
+            # get sample list
+            sample_list=`awk '{{print $3}}' {input.contrast_file}`
+            clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
+
+            # rum script       
+            Rscript {params.rscript_wrapper} \\
+                --rmd {params.rmd} \\
+                --sourcefile {params.rscript_functions} \\
+                --output_dir {params.output_dir} \\
+                --report {output.html} \\
+                --peak_list "$clean_sample_list" \\
+                --species {params.species} \\
+                --geneset_id {params.geneset_id} \\
+                --dedup_status {params.dedup_status}
+            """
