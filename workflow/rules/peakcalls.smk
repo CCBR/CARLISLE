@@ -187,10 +187,8 @@ rule seacr_stringent:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        peak_file_norm = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),
-        peak_file_non = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),
-        bg_file_norm = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bigbed.gz"),
-        bg_file_non = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bigbed.gz"),
+        peak_file = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bed"),
+        bg_file = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bigbed.gz"),
     params:
         bg_path=join(RESULTSDIR,"bedgraph"),
         frag_bed_path=join(RESULTSDIR,"fragments"),
@@ -198,6 +196,7 @@ rule seacr_stringent:
         qthresholds="{qthresholds}",
         dupstatus= "{dupstatus}",
         memG = getmemG("seacr"),
+        norm_method = NORM_METHOD
     threads: getthreads("seacr")
     envmodules:
         TOOLS["seacr"],
@@ -223,35 +222,35 @@ rule seacr_stringent:
         treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
         cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
 
-        # run norm
-        SEACR.sh --bedgraph ${{treat_bed}} \\
-            --control ${{cntrl_bed}} \\
-            --normalize norm \\
-            --mode stringent \\
-            --threshold {params.qthresholds} \\
-            --output norm
+        if [[ {params.norm_method} != "SPIKEIN" ]]; then
+            # run norm
+            SEACR.sh --bedgraph ${{treat_bed}} \\
+                --control ${{cntrl_bed}} \\
+                --normalize norm \\
+                --mode stringent \\
+                --threshold {params.qthresholds} \\
+                --output norm
+            
+            # mv output and rename for consistency
+            mv $TMPDIR/norm.stringent.bed {output.peak_file}
+        else
+            # run non
+            SEACR.sh --bedgraph ${{treat_bed}} \\
+                --control ${{cntrl_bed}} \\
+                --normalize non \\
+                --mode stringent \\
+                --threshold {params.qthresholds} \\
+                --output non
 
-        # run non
-        SEACR.sh --bedgraph ${{treat_bed}} \\
-            --control ${{cntrl_bed}} \\
-            --normalize non \\
-            --mode stringent \\
-            --threshold {params.qthresholds} \\
-            --output non
-
-        # mv output and rename for consistency
-        mv $TMPDIR/norm.stringent.bed {output.peak_file_norm}
-        mv $TMPDIR/non.stringent.bed {output.peak_file_non}
+            # mv output and rename for consistency
+            mv $TMPDIR/non.stringent.bed {output.peak_file}
+        fi
 
         # create bigbed files
-        cut -f1-3 {output.peak_file_norm} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/norm_stringent.bed
-        bedToBigBed -type=bed3 ${{TMPDIR}}/norm_stringent.bed {input.genome_len} ${{TMPDIR}}/norm_stringent.bigbed
+        cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/stringent.bed
+        bedToBigBed -type=bed3 ${{TMPDIR}}/stringent.bed {input.genome_len} ${{TMPDIR}}/stringent.bigbed
 
-        cut -f1-3 {output.peak_file_non} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/non_stringent.bed
-        bedToBigBed -type=bed3 ${{TMPDIR}}/non_stringent.bed {input.genome_len} ${{TMPDIR}}/non_stringent.bigbed
-
-        bgzip -c ${{TMPDIR}}/norm_stringent.bigbed > {output.bg_file_norm}
-        bgzip -c ${{TMPDIR}}/non_stringent.bigbed > {output.bg_file_non}
+        bgzip -c ${{TMPDIR}}/stringent.bigbed > {output.bg_file}
         """
 
 rule seacr_relaxed:
@@ -260,17 +259,16 @@ rule seacr_relaxed:
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        peak_file_norm = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),
-        peak_file_non = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),
-        bg_file_norm = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bigbed.gz"),
-        bg_file_non = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bigbed.gz"),
+        peak_file = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bed"),
+        bg_file = join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bigbed.gz"),
     params:
         bg_path=join(RESULTSDIR,"bedgraph"),
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
         qthresholds="{qthresholds}",
         dupstatus= "{dupstatus}",
-        memG = getmemG("seacr")
+        memG = getmemG("seacr"),
+        norm_method = NORM_METHOD
     threads: getthreads("seacr")
     envmodules:
         TOOLS["seacr"],
@@ -296,35 +294,33 @@ rule seacr_relaxed:
             treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
             cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
 
-            # run norm
-            SEACR.sh --bedgraph  ${{treat_bed}} \\
-                --control ${{cntrl_bed}} \\
-                --normalize norm \\
-                --mode relaxed \\
-                --threshold {params.qthresholds} \\
-                --output norm    
+            if [[ {params.norm_method} != "SPIKEIN" ]]; then
+                # run norm
+                SEACR.sh --bedgraph  ${{treat_bed}} \\
+                    --control ${{cntrl_bed}} \\
+                    --normalize norm \\
+                    --mode relaxed \\
+                    --threshold {params.qthresholds} \\
+                    --output norm    
 
-            # run non
-            SEACR.sh --bedgraph ${{treat_bed}} \\
-                --control ${{cntrl_bed}} \\
-                --normalize non \\
-                --mode relaxed \\
-                --threshold {params.qthresholds} \\
-                --output non
-
-            # mv output and rename for consistency
-            mv $TMPDIR/norm.relaxed.bed {output.peak_file_norm}
-            mv $TMPDIR/non.relaxed.bed {output.peak_file_non}
+                # mv output and rename for consistency
+                mv $TMPDIR/norm.relaxed.bed {output.peak_file}
+            else
+                # run non
+                SEACR.sh --bedgraph ${{treat_bed}} \\
+                    --control ${{cntrl_bed}} \\
+                    --normalize non \\
+                    --mode relaxed \\
+                    --threshold {params.qthresholds} \\
+                    --output non
+                
+                mv $TMPDIR/non.relaxed.bed {output.peak_file}
+            fi
 
             # create bigbed files
-            cut -f1-3 {output.peak_file_norm} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/norm_relaxed.bed
-            bedToBigBed -type=bed3 ${{TMPDIR}}/norm_relaxed.bed {input.genome_len} ${{TMPDIR}}/norm_relaxed.bigbed
-
-            cut -f1-3 {output.peak_file_non} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/non_relaxed.bed
-            bedToBigBed -type=bed3 ${{TMPDIR}}/non_relaxed.bed {input.genome_len} ${{TMPDIR}}/non_relaxed.bigbed
-
-            bgzip -c ${{TMPDIR}}/norm_relaxed.bigbed > {output.bg_file_norm}
-            bgzip -c ${{TMPDIR}}/non_relaxed.bigbed > {output.bg_file_non}
+            cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/relaxed.bed
+            
+            bgzip -c ${{TMPDIR}}/relaxed.bigbed > {output.bg_file}
 
     """
 
