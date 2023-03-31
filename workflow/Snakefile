@@ -143,22 +143,23 @@ def get_rose(wildcards):
 
 def get_enrichment(wildcards):
     files=[]
-    if (GENOME == "hg19") or (GENOME == "hg38"):
-        if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-            t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(t)
-            h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(h)
-        if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-            t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(t)
-            h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(h)
-        if ("seacr_norm_stringent" in PEAKTYPE) or ("seacr_norm_relaxed" in PEAKTYPE) or ("seacr_non_stringent" in PEAKTYPE) or ("seacr_non_relaxed" in PEAKTYPE):
-            t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(t)
-            h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
-            files.extend(h)
+    if config["run_contrasts"] == "Y":
+        if (GENOME == "hg19") or (GENOME == "hg38"):
+            if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(t)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(h)
+            if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(t)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(h)
+            if ("seacr_norm_stringent" in PEAKTYPE) or ("seacr_norm_relaxed" in PEAKTYPE) or ("seacr_non_stringent" in PEAKTYPE) or ("seacr_non_relaxed" in PEAKTYPE):
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(t)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                files.extend(h)
     return files
 
 include: "rules/init.smk"
@@ -173,27 +174,33 @@ rule all:
         ##########################################
         ### required files
         ##########################################
+        ## Rules/Init
         # manifests
         unpack(run_pipe_prep),
         
+        ## Rules/Align
         # norm table, if needed
         unpack(run_library_norm),
-        
+
         # alignment stats yaml files and stats table
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
 
-        # # PEAKCALLS rules
+        ## Rules/peakcalls
+        # PEAKCALLS rules
         unpack(run_macs2),
         unpack(run_seacr),
         unpack(run_gopeaks),
 
+        ## Rules/QC
         # qc
         unpack(run_qc),
 
+        ## Rules/diff
         # DIFFERENTIAL
         unpack(run_contrasts),
         
+        ## Rules/annotation
         # ANNOTATION
         unpack(get_motifs),
         unpack(get_rose),
