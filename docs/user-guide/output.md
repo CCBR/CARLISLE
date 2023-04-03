@@ -29,8 +29,8 @@ The following directories are created under the WORKDIR/results directory:
 │   │   ├── gopeaks
 │   │   │   ├── annotation
 │   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_files
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_files
+│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
+│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
 │   │   │   │   ├── homer
 │   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.gopeaks_broad.motifs
 │   │   │   │   │   │   ├── homerResults
@@ -53,8 +53,8 @@ The following directories are created under the WORKDIR/results directory:
 │   │   ├── macs2
 │   │   │   ├── annotation
 │   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_files
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_files
+│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
+│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
 │   │   │   │   ├── homer
 │   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.macs2_narrow.motifs
 │   │   │   │   │   │   ├── homerResults
@@ -77,8 +77,8 @@ The following directories are created under the WORKDIR/results directory:
 │   │   └── seacr
 │   │   │   ├── annotation
 │   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_files
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_files
+│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
+│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
 │   │   │   │   ├── homer
 │   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.seacr_non_relaxed.motifs
 │   │   │   │   │   │   ├── homerResults
