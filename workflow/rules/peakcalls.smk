@@ -195,9 +195,9 @@ rule seacr_stringent:
         tc_file="{treatment_control_list}",
         qthresholds="{qthresholds}",
         dupstatus= "{dupstatus}",
-        memG = getmemG("seacr"),
+        memG = getmemG("seacr_stringent"),
         norm_method = NORM_METHOD
-    threads: getthreads("seacr")
+    threads: getthreads("seacr_stringent")
     envmodules:
         TOOLS["seacr"],
         TOOLS["ucsc"],
@@ -249,7 +249,6 @@ rule seacr_stringent:
         # create bigbed files
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/stringent.bed
         bedToBigBed -type=bed3 ${{TMPDIR}}/stringent.bed {input.genome_len} ${{TMPDIR}}/stringent.bigbed
-
         bgzip -c ${{TMPDIR}}/stringent.bigbed > {output.bg_file}
         """
 
@@ -267,9 +266,9 @@ rule seacr_relaxed:
         tc_file="{treatment_control_list}",
         qthresholds="{qthresholds}",
         dupstatus= "{dupstatus}",
-        memG = getmemG("seacr"),
+        memG = getmemG("seacr_relaxed"),
         norm_method = NORM_METHOD
-    threads: getthreads("seacr")
+    threads: getthreads("seacr_relaxed")
     envmodules:
         TOOLS["seacr"],
         TOOLS["ucsc"],
@@ -319,9 +318,8 @@ rule seacr_relaxed:
 
             # create bigbed files
             cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/relaxed.bed
-            
+            bedToBigBed -type=bed3 ${{TMPDIR}}/relaxed.bed {input.genome_len} ${{TMPDIR}}/relaxed.bigbed
             bgzip -c ${{TMPDIR}}/relaxed.bigbed > {output.bg_file}
-
     """
 
 rule gopeaks_narrow:
@@ -335,9 +333,9 @@ rule gopeaks_narrow:
         tc_file="{treatment_control_list}",
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
-        memG = getmemG("gopeaks")
+        memG = getmemG("gopeaks_narrow")
     threads:
-        getthreads("gopeaks")
+        getthreads("gopeaks_narrow")
     envmodules:
         TOOLS["ucsc"],
         TOOLS["samtools"]
@@ -388,9 +386,9 @@ rule gopeaks_broad:
         tc_file="{treatment_control_list}",
         dupstatus = "{dupstatus}",
         qthresholds = "{qthresholds}",
-        memG = getmemG("gopeaks")
+        memG = getmemG("gopeaks_broad")
     threads:
-        getthreads("gopeaks")
+        getthreads("gopeaks_broad")
     envmodules:
         TOOLS["ucsc"],
         TOOLS["samtools"]
