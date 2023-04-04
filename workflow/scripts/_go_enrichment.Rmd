@@ -5,9 +5,9 @@ date: "`r Sys.Date()`"
 output:
   html_document:
 params:
-  sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  sourcefile: "~/../../Volumes/Pipelines-1/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   output_dir: "~/../../Volumes/data/tmp/go"
-  peak_list: "~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.05/seacr/peak_output/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.05/seacr/peak_output/53_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.05/seacr/peak_output/HN6_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.05/seacr/peak_output/HN6_H3K4me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.broad.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/gopeaks/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.narrow.peaks.bed"
+  peak_list: "~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bed"
   species: "hg38"
   geneset_id: "GOBP"
   dedup_status: "dedup"
@@ -64,7 +64,7 @@ dedup_status=params$dedup_status
 
 if (debug=="Y"){
   speciesID="hg19"
-  functionFile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  functionFile="~/../../Volumes/Pipelines-1/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   output_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/go_enrichment"
   peak_dir="~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/"
   peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"

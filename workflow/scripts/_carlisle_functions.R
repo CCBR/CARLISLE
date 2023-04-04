@@ -35,7 +35,6 @@ GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
 ########################################################################
 # GO ENRICHMENT
 ########################################################################
-
 READ_PEAK_FILE<-function(peak_file_in){
   peak_df=read.csv(peak_file_in,sep="\t",header=FALSE)[,c("V1","V2","V3")]
   colnames(peak_df)=c("chrom","start","end")
@@ -139,7 +138,11 @@ PLOT_QC_MAIN<-function(function_in,rowid_in){
   # print with data key
   cat(legend_text)
   n=length(p)
-  if (n==2){
+  if (n==0){
+    print("All plots failed for this sample")
+  } else if (n==1){
+    plot(c(p[[1]]))
+  } else if (n==2){
     plot(c(p[[1]],p[[2]]))
   } else if (n==3){
     plot(c(p[[1]],p[[2]],p[[3]]))
