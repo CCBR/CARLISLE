@@ -69,9 +69,9 @@ Three peak callers are available for deployment within the pipeline, with differ
 ```
 peaktype: "macs2_narrow, macs2_broad,"
 ```
-2. [SEACR](https://github.com/FredHutch/SEACR) is available with four peak calling options: normalized stringent (norm.stringent.bed) or unnormalized stringent (non.stringent.bed) or normalized relaxed: (norm.relaxed.bed) or unnormalized relaxed: (non.relaxed.bed)
+2. [SEACR](https://github.com/FredHutch/SEACR) is available with four peak calling options: stringent or relaxed parameters, to be paired with "norm" for samples without a spike-in control and "non" for samples with a spikein control
 ```
-peaktype: "seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed"
+peaktype: "seacr_stringent, seacr_relaxed"
 ```
 3. [GOPEAKS](https://github.com/maxsonBraunLab/gopeaks) is available with two peak calling options: narrowpeaks or broadpeaks
 ```
@@ -79,13 +79,13 @@ peaktype: "gopeaks_narrow, gopeaks_broad"
 ```
 A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
 
-```
-| Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| Macs2       | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
-| SEACR       | NA                  | NA                | AVAILABLE             | AVAILABLE           | AVAILABLE                 | AVAILABLE               |
-| GoPeaks     | AVAILABLE           | AVAILABLE         | NA                    | NA                  | NA                        | NA                      |
+| Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed   | Non-Normalized, Stringent | Non-Normalized, Relaxed |
+| --- | --- | --- |--- |--- |--- |--- |
+| Macs2 | AVAIL | AVAIL | NA | NA | NA | NA |
+| SEACR | NA | NA | AVAIL w/o SPIKEIN | AVAIL w/o SPIKEIN | AVAIL w/ SPIKEIN | AVAIL w/ SPIKEIN |
+| GoPeaks | AVAIL | AVAIL | NA | NA | NA | NA |
 
+```
 # Recommended list
 ### peaktype: "macs2_narrow, macs2_broad, gopeaks_narrow, gopeaks_broad"
 
@@ -99,6 +99,7 @@ Selecting "Y" for the `macs2_control` will run the paired control sample provide
 
 ##### 2.1.3.1.4 Quality Tresholds
 Thresholds for quality can be controled through the `quality_tresholds` parameter. This must be a list of comma separated values. minimum of numeric value required.
+
 - default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
 - default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
 - default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
@@ -111,10 +112,12 @@ quality_thresholds: "0.1, 0.05, 0.01"
 Additional reference files may be added to the pipeline, if other species were to be used. 
 
 The absolute file paths which must be included are:
+
 1. fa: "/path/to/species.fa"
 2. blacklist: "/path/to/blacklistbed/species.bed"
 
 The following information must be included:
+
 1. regions: "list of regions to be included; IE chr1 chr2 chr3"
 2.  macs2_g: "macs2 genome shorthand; IE mm IE hs"
 
@@ -137,18 +140,21 @@ This manifest will include information to sample level information. It includes 
 
 An example sampleManifest file is shown below:
 
-```
-sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_R1	path_to_R2
-MOC1_siNC_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_1.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siNC_2m_25_HCHO_1.1m.R2.fastq.gz
-MOC1_siSmyd3_2m_25_HCHO	1	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_1.1m.R2.fastq.gz
-MOC1_siSmyd3_2m_25_HCHO	2	N	MOC1_siNC_2m_25_HCHO_IgG_Ctrl	1	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R1.fastq.gz	PIPELINE_HOME/.test/MOC1_siSmyd3_2m_25_HCHO_2.1m.R2.fastq.gz
-```
+
+| sampleName| replicateNumber| isControl| controlName| controlReplicateNumber| path_to_R1| path_to_R2
+| --- |--- |--- |--- |--- |--- |--- |
+| 53_H3K4me3| 1| N| HN6_IgG_rabbit_negative_control| 1| PIPELINE_HOME/.test/53_H3K4me3_1.R1.fastq.gz| PIPELINE_HOME/.test/53_H3K4me3_1.R2.fastq.gz
+| 53_H3K4me3| 2| N| HN6_IgG_rabbit_negative_control| 1| PIPELINE_HOME/.test/53_H3K4me3_2.R1.fastq.gz| PIPELINE_HOME/.test/53_H3K4me3_2.R2.fastq.gz
+| HN6_H3K4me3| 1| N| HN6_IgG_rabbit_negative_control| 1| PIPELINE_HOME/.test/HN6_H3K4me3_1.R1.fastq.gz| PIPELINE_HOME/.test/HN6_H3K4me3_1.R2.fastq.gz
+| HN6_H3K4me3| 2| N| HN6_IgG_rabbit_negative_control| 1| PIPELINE_HOME/.test/HN6_H3K4me3_2.R1.fastq.gz| PIPELINE_HOME/.test/HN6_H3K4me3_2.R2.fastq.gz
+| HN6_IgG_rabbit_negative_control| 1| Y| -| -| PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz| PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R2.fastq.gz
+
 
 ### 2.2.2 Contrast Manifest (OPTIONAL)
 This manifest will include sample information to performed differential comparisons.
 
 An example contrast file:
-```
-condition1	condition2
-MOC1_siSmyd3_2m_25_HCHO	MOC1_siNC_2m_25_HCHO
-```
+
+| condition1 | condition2 |
+| --- | --- |
+| MOC1_siSmyd3_2m_25_HCHO | MOC1_siNC_2m_25_HCHO |

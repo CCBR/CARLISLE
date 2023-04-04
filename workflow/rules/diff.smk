@@ -6,17 +6,11 @@ def get_all_peak_files(wildcards):
     if "macs2_broad" in PEAKTYPE:
         b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(b)
-    if "seacr_norm_stringent" in PEAKTYPE:
-        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+    if "seacr_stringent" in PEAKTYPE:
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(s)
-    if "seacr_non_stringent" in PEAKTYPE:
-        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(s)
-    if "seacr_norm_relaxed" in PEAKTYPE:
-        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.norm_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(r)
-    if "seacr_non_relaxed" in PEAKTYPE:
-        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.non_relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+    if "seacr_relaxed" in PEAKTYPE:
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
         files.extend(r)
     if "gopeaks_narrow" in PEAKTYPE:
         n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
@@ -73,11 +67,7 @@ rule create_contrast_data_files:
 
         # identify peak callers
         peak_caller=`echo {params.peak_caller_type} | cut -d"_" -f1`
-        if [[ ${{peak_caller}} == "seacr" ]]; then
-            peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2"_"$3}}'`
-        else
-            peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2}}'`
-        fi
+        peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2}}'`
 
         # set up output
         if [[ -f {output.contrast_data} ]]; then rm {output.contrast_data}; fi

@@ -35,7 +35,6 @@ GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){
 ########################################################################
 # GO ENRICHMENT
 ########################################################################
-
 READ_PEAK_FILE<-function(peak_file_in){
   peak_df=read.csv(peak_file_in,sep="\t",header=FALSE)[,c("V1","V2","V3")]
   colnames(peak_df)=c("chrom","start","end")
@@ -97,49 +96,53 @@ PLOT_QC_MAIN<-function(function_in,rowid_in){
   locusdf_list=c(strsplit(peak_df[1,"locusdf_list"],",")[[1]],"nearest_tss","nearest_gene")
   locusdf_list=locusdf_list[locusdf_list != "none"]
   
+  # create plots, catching for errors
   counter=1
   legend_text=""
   row_count=1; col_count=1
   p=list()
   for (l_id in locusdf_list){
-    failed_flag="N"
-    p[[counter]]=try(PLOT_QC_FUNCTIONS(function_in,rowid_in,l_id))
+    plot_test = tryCatch({
+      PLOT_QC_FUNCTIONS(function_in,rowid_in,l_id)
+    }, warning = function(w) {
+      "warning"
+    }, error = function(e) {
+      "failed"
+    })
     
-    if("try-error" %in% class(p[[counter]])) {
-      p[[counter]] = plot(0, type = 'n', axes = FALSE, ann = FALSE)
-      failed_flag="Y"
-    }
-    counter=counter+1
-    
-    # if true, this is a new row
-    if (col_count==1){
-      legend_text=paste0(legend_text,"Row ",row_count,":  | Col 1 (",l_id,")")
-      col_count=2
-    } else if (col_count==2){
-      if (length(locusdf_list)%%2==0){
+    # save successful plots in plot_list
+    # save successful plots legend
+    if (class(plot_test) == "trellis"){
+      p[[counter]]=plot_test
+      counter=counter+1
+      
+      # if true, this is a new row
+      if (col_count==1){
+        legend_text=paste0(legend_text,"Row ",row_count,":  | Col 1 (",l_id,")")
+        col_count=2
+      } else if (col_count==2 & row_count==1){
         legend_text=paste0(legend_text," | Col 2 (",l_id,")\n")
         row_count=row_count+1
         col_count=1
-      } else{
+      } else if (col_count==2 & row_count>1){
         legend_text=paste0(legend_text," | Col 2 (",l_id,")")
-        col_count=3
+        col_count=col_count+1
+      } else{
+        legend_text=paste0(legend_text," | Col 3 (",l_id,")\n")
+        col_count=1
+        row_count=row_count+1
       }
-    } else{
-      legend_text=paste0(legend_text," | Col 3 (",l_id,")\n")
-      col_count=1
-      row_count=row_count+1
-    }
-    
-    if (failed_flag=="Y"){
-      legend_text=gsub(l_id,"failed",legend_text)  
     }
   }
   
   # print with data key
   cat(legend_text)
-  
   n=length(p)
-  if (n==2){
+  if (n==0){
+    print("All plots failed for this sample")
+  } else if (n==1){
+    plot(c(p[[1]]))
+  } else if (n==2){
     plot(c(p[[1]],p[[2]]))
   } else if (n==3){
     plot(c(p[[1]],p[[2]],p[[3]]))
