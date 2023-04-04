@@ -6,14 +6,10 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
 
     # SEACR OPTIONS
-    if wildcards.peak_caller_type =="seacr_norm_stringent":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_stringent.peaks.bed")
-    if wildcards.peak_caller_type =="seacr_norm_relaxed":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".norm_relaxed.peaks.bed")
-    if wildcards.peak_caller_type =="seacr_non_stringent":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_stringent.peaks.bed")
-    if wildcards.peak_caller_type =="seacr_non_relaxed":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".non_relaxed.peaks.bed")
+    if wildcards.peak_caller_type =="seacr_stringent":
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".stringent.peaks.bed")
+    if wildcards.peak_caller_type =="seacr_relaxed":
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".relaxed.peaks.bed")
 
     #GOPEAKS OPTIONS
     if wildcards.peak_caller_type =="gopeaks_narrow":
@@ -181,7 +177,7 @@ rule rose:
         ## correct SEACR
         ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
-        if [[ {params.peak_caller_type} == "seacr_norm_stringent" ]] || [[ {params.peak_caller_type} == "seacr_norm_relaxed" ]] || [[ {params.peak_caller_type} == "seacr_non_relaxed" ]] || [[ {params.peak_caller_type} == "seacr_non_relaxed" ]]; then
+        if [[ {params.peak_caller_type} == "seacr_stringent" ]] || [[ {params.peak_caller_type} == "seacr_relaxed" ]]; then
             echo "#### Fixing SECAR"
             cp $TMPDIR/subset.bed $TMPDIR/save.bed
             awk -v sample_id="${{treatment}}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
@@ -287,7 +283,7 @@ if config["run_contrasts"] == "Y":
             if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
 
             # pull file list
-            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_norm_stringent.txt
+            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_stringent.txt
             for f in {params.search_dir}/{params.contrast_list}.{params.dupstatus}/{params.contrast_list}.{params.dupstatus}.{params.peak_caller}*.txt; do
                     cat $f >> $TMPDIR/merge.txt
             done
