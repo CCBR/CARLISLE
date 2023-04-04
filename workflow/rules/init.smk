@@ -168,7 +168,7 @@ for pt in PEAKTYPE:
         macs_set.append(pt)
     elif pt == "gopeaks_narrow" or pt == "gopeaks_broad":
         g_set.append(pt)
-    elif pt == "seacr_norm_stringent" or pt == "seacr_norm_relaxed" or pt == "seacr_non_stringent" or pt == "seacr_non_relaxed":
+    elif pt == "seacr_stringent" or pt == "seacr_relaxed":
         s_set.append(pt)
     else:
         print("A peak type combination was used that is non-compatiable")
