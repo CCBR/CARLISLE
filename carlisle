@@ -302,12 +302,16 @@ function run() {
   elif [ "$1" == "slurm" ];then
   
     preruncleanup
-    # if QOS is other than "global" and is supplied in the cluster.yaml file then add " --qos={cluster.qos}" to the 
-    # snakemake command below
-    #define partitions  
-    BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
-    PARTITIONS="norm,ccr"
-    #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
+
+    #define partitions dependent on host
+    hostID=`echo $HOSTNAME`
+    if [[ $hostID == "biowulf.nih.gov" ]]; then
+      BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
+      PARTITIONS="norm,ccr"
+      #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
+    elif [[ $hostID == "biowulf8.nih.gov" ]]; then
+      PARTITIONS="rhel8"
+    fi
 
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
