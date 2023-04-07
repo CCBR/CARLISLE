@@ -9,7 +9,7 @@
 #
 # DISCLAIMER: This wrapper only works on BIOWULF
 
-PYTHON_VERSION="python/3.7"
+PYTHON_VERSION="python/3.9"
 SNAKEMAKE_VERSION="snakemake"
 SINGULARITY_VERSION="singularity"
 
