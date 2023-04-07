@@ -10,8 +10,8 @@
 # DISCLAIMER: This wrapper only works on BIOWULF
 
 PYTHON_VERSION="python/3.9"
-SNAKEMAKE_VERSION="snakemake"
-SINGULARITY_VERSION="singularity"
+SNAKEMAKE_VERSION="snakemake/7.19.1"
+SINGULARITY_VERSION="singularity/3.10.5"
 
 set -eo pipefail
 module purge
