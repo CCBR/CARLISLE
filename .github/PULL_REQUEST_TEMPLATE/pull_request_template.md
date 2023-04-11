@@ -3,9 +3,7 @@ name: Pull Request report
 about: Create a Pull Request for the pipeline
 title: ''
 labels: ''
-assignees: ''
-
----
+assignees: 'slsevilla'
 
 **Overview of the Request**
 Provide a summary of what is included in this Pull Request
