@@ -5,8 +5,6 @@ title: ''
 labels: ''
 assignees: 'slsevilla'
 
----
-
 **Overview of the Request**
 Provide a summary of what is included in this Pull Request
 
