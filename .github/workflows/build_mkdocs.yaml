@@ -1,19 +1,17 @@
 name: mkdocs_build
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - master
+    paths:
+      - 'docs/**'
 jobs:
-  build:
-    name: Deploy docs
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout main
-        uses: actions/checkout@v2
-      - name: Deploy docs
-        uses: mhausenblas/mkdocs-deploy-gh-pages@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG_FILE: mkdocs.yml
-          EXTRA_PACKAGES: build-base
-          REQUIREMENTS: docs/requirements.txt
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - run: pip install --upgrade pip
+      - run: pip install -r docs/requirements.txt
+      - run: mkdocs gh-deploy --force
