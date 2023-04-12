@@ -1,0 +1,18 @@
+name: lintr
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+jobs:
+  Lintr:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker://snakemake/snakemake:v5.24.2
+    - name: Lint Workflow
+      continue-on-error: true
+      run: |
+        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output_carlisle || \
+        echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
