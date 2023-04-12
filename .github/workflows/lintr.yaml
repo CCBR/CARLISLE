@@ -15,10 +15,11 @@ jobs:
       continue-on-error: true
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-        "mkdir -p /opt2/output_carlisle/config && \
+        "mkdir -p /opt2/output_carlisle/config /opt2/output_carlisle/annotation && \
         cp -r /opt2/workflow/scripts/ /opt2/output_carlisle/ && \
-        cp /opt2/resources/tools.yaml /opt2/output_carlisle/config/tools.yaml && \
-        cp /opt2/resources/cluster.yaml /opt2/output_carlisle/config/cluster.yaml && \
+        cp /opt2/resources/*.yaml /opt2/output_carlisle/config/ && \
+        anno_dir="/opt2/output_carlisle/annotation" && \
+        touch $anno_dir/hg38.fa $anno_dir/genes.gtf $anno_dir/hg38.bed $anno_dir/hg38.tss.bed $anno_dir/hg38_refseq.ucsc && \
         snakemake --lint -s /opt2/workflow/Snakefile \
         -d /opt2/output_carlisle --configfile /opt2/.test/config_lint.yaml || \
         echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'"
