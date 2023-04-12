@@ -138,10 +138,10 @@ reference:
 
 spikein_reference:
   ecoli:
-    fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
+    fa: "/opt2/output_carlisle/annotation/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
   saccharomyces:
     fa: "PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
 
-adapters: "PIPELINE_HOME/resources/other/adapters.fa"
+adapters: "/opt2/output_carlisle/annotation/adapters.fa"
