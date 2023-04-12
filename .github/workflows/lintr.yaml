@@ -15,7 +15,7 @@ jobs:
       continue-on-error: true
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-        "mkdir /opt2/output_carlisle && \
+        "mkdir -p /opt2/output_carlisle/config && \
         cp -r /opt2/workflow/scripts/ /opt2/output_carlisle/ && \
         cp /opt2/resources/tools.yaml /opt2/output_carlisle/config/tools.yaml && \
         cp /opt2/resources/cluster.yaml /opt2/output_carlisle/config/cluster.yaml && \
