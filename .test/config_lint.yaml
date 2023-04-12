@@ -5,14 +5,14 @@
 workdir: "/opt2/output_carlisle"
 
 # tab delimited samples file .. see samplefile for format details
-samplemanifest: "/opt2/config/samples.tsv"
+samplemanifest: "/opt2/.test/samples.test_lintr.tsv"
 
 #####################################################################################
 # User parameters
 #####################################################################################
 # run sample contrasts
 run_contrasts: "Y" # Y or N
-contrasts: "/opt2/config/contrasts.tsv"  # run_contrasts needs to be "Y"
+contrasts: "/opt2/.test/contrasts.tsv"  # run_contrasts needs to be "Y"
 contrasts_fdr_cutoff: "0.05"
 contrasts_lfc_cutoff: "0.59" # FC of 1.5
 
