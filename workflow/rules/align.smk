@@ -135,7 +135,7 @@ rule filter:
     envmodules:
         TOOLS["bowtie2"],
         TOOLS["samtools"],
-        TOOLS["python37"],
+        TOOLS["python"],
         TOOLS["picard"],
         TOOLS["ucsc"]
     shell:
@@ -221,7 +221,7 @@ rule alignstats:
         pyscript = join(SCRIPTSDIR,"_get_nreads_stats.py"),
     threads: getthreads("alignstats")
     envmodules:
-        TOOLS["python37"],
+        TOOLS["python"],
     shell:
         """
         set -exo pipefail

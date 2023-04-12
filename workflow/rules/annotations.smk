@@ -99,8 +99,9 @@ rule rose:
     envmodules:
         TOOLS["bedtools"],
         TOOLS["rose"],
-        TOOLS["python37"],
+        TOOLS["python"],
         TOOLS["samtools"],
+        TOOLS["R"]
     threads: getthreads("rose")
     params:
         genome = config["genome"],
