@@ -124,7 +124,7 @@ rule make_counts_matrix:
     params:
         pyscript=join(SCRIPTSDIR,"_make_counts_matrix.py"),
     envmodules:
-        TOOLS["python"],
+        TOOLS["python3"],
         TOOLS["bedtools"],
         TOOLS["bedops"]
     shell:
@@ -275,7 +275,7 @@ rule diffbb:
         lfc=LFCCUTOFF,
     envmodules:
         TOOLS["ucsc"],
-        TOOLS["python"]
+        TOOLS["python3"]
     shell:
         """
         set -exo pipefail

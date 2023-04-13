@@ -99,7 +99,7 @@ rule rose:
     envmodules:
         TOOLS["bedtools"],
         TOOLS["rose"],
-        TOOLS["python"],
+        TOOLS["python3"],
         TOOLS["samtools"],
         TOOLS["R"]
     threads: getthreads("rose")
