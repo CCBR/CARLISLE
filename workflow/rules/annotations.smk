@@ -300,8 +300,6 @@ if config["run_contrasts"] == "Y":
         """
         input:
             contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
-        output:
-            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
         params:
             rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
             rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
@@ -311,7 +309,9 @@ if config["run_contrasts"] == "Y":
             geneset_id = GENESET_ID,
             dedup_status =  "{dupstatus}"
         envmodules:
-            TOOLS["R"]
+            TOOLS["R"],
+        output:
+            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
         shell:
             """
             set -exo pipefail
