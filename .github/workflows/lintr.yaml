@@ -17,7 +17,8 @@ jobs:
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
         "mkdir -p /opt2/output_carlisle/config /opt2/output_carlisle/annotation && \
         cp -r /opt2/workflow/scripts/ /opt2/output_carlisle/ && \
-        cp /opt2/resources/*.yaml /opt2/output_carlisle/config/ && \
+        cp /opt2/resources/cluster_biowulf.yaml /opt2/output_carlisle/config/cluster.yaml && \
+        cp /opt2/resources/tools_biowulf.yaml /opt2/output_carlisle/config/tools.yaml && \
         cd /opt2/output_carlisle/annotation && \
         touch hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa && \
         snakemake --lint -s /opt2/workflow/Snakefile \
