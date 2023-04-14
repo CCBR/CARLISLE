@@ -1,0 +1,14 @@
+name: DevTesting
+on:
+  push:
+    branches:
+      - dev
+jobs:
+  TestingDev:
+    steps:
+    - uses: snakemake/snakemake-github-action@v1
+      with:
+        directory: '.test'
+        snakefile: 'workflow/Snakefile'
+        args: '--cores 1 --use-conda --conda-cleanup-pkgs cache'
+        stagein: '' # additional preliminary commands to run (can be multiline)
