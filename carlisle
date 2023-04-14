@@ -24,7 +24,7 @@ hostID=`echo $HOSTNAME`
 if [[ $hostID == "biowulf.nih.gov" ]]; then
   BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
   PARTITIONS="norm,ccr"
-  cluster_specific_yaml="cluster.yaml"
+  cluster_specific_yaml="cluster_biowulf.yaml"
   #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
 elif [[ $hostID == "biowulf8.nih.gov" ]]; then
   PARTITIONS="rhel8"
@@ -34,7 +34,7 @@ fi
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/$cluster_specific_yaml resources/tools.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster_* resources/tools.yaml"
 ESSENTIAL_FOLDERS="workflow/scripts"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -108,6 +108,9 @@ function init() {
     fbn=$(basename $f)
     sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" -e "s/WORKDIR/${WORKDIR//\//\\/}/g" ${PIPELINE_HOME}/$f > $WORKDIR/config/$fbn
   done
+
+  # rename config dependent on partition used
+  cp $WORKDIR/config/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
 
   # copy essential folders
   for f in $ESSENTIAL_FOLDERS;do
@@ -337,7 +340,7 @@ function run() {
     --printshellcmds \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
-    --cluster-config ${WORKDIR}/config/$cluster_specific_yaml \
+    --cluster-config ${WORKDIR}/config/config.yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
     -j 500 \
     --rerun-incomplete \
@@ -365,7 +368,7 @@ EOF
     --printshellcmds \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
-    --cluster-config ${WORKDIR}/config/$cluster_specific_yaml \
+    --cluster-config ${WORKDIR}/config/config.yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
     -j 500 \
     --rerun-incomplete \
