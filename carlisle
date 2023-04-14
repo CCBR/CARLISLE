@@ -19,10 +19,22 @@ module purge
 SCRIPTNAME="$0"
 SCRIPTBASENAME=$(readlink -f $(basename $0))
 
+#define cluster, partitions dependent on host
+hostID=`echo $HOSTNAME`
+if [[ $hostID == "biowulf.nih.gov" ]]; then
+  BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
+  PARTITIONS="norm,ccr"
+  cluster_specific_yaml="cluster.yaml"
+  #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
+elif [[ $hostID == "biowulf8.nih.gov" ]]; then
+  PARTITIONS="rhel8"
+  cluster_specific_yaml="cluster_rhel8.yaml"
+fi
+
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster.yaml resources/tools.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/$cluster_specific_yaml resources/tools.yaml"
 ESSENTIAL_FOLDERS="workflow/scripts"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -303,16 +315,6 @@ function run() {
   
     preruncleanup
 
-    #define partitions dependent on host
-    hostID=`echo $HOSTNAME`
-    if [[ $hostID == "biowulf.nih.gov" ]]; then
-      BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
-      PARTITIONS="norm,ccr"
-      #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
-    elif [[ $hostID == "biowulf8.nih.gov" ]]; then
-      PARTITIONS="rhel8"
-    fi
-
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name="CARLISLE"
@@ -335,7 +337,7 @@ function run() {
     --printshellcmds \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
-    --cluster-config ${WORKDIR}/config/cluster.yaml \
+    --cluster-config ${WORKDIR}/config/$cluster_specific_yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
     -j 500 \
     --rerun-incomplete \
@@ -363,7 +365,7 @@ EOF
     --printshellcmds \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
-    --cluster-config ${WORKDIR}/config/cluster.yaml \
+    --cluster-config ${WORKDIR}/config/$cluster_specific_yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
     -j 500 \
     --rerun-incomplete \
