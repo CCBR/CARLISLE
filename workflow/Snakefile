@@ -164,34 +164,30 @@ rule all:
         ##########################################
         ### required files
         ##########################################
-        ## Rules/Init
         # manifests
         unpack(run_pipe_prep),
         
-        # Rules/Align
-        # norm table, if needed
+        # ALIGN / create_library_norm_scales
         unpack(run_library_norm),
 
-        # alignment stats yaml files and stats table
+        # ALIGN / alignstats
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+        
+        # ALIGN / gather_alignstats
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
 
-        ## Rules/peakcalls
-        # PEAKCALLS rules
+        # PEAKCALLS / macs2_narrow, macs2_broad, seacr_stringent, seacr_relaxed, gopeaks_narrow, gopeaks_broad
         unpack(run_macs2),
         unpack(run_seacr),
         unpack(run_gopeaks),
 
-        ## Rules/QC
-        # qc
+        # QC
         unpack(run_qc),
 
-        ## Rules/diff
-        # DIFFERENTIAL
+        # DIFF / create_contrast_data_files
         unpack(run_contrasts),
         
-        ## Rules/annotation
-        # ANNOTATION
+        # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
         unpack(get_motifs),
         unpack(get_rose),
         unpack(get_enrichment)
@@ -199,18 +195,38 @@ rule all:
         ##########################################
         ### intermediate files
         ##########################################
-        # bowtie2 index building
-        # join(BOWTIE2_INDEX,"ref.1.bt2"),
-        # join(BOWTIE2_INDEX,"ref.len"),
-        # join(BOWTIE2_INDEX,"spikein.len"),
+        # INIT / create_reference
+        join(BOWTIE2_INDEX,"ref.1.bt2"),
+        join(BOWTIE2_INDEX,"ref.len"),
+        join(BOWTIE2_INDEX,"spikein.len"),
 
-        ## ALIGN RULES
-        # filtered bams
-        # expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # ALIGN / trim
+        expand(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
+        expand(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
 
-        # # bedgraphs and bigwigs
-        # expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        # expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        # ALIGN / align
+        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam"),replicate=REPLICATES),
+        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),replicate=REPLICATES),
+        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),replicate=REPLICATES),
+        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),replicate=REPLICATES),
+
+        # ALIGN / filter
+        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.flagstat"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+
+        # ALIGN / alignstats
+        join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),
+        
+        # ALIGN / gather_alignstats
+        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
+
+        # ALIGN / create_library_norm_scales     
+        join(RESULTSDIR,"alignment_stats","library_scale.tsv"),
+
+        # ALIGN / bam2bg
+        expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
 """

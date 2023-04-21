@@ -9,9 +9,9 @@
 #
 # DISCLAIMER: This wrapper only works on BIOWULF
 
-PYTHON_VERSION="python/3.7"
-SNAKEMAKE_VERSION="snakemake"
-SINGULARITY_VERSION="singularity"
+PYTHON_VERSION="python/3.9"
+SNAKEMAKE_VERSION="snakemake/7.19.1"
+SINGULARITY_VERSION="singularity/3.10.5"
 
 set -eo pipefail
 module purge
@@ -19,10 +19,24 @@ module purge
 SCRIPTNAME="$0"
 SCRIPTBASENAME=$(readlink -f $(basename $0))
 
+#define cluster, partitions dependent on host
+hostID=`echo $HOSTNAME`
+if [[ $hostID == "biowulf.nih.gov" ]]; then
+  BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
+  PARTITIONS="norm,ccr"
+  cluster_specific_yaml="cluster_biowulf.yaml"
+  tools_specific_yaml="tools_biowulf.yaml"
+  #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
+elif [[ $hostID == "biowulf8.nih.gov" ]]; then
+  PARTITIONS="rhel8"
+  cluster_specific_yaml="cluster_rhel8.yaml"
+  tools_specific_yaml="tools_rhel8.yaml"
+fi
+
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster.yaml resources/tools.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster_* resources/tools_*"
 ESSENTIAL_FOLDERS="workflow/scripts"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -96,6 +110,10 @@ function init() {
     fbn=$(basename $f)
     sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" -e "s/WORKDIR/${WORKDIR//\//\\/}/g" ${PIPELINE_HOME}/$f > $WORKDIR/config/$fbn
   done
+
+  # rename config dependent on partition used
+  cp $WORKDIR/config/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
+  cp $WORKDIR/config/$tools_specific_yaml $WORKDIR/config/tools.yaml
 
   # copy essential folders
   for f in $ESSENTIAL_FOLDERS;do
@@ -302,12 +320,6 @@ function run() {
   elif [ "$1" == "slurm" ];then
   
     preruncleanup
-    # if QOS is other than "global" and is supplied in the cluster.yaml file then add " --qos={cluster.qos}" to the 
-    # snakemake command below
-    #define partitions  
-    BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
-    PARTITIONS="norm,ccr"
-    #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
 
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
