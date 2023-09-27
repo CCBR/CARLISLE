@@ -14,6 +14,29 @@ def run_library_norm(wildcards):
         files.extend(lib)
     return files
 
+def run_deeptools_bw(wildcards):
+    files=[]
+    b1=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    files.extend(b1)
+    b2=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    files.extend(b2)
+    b3=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    files.extend(b3)
+    return files
+
+def run_deeptools_heatmap(wildcards):
+    files=[]
+    GROUP = [a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]]
+    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    files.extend(p1)
+    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    files.extend(p2)
+    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    files.extend(p3)
+    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    files.extend(p4)
+    return files
+
 def run_macs2(wildcards):
     files=[]
     if "macs2_narrow" in PEAKTYPE:
@@ -60,13 +83,14 @@ def run_qc(wildcards):
     files=[]
     if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
         q=expand(join(RESULTSDIR,'qc', 'multiqc_report_{qthresholds}.html'),qthresholds=QTRESHOLDS)
+        files.extend(q)
     else:
         q=join(RESULTSDIR,'qc', 'multiqc_report.html')
-    files.extend(q)
+        files.append(q)
 
     if ("SPIKEIN" == NORM_METHOD) and ("ecoli" == spikein_genome):
         html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
-        files.extend(html)
+        files.append(html)
     return files
 
 def run_contrasts(wildcards):
@@ -167,6 +191,12 @@ rule all:
         # manifests
         unpack(run_pipe_prep),
         
+        # ALIGN / deeptools_bw
+        unpack(run_deeptools_bw),
+
+        # ALIGN / deeptools_heatmap
+        unpack(run_deeptools_heatmap),
+
         # ALIGN / create_library_norm_scales
         unpack(run_library_norm),
 
@@ -229,4 +259,13 @@ rule all:
         expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+
+        # ALIGN / deeptools_heatmap
+        expand(join(RESULTSDIR,"deeptools","clean", "{sample}.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "{sample}.prot.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "all_samples.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "all_samples.prot.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.TSS.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.geneinfo.bed"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
 """
