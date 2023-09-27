@@ -244,6 +244,14 @@ function testrun() {
   dryrun
 }
 
+function tinytestrun() {
+  check_essential_files
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.tinytest.tsv > $WORKDIR/config/samples.tsv
+  cp ${PIPELINE_HOME}/.test/contrasts.tinytest.tsv $WORKDIR/config/contrasts.tsv
+  check_essential_files
+  dryrun
+}
+
 function runslurm() {
 # Submit the execution of the pipeline to the biowulf job scheduler (slurm)
   runcheck
@@ -422,6 +430,7 @@ function main(){
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
     testrun) testrun && exit 0;;
+    tinytestrun) tinytestrun && exit 0;;          # hidden option for debugging
     dry) dryrun && exit 0;;                      # hidden option
     local) runlocal && exit 0;;                  # hidden option
     reconfig) reconfig && exit 0;;               # hidden option for debugging
