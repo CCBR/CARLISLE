@@ -5,10 +5,9 @@
 
 # prep the logs by pulling IDs
 snakemakelog=$1
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 jobids=$(grep --color=never "^Submitted .* with external jobid" $snakemakelog | awk '{print $NF}'  | sed "s/['.]//g" | sort | uniq | tr "\\n" " ")
 jobidswc=$(echo $jobids | wc -c)
 
 # run jobby script
 module load python
-if [ "$jobidswc" != "1" ];then ${SCRIPT_DIR}/$2 $jobids; fi
+if [ "$jobidswc" != "1" ];then python $2 $jobids; fi
