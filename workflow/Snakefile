@@ -221,6 +221,25 @@ rule all:
         # unpack(get_motifs),
         # unpack(get_rose),
         # unpack(get_enrichment)
+
+# create jobby tables
+jobby_cmd = join(SCRIPTSDIR, 'resources', '_run_jobby_on_snakemake_log') + " " + join('logfiles', 'snakemake.log') + " | tee " + join('logfiles', 'snakemake.log.jobby') + " | cut -f2,3,18 > " + join('logfiles', 'snakemake.log.jobby.short')
+spook_cmd = join(SCRIPTSDIR, 'resources', '_spooker') + " " + WORKDIR + " | tee " + join('logfiles', 'spooker.log')
+
+onsuccess:
+    print("OnSuccess")
+    print(jobby_cmd)
+    shell(jobby_cmd)
+    print(spook_cmd)
+    shell(spook_cmd)
+
+onerror:
+    print("OnError")
+    print(jobby_cmd)
+    shell(jobby_cmd)
+    print(spook_cmd)
+    shell(spook_cmd)
+
 """
         ##########################################
         ### intermediate files
