@@ -74,7 +74,7 @@ macs2_control: "N"
 ## thresholds to be used for peak callers
 ## must be a list of comma separated values. minimum of numeric value required.
 ### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
-### default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
+### default GOPEAKS qvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md; [link to issue]
 ### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
 quality_thresholds: "0.1, 0.05"
 
