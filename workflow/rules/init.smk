@@ -247,6 +247,13 @@ if config["run_contrasts"] == "Y":
         if os.path.exists(rg_file): os.remove(rg_file)
         # once file is removed it will be recreated by rule create_replicate_sample_table
 
+# create CONTROL : TREATMENT dictionary
+CONTROL_to_TREAT_DICT={}
+for t in TREAT_to_CONTRL_DICT:
+    c=TREAT_to_CONTRL_DICT[t]
+    if c not in CONTROL_to_TREAT_DICT:
+        CONTROL_to_TREAT_DICT[c]=[]
+    CONTROL_to_TREAT_DICT[c].append(t)
 
 #########################################################
 # READ IN TOOLS REQUIRED BY PIPELINE

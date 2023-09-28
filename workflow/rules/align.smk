@@ -368,3 +368,104 @@ rule bam2bg:
         # add to YAML
         echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
         """
+
+rule deeptools_bw:
+    input:
+        bam = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),
+        genome_len = join(BOWTIE2_INDEX,"genome.len")
+    output:
+        clean_bam = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),
+        clean_bai = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),
+        bw = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),
+    envmodules:
+        TOOLS["samtools"],
+        TOOLS["deeptools"],
+    shell:
+        """
+        genome_size=`cat {input.genome_len} | awk '{{ sum+=$2 }} END{{ print sum }}'`
+        samtools view -b -@4 {input.bam} chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY | samtools sort -@4 -o {output.clean_bam}
+        samtools index {output.clean_bam}
+        bamCoverage --bam {output.clean_bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors 32 --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
+        """
+
+rule deeptools_prep:
+    input:
+        bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+    output:
+        deeptools_prep = temp(expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS)),
+    run:
+        for dupstatus in DUPSTATUS:
+            for i in ["","prot."]:
+                for item in TREATMENT_CONTROL_LIST:
+                    labels = item.split('_vs_')
+                    treatment, control = labels
+                    bws = [join(RESULTSDIR,"deeptools","clean","{}.{}.clean.bigwig".format(item, dupstatus)) for item in labels]
+                    f=open(join(RESULTSDIR,"deeptools","clean","{}.{}{}.deeptools_prep".format(treatment, i, dupstatus) ),'w')
+                    f.write("{}\n".format(dupstatus))
+                    f.write("{}\n".format(" ".join(bws)))
+                    f.write("{}\n".format(" ".join(labels)))
+                    f.close()
+
+        for dupstatus in DUPSTATUS:
+            labels = []
+            for c in CONTROL_to_TREAT_DICT:
+                labels += CONTROL_to_TREAT_DICT[c]
+                labels.append(c)
+            bws = [join(RESULTSDIR,"deeptools","clean","{}.{}.clean.bigwig".format(item, dupstatus)) for item in labels]
+
+            for i in ["","prot."]:
+                f_all=open(join(RESULTSDIR,"deeptools","clean","all_samples.{}{}.deeptools_prep".format(i, dupstatus)),'w')
+                f_all.write("all_samples\n")
+                f_all.write("{}\n".format(" ".join(bws)))
+                f_all.write("{}\n".format(" ".join(labels)))
+                f_all.close()
+
+rule deeptools_mat:
+    input:
+        deeptools_prep = join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),
+        bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+    output:
+        metamat=temp(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz")),
+        TSSmat=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.TSS.mat.gz")),
+        bed=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.geneinfo.bed")),
+    params:
+        prebed="/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/geneinfo.bed",
+        pythonver=TOOLS["python3"],
+        deeptoolsver=TOOLS["deeptools"],
+    threads:
+        getthreads("deeptools_mat"),
+    run:
+        import re
+        commoncmd="module load {params.deeptoolsver}; module load {params.pythonver};"
+        listfile=list(map(lambda z:z.strip().split(),open(input.deeptools_prep,'r').readlines()))
+        ext=listfile[0][0]
+        bws=listfile[1]
+        labels=listfile[2]
+        if "prot" in wildcards.group:
+            cmd1="grep --line-buffered 'protein_coding' "+ params.prebed  +" | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' > "+output.bed
+        else:
+            cmd1="awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' "+params.prebed+" > "+output.bed
+        cmd2="computeMatrix scale-regions -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --upstream 1000 --regionBodyLength 2000 --downstream 1000 --skipZeros -o "+output.metamat+" --samplesLabel "+" ".join(labels)
+        cmd3="computeMatrix reference-point -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros -o "+output.TSSmat+" --samplesLabel "+" ".join(labels)
+        shell(commoncmd+cmd1)
+        shell(commoncmd+cmd2)
+        shell(commoncmd+cmd3)
+
+rule deeptools_heatmap:
+    input:
+        metamat=rules.deeptools_mat.output.metamat,
+        TSSmat=rules.deeptools_mat.output.TSSmat,
+    output:
+        metaheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_heatmap.pdf"),
+        TSSheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_heatmap.pdf"),
+        metaline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_profile.pdf"),
+        TSSline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_profile.pdf"),
+    envmodules:
+        TOOLS["deeptools"],
+    shell:
+        """
+        plotHeatmap -m {input.metamat} -out {output.metaheat} --colorMap 'PuOr_r' --zMin auto --zMax auto --yAxisLabel 'average RPGC' --regionsLabel 'genes' --legendLocation 'none'
+        plotHeatmap -m {input.TSSmat} -out {output.TSSheat} --colorMap 'RdBu_r' --zMin auto --zMax auto --yAxisLabel 'average RPGC' --regionsLabel 'genes' --legendLocation 'none'
+        plotProfile -m {input.metamat} -out {output.metaline} --plotHeight 15 --plotWidth 15 --perGroup --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-right
+        plotProfile -m {input.TSSmat} -out {output.TSSline} --plotHeight 15 --plotWidth 15 --perGroup --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left
+        """
