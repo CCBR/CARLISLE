@@ -35,10 +35,10 @@ if [[ $ISBIOWULF == true || $ISFRCE == true ]];then
 	    fi
         fi
         echo "spook is now in PATH:$SPOOK"
-        SPOOK_COPY2DIR="/scratch/carlisle"
+        SPOOK_COPY2DIR="/scratch/ccbrpipeliner"
     fi
     if [[ $ISFRCE == true ]];then
-        SPOOK_COPY2DIR="/mnt/projects/CCBR-Pipelines/pipelines/userdata/carlisle"
+        SPOOK_COPY2DIR="/mnt/projects/CCBR-Pipelines/pipelines/userdata/ccbrpipeliner"
     fi
 
     DT=$(date +%y%m%d%H%M%S)
@@ -63,8 +63,8 @@ if [[ $ISBIOWULF == true || $ISFRCE == true ]];then
         tree $PIPELINE_OUTDIR >> $treefile
         cmd="$cmd $treefile"
 
-        if [[ -d "${PIPELINE_OUTDIR}/logfiles" ]];then
-            logdir="${PIPELINE_OUTDIR}/logfiles"
+        if [[ -d "${PIPELINE_OUTDIR}/logs" ]];then
+            logdir="${PIPELINE_OUTDIR}/logs"
             for thisfile in "snakemake.log" "snakemake.log.jobby" "master.log" "runtime_statistics.json";do
                 absthisfile="${logdir}/${thisfile}"
                 if [[ -f "$absthisfile" ]];then
