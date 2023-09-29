@@ -223,8 +223,10 @@ rule all:
         # unpack(get_enrichment)
 
 # create jobby tables
-jobby_cmd = join(SCRIPTSDIR, 'resources', '_run_jobby_on_snakemake_log') + " " + join('logfiles', 'snakemake.log') + " | tee " + join('logfiles', 'snakemake.log.jobby') + " | cut -f2,3,18 > " + join('logfiles', 'snakemake.log.jobby.short')
-spook_cmd = join(SCRIPTSDIR, 'resources', '_spooker') + " " + WORKDIR + " | tee " + join('logfiles', 'spooker.log')
+## command for jobby: bash scripts/_run_jobby_on_snakemake_log logs/snakemake.log _jobby.py | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
+## command for spooker: bash scripts/_spooker /data/sevillas2/carlisle/spook1 | tee logs/spooker.log
+jobby_cmd = "bash " + join(SCRIPTSDIR, '_run_jobby_on_snakemake_log') + " " + join('logs', 'snakemake.log') + " " + join(SCRIPTSDIR, '_jobby.py') + " | tee " + join('logs', 'snakemake.log.jobby') + " | cut -f2,3,18 > " + join('logs', 'snakemake.log.jobby.short')
+spook_cmd = "bash " + join(SCRIPTSDIR, '_spooker') + " " + WORKDIR + " | tee " + join('logs', 'spooker.log')
 
 onsuccess:
     print("OnSuccess")
