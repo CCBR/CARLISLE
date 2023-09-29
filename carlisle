@@ -21,17 +21,9 @@ SCRIPTBASENAME=$(readlink -f $(basename $0))
 
 #define cluster, partitions dependent on host
 hostID=`echo $HOSTNAME`
-if [[ $hostID == "biowulf.nih.gov" ]]; then
-  BUYINPARTITIONS=$(bash <(curl -s https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/get_buyin_partition_list.bash 2>/dev/null))
-  PARTITIONS="norm,ccr"
-  cluster_specific_yaml="cluster_biowulf.yaml"
-  tools_specific_yaml="tools_biowulf.yaml"
-  #if [ $BUYINPARTITIONS ];then PARTITIONS="norm,$BUYINPARTITIONS";fi
-elif [[ $hostID == "biowulf8.nih.gov" ]]; then
-  PARTITIONS="rhel8"
-  cluster_specific_yaml="cluster_rhel8.yaml"
-  tools_specific_yaml="tools_rhel8.yaml"
-fi
+PARTITIONS="norm,ccr"
+cluster_specific_yaml="cluster_biowulf.yaml"
+tools_specific_yaml="tools_biowulf.yaml"
 
 # essential files
 # these are relative to the workflows' base folder
@@ -249,6 +241,14 @@ function testrun() {
   sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.test.tsv > $WORKDIR/config/samples.tsv
   cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
   check_essential_files
+  runslurm
+}
+
+function tinytestrun() {
+  check_essential_files
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.tinytest.tsv > $WORKDIR/config/samples.tsv
+  cp ${PIPELINE_HOME}/.test/contrasts.tinytest.tsv $WORKDIR/config/contrasts.tsv
+  check_essential_files
   dryrun
 }
 
@@ -430,6 +430,7 @@ function main(){
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
     testrun) testrun && exit 0;;
+    tinytestrun) tinytestrun && exit 0;;          # hidden option for debugging
     dry) dryrun && exit 0;;                      # hidden option
     local) runlocal && exit 0;;                  # hidden option
     reconfig) reconfig && exit 0;;               # hidden option for debugging
