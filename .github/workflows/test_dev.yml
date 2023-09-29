@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: snakemake/snakemake-github-action@v1
+    - uses: docker://snakemake/snakemake:v7.19.1
       with:
         directory: '.test'
-        - uses: docker://snakemake/snakemake:v7.19.1
     - name: Dev Testing Workflow
       continue-on-error: true
       run: |
