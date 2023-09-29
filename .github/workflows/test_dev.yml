@@ -10,10 +10,7 @@ jobs:
     - uses: snakemake/snakemake-github-action@v1
       with:
         directory: '.test'
-        snakefile: 'workflow/Snakefile'
-        args: '--cores 1 --use-conda --conda-cleanup-pkgs cache'
-        stagein: '' # additional preliminary commands to run (can be multiline)
-
+        - uses: docker://snakemake/snakemake:v7.19.1
     - name: Dev Testing Workflow
       continue-on-error: true
       run: |
