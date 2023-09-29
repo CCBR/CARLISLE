@@ -10,7 +10,6 @@ jobs:
     - uses: docker://snakemake/snakemake:v7.19.1
       with:
         directory: '.test'
-        args: '--cores 1 --use-conda --conda-cleanup-pkgs cache'
     - name: Dev Testing Workflow
       continue-on-error: true
       run: |
