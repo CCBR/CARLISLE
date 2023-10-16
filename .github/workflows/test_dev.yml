@@ -17,7 +17,6 @@ jobs:
       with:
         directory: '.test'
     - name: dryrun
-      continue-on-error: true
       run: |
         bash install.sh carlisle-dev
         which carlisle
