@@ -26,7 +26,7 @@ fi
 cp $DIRNAME/carlisle $INSTALL_PATH/
 
 ## all config & workflow scripts;
-for subdir in config workflow/scripts
+for subdir in config workflow/scripts workflow/Snakefile
 do  
     mkdir -p ${INSTALL_PATH}/$subdir
     cp ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
