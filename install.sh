@@ -4,6 +4,7 @@
 # examples
 #   ./install.sh .v2.4.0
 #   /data/CCBR_Pipeliner/Pipelines/CARLISLE/dev/install.sh /data/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.5.0-a
+set -euxo pipefail
 
 VERSION=$1
 INSTALL_PATH=${VERSION}/bin
