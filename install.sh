@@ -38,3 +38,5 @@ cp ${DIRNAME}/resources/*.yaml ${INSTALL_PATH}/resources/
 if [[ ":$PATH:" != *":${INSTALL_PATH}:"* ]];then
     export PATH="${PATH}:${INSTALL_PATH}"
 fi
+
+echo "CARLISLE installed to ${INSTALL_PATH}"
