@@ -26,11 +26,12 @@ fi
 cp $DIRNAME/carlisle $INSTALL_PATH/
 
 ## all config & workflow scripts;
-for subdir in config workflow/scripts workflow/Snakefile
+for subdir in config workflow/scripts
 do  
     mkdir -p ${INSTALL_PATH}/$subdir
     cp ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
 done
+cp ${DIRNAME}/workflow/Snakefile ${INSTALL_PATH}/workflow
 
 ## selected resources
 mkdir -p ${INSTALL_PATH}/resources/
