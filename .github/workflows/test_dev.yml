@@ -32,4 +32,4 @@ jobs:
         done
 
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-          "echo $(ls .) && snakemake --dryrun -s workflow/Snakefile --configfile config_lint.yaml"
+          "snakemake --dryrun -s workflow/Snakefile --configfile config_lint.yaml"
