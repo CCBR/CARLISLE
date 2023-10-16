@@ -40,4 +40,4 @@ if [[ ":$PATH:" != *":${INSTALL_PATH}:"* ]];then
     export PATH="${PATH}:${INSTALL_PATH}"
 fi
 
-echo "Installed CARLISLE to ${INSTALL_PATH}"
+echo "${INSTALL_PATH}"
