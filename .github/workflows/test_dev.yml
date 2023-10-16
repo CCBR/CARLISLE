@@ -18,8 +18,9 @@ jobs:
       with:
         directory: '.test'
     - name: dryrun
+      shell: bash {0}
       run: |
-        bash ./install.sh carlisle-dev
+        ./install.sh carlisle-dev
         echo $PATH
         cd .test
         mkdir annotation
