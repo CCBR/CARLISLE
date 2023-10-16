@@ -194,8 +194,9 @@ function controlcheck(){
   check2=`awk '{print $2}' ${WORKDIR}/config/contrasts.tsv`
   
   for sample_id in ${control_list[@]}; do
-    if [[ $check1 =~ $sample_id || $check2 =~ $sample_id ]]; then 
+    if [[ $check1 == $sample_id || $check2 == $sample_id ]]; then 
       echo "Controls ($sample_id) cannot be listed in contrast.csv - update and re-run"
+      echo "$check1 okkk $check2"
       exit 0
     fi
   done
