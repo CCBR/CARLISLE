@@ -14,6 +14,7 @@ DIRNAME=$(readlink -f $(dirname $0))
 if [ -n "$(ls -A $INSTALL_PATH 2>/dev/null)" ]
 then
     echo "ERROR: directory not empty: ${INSTALL_PATH}"
+    echo $(ls $INSTALL_PATH)
     exit 1
 fi
 
