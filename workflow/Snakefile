@@ -197,30 +197,30 @@ rule all:
         # ALIGN / deeptools_heatmap
         unpack(run_deeptools_heatmap),
 
-        # # ALIGN / create_library_norm_scales
-        # unpack(run_library_norm),
+        # ALIGN / create_library_norm_scales
+        unpack(run_library_norm),
 
-        # # ALIGN / alignstats
-        # expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
+        # ALIGN / alignstats
+        expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
         
-        # # ALIGN / gather_alignstats
-        # join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
+        # ALIGN / gather_alignstats
+        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
 
-        # # PEAKCALLS / macs2_narrow, macs2_broad, seacr_stringent, seacr_relaxed, gopeaks_narrow, gopeaks_broad
-        # unpack(run_macs2),
-        # unpack(run_seacr),
-        # unpack(run_gopeaks),
+        # PEAKCALLS / macs2_narrow, macs2_broad, seacr_stringent, seacr_relaxed, gopeaks_narrow, gopeaks_broad
+        unpack(run_macs2),
+        unpack(run_seacr),
+        unpack(run_gopeaks),
 
-        # # QC
-        # unpack(run_qc),
+        # QC
+        unpack(run_qc),
 
-        # # DIFF / create_contrast_data_files
-        # unpack(run_contrasts),
+        # DIFF / create_contrast_data_files
+        unpack(run_contrasts),
         
-        # # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
-        # unpack(get_motifs),
-        # unpack(get_rose),
-        # unpack(get_enrichment)
+        # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
+        unpack(get_motifs),
+        unpack(get_rose),
+        unpack(get_enrichment)
 
 # create jobby tables
 ## command for jobby: bash scripts/_run_jobby_on_snakemake_log logs/snakemake.log _jobby.py | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
