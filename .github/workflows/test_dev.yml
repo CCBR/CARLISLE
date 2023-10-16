@@ -30,4 +30,4 @@ jobs:
 
         $carlisle --runmode=init --workdir=./
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-          snakemake --dryrun --configfile config_lint.yaml
+          snakemake --dryrun -c 1 --configfile config_lint.yaml
