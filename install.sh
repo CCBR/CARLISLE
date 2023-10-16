@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # usage:
 #   ./install.sh new/path/to/install
-# example
+# examples
 #   ./install.sh .v2.4.0
+#   /data/CCBR_Pipeliner/Pipelines/CARLISLE/dev/install.sh /data/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.5.0-a
 
 SCRIPTNAME="$0"
 INSTALL_PATH="$1"
