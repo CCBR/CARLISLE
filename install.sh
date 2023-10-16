@@ -7,13 +7,9 @@
 set -euxo pipefail
 
 VERSION=$1
-INSTALL_PATH=${VERSION}/bin
-
+mkdir -p ${VERSION}/bin
+INSTALL_PATH=$(readlink -f ${VERSION}/bin)
 DIRNAME=$(readlink -f $(dirname $0))
-
-
-mkdir -p ${INSTALL_PATH}
-
 
 if [ -n "$(ls -A $INSTALL_PATH 2>/dev/null)" ]
 then
