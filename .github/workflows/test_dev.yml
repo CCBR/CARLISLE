@@ -20,14 +20,15 @@ jobs:
     - name: dryrun
       shell: bash {0}
       run: |
-        carlisle=$(./install.sh carlisle-dev)/carlisle
+        ./install.sh .test/
         cd .test
+        mv bin/* ./
+
         mkdir annotation
         for f in hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa
         do
           touch annotation/$f
         done
 
-        $carlisle --runmode=init --workdir=./
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
           snakemake --dryrun -c 1 --configfile config_lint.yaml
