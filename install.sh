@@ -4,7 +4,7 @@
 # examples
 #   ./install.sh .v2.4.0
 #   /data/CCBR_Pipeliner/Pipelines/CARLISLE/dev/install.sh /data/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.5.0-a
-set -euxo pipefail
+set -euo pipefail
 
 VERSION=$1
 mkdir -p ${VERSION}/bin
@@ -40,4 +40,4 @@ if [[ ":$PATH:" != *":${INSTALL_PATH}:"* ]];then
     export PATH="${PATH}:${INSTALL_PATH}"
 fi
 
-echo "CARLISLE installed to ${INSTALL_PATH}"
+echo "Installed CARLISLE to ${INSTALL_PATH}"
