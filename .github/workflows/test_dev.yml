@@ -2,7 +2,13 @@ name: DevTesting
 on:
   push:
     branches:
+      - master
       - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
