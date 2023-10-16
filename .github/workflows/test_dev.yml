@@ -21,13 +21,14 @@ jobs:
       shell: bash {0}
       run: |
         ./install.sh carlisle-dev
-        echo $PATH
+        echo "$(readlink -f carlisle-dev)" >> $GITHUB_PATH
         cd .test
         mkdir annotation
         for f in hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa
         do
           touch annotation/$f
         done
+
         which carlisle
         carlisle --runmode=init --workdir=./
         docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
