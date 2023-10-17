@@ -1,25 +1,37 @@
-name: DevTesting
+name: test
 on:
   push:
     branches:
+      - master
       - dev
+  pull_request:
+    branches:
+      - master
+      - dev
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v4.1.0
     - uses: docker://snakemake/snakemake:v7.19.1
       with:
         directory: '.test'
-    - name: Dev Testing Workflow
-      continue-on-error: true
+    - name: dryrun
+      shell: bash {0}
       run: |
-        docker run -v $PWD:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-          "mkdir -p /opt2/output_carlisle/config /opt2/output_carlisle/annotation && \
-          cp -r /opt2/workflow/scripts/ /opt2/output_carlisle/ && \
-          cp /opt2/resources/cluster_biowulf.yaml /opt2/output_carlisle/config/cluster.yaml && \
-          cp /opt2/resources/tools_biowulf.yaml /opt2/output_carlisle/config/tools.yaml && \
-          cd /opt2/output_carlisle/annotation && \
-          touch hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa && \
-          snakemake --lint -s /opt2/workflow/Snakefile \
-          -d /opt2/output_carlisle --configfile /opt2/.test/config_lint.yaml || \
-          echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'"
+        # TODO: install & use `carlisle init` instead of manually copying files
+        mkdir output_carlisle
+        for dir in workflow workflow/scripts config resources
+        do 
+          cp -r $dir output_carlisle
+        done
+        mkdir output_carlisle/annotation
+        for f in hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa
+        do
+          touch output_carlisle/annotation/$f
+        done
+        # TODO: use `carlisle run --mode dryrun`
+        cd output_carlisle
+        docker run -v $PWD:/opt2/output_carlisle snakemake/snakemake:v7.19.1 /bin/bash -c \
+          "cd /opt2/output_carlisle && snakemake --dryrun --configfile .test/config_lint.yaml"
