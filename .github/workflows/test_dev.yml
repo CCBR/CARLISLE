@@ -22,7 +22,7 @@ jobs:
       run: |
         # TODO: install & use `carlisle init` instead of manually copying files
         mkdir output_carlisle
-        for dir in workflow scripts config resources
+        for dir in workflow workflow/scripts config resources
         do 
           cp -r $dir output_carlisle
         done
