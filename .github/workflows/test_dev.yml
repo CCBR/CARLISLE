@@ -20,10 +20,11 @@ jobs:
     - name: dryrun
       shell: bash {0}
       run: |
+        for dir in workflow config resources
+        do 
+          cp -r $dir .test
+        done
         cd .test
-        cp -r ../workflow ./
-        cp -r ../config ./
-        cp -r ../resources ./
         mkdir annotation
         for f in hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa
         do
