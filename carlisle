@@ -28,7 +28,7 @@ tools_specific_yaml="tools_biowulf.yaml"
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
 ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster_* resources/tools_*"
-ESSENTIAL_FOLDERS="workflow/scripts"
+ESSENTIAL_FOLDERS="workflow/scripts annotation"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
 
