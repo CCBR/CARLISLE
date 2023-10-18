@@ -14,7 +14,6 @@ SNAKEMAKE_VERSION="snakemake/7.19.1"
 SINGULARITY_VERSION="singularity/3.10.5"
 
 set -eo pipefail
-module purge
 
 SCRIPTNAME="$0"
 SCRIPTBASENAME=$(readlink -f $(basename $0))
