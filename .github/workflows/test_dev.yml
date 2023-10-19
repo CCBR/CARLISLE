@@ -28,5 +28,5 @@ jobs:
           "cd /opt2 && snakemake \
             -s ./carlisle-v9999.9999.9999-dev/bin/workflow/Snakefile \
             --dryrun \
-            --configfile .test/config_lint.yaml\
-            --workdir /opt2/test-workdir/output_carlisle"
+            --configfile carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml \
+            --directory output_carlisle"
