@@ -103,8 +103,8 @@ function init() {
   done
 
   # rename config dependent on partition used
-  cp ${PIPELINE_HOME}/config/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
-  cp ${PIPELINE_HOME}/config/$tools_specific_yaml $WORKDIR/config/tools.yaml
+  cp ${PIPELINE_HOME}/resources/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
+  cp ${PIPELINE_HOME}/resources/$tools_specific_yaml $WORKDIR/config/tools.yaml
 
   # copy essential folders
   for f in $ESSENTIAL_FOLDERS;do
