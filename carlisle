@@ -32,24 +32,22 @@ ESSENTIAL_FOLDERS="workflow/scripts annotation"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
 
-function get_git_commitid_tag() {
-  # This function gets the latest git commit id and tag
-  # Input is PIPELINE_HOME folder which is a git folder
-    cd $1
-    gid=$(git rev-parse HEAD)
-    tag=$(git describe --tags $gid 2>/dev/null)
-    echo -ne "$gid\t$tag"
-}
-
 # ## setting PIPELINE_HOME
 PIPELINE_HOME=$(readlink -f $(dirname "$0"))
 echo "Pipeline Dir: $PIPELINE_HOME"
 # set snakefile
 SNAKEFILE="${PIPELINE_HOME}/workflow/Snakefile"
 
-# get github commit tag
-GIT_COMMIT_TAG=$(get_git_commitid_tag $PIPELINE_HOME)
-echo "Git Commit/Tag: $GIT_COMMIT_TAG"
+function get_version_from_path() {
+  PIPELINE_HOME=$1
+  VERSION="$(echo $PIPELINE_HOME | grep -oP 'v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?' - )"
+  echo -ne $VERSION
+}
+
+# get version from directory name
+# regex source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+#echo "Version: $VERSION"
+echo "Version: $(get_version_from_path $PIPELINE_HOME)"
 
 function usage() { 
 # This function prints generic usage of the wrapper script.
