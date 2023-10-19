@@ -14,7 +14,6 @@ SNAKEMAKE_VERSION="snakemake/7.19.1"
 SINGULARITY_VERSION="singularity/3.10.5"
 
 set -eo pipefail
-module purge
 
 SCRIPTNAME="$0"
 SCRIPTBASENAME=$(readlink -f $(basename $0))
@@ -28,19 +27,10 @@ tools_specific_yaml="tools_biowulf.yaml"
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml resources/cluster_* resources/tools_*"
-ESSENTIAL_FOLDERS="workflow/scripts"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml"
+ESSENTIAL_FOLDERS="workflow/scripts annotation"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
-
-function get_git_commitid_tag() {
-  # This function gets the latest git commit id and tag
-  # Input is PIPELINE_HOME folder which is a git folder
-    cd $1
-    gid=$(git rev-parse HEAD)
-    tag=$(git describe --tags $gid 2>/dev/null)
-    echo -ne "$gid\t$tag"
-}
 
 # ## setting PIPELINE_HOME
 PIPELINE_HOME=$(readlink -f $(dirname "$0"))
@@ -48,9 +38,16 @@ echo "Pipeline Dir: $PIPELINE_HOME"
 # set snakefile
 SNAKEFILE="${PIPELINE_HOME}/workflow/Snakefile"
 
-# get github commit tag
-GIT_COMMIT_TAG=$(get_git_commitid_tag $PIPELINE_HOME)
-echo "Git Commit/Tag: $GIT_COMMIT_TAG"
+function get_version_from_path() {
+  PIPELINE_HOME=$1
+  VERSION="$(echo $PIPELINE_HOME | grep -oP 'v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?' - )"
+  echo -ne $VERSION
+}
+
+# get version from directory name
+# regex source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+#echo "Version: $VERSION"
+echo "Version: $(get_version_from_path $PIPELINE_HOME)"
 
 function usage() { 
 # This function prints generic usage of the wrapper script.
@@ -104,8 +101,8 @@ function init() {
   done
 
   # rename config dependent on partition used
-  cp $WORKDIR/config/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
-  cp $WORKDIR/config/$tools_specific_yaml $WORKDIR/config/tools.yaml
+  cp ${PIPELINE_HOME}/resources/$cluster_specific_yaml $WORKDIR/config/cluster.yaml
+  cp ${PIPELINE_HOME}/resources/$tools_specific_yaml $WORKDIR/config/tools.yaml
 
   # copy essential folders
   for f in $ESSENTIAL_FOLDERS;do
