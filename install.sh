@@ -24,16 +24,11 @@ fi
 cp $DIRNAME/carlisle $INSTALL_PATH/
 
 ## all config & workflow scripts;
-for subdir in config workflow/scripts annotation .test
+for subdir in annotation config workflow resources .test
 do  
     mkdir -p ${INSTALL_PATH}/$subdir
-    cp ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
+    cp -r ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
 done
-cp ${DIRNAME}/workflow/Snakefile ${INSTALL_PATH}/workflow
-
-## selected resources
-mkdir -p ${INSTALL_PATH}/resources/
-cp ${DIRNAME}/resources/*.yaml ${INSTALL_PATH}/resources/
 
 # export path
 if [[ ":$PATH:" != *":${INSTALL_PATH}:"* ]];then
