@@ -18,8 +18,22 @@ then
     exit 1
 fi
 
-# copy entire repo, including dotfiles
-cp -r ${DIRNAME}/. ${INSTALL_PATH}
+# copy essential files & directories
+
+## carlisle CLI script
+cp $DIRNAME/carlisle $INSTALL_PATH/
+
+## all config & workflow scripts;
+for subdir in config workflow/scripts annotation .test
+do  
+    mkdir -p ${INSTALL_PATH}/$subdir
+    cp ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
+done
+cp ${DIRNAME}/workflow/Snakefile ${INSTALL_PATH}/workflow
+
+## selected resources
+mkdir -p ${INSTALL_PATH}/resources/
+cp ${DIRNAME}/resources/*.yaml ${INSTALL_PATH}/resources/
 
 # export path
 if [[ ":$PATH:" != *":${INSTALL_PATH}:"* ]];then
