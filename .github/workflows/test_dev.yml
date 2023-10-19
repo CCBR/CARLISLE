@@ -20,8 +20,13 @@ jobs:
     - name: dryrun
       shell: bash {0}
       run: |
-        bash ./install.sh ./carlisle-v9999.9999.9999-dev
-        ./carlisle-v9999.9999.9999-dev/bin/carlisle --runmode=init --workdir=./output_carlisle
+        bash ./install.sh ./test-workdir/carlisle-v9999.9999.9999-dev
+        ./test-workdir/carlisle-v9999.9999.9999-dev/bin/carlisle --runmode=init --workdir=./test-workdir/output_carlisle
+        cp ./test-workdir/carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml ./test-workdir/output_carlisle/config/config.yaml
         # TODO: use `carlisle run --mode dryrun`
-        docker run -v ./output_carlisle:/opt2/output_carlisle snakemake/snakemake:v7.19.1 /bin/bash -c \
-          "cd /opt2/output_carlisle && snakemake --dryrun --configfile .test/config_lint.yaml"
+        docker run -v ./test-workdir/:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
+          "cd /opt2 && snakemake \
+            -s ./carlisle-v9999.9999.9999-dev/bin/workflow/Snakefile \
+            --dryrun \
+            --configfile .test/config_lint.yaml\
+            --workdir /opt2/test-workdir/output_carlisle"
