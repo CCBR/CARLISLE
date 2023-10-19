@@ -20,18 +20,8 @@ jobs:
     - name: dryrun
       shell: bash {0}
       run: |
-        # TODO: install & use `carlisle init` instead of manually copying files
-        mkdir output_carlisle
-        for dir in workflow workflow/scripts config resources
-        do 
-          cp -r $dir output_carlisle
-        done
-        mkdir output_carlisle/annotation
-        for f in hg38.fa genes.gtf hg38.bed hg38.tss.bed hg38_refseq.ucsc Ecoli_GCF_000005845.2_ASM584v2_genomic.fna adapters.fa
-        do
-          touch output_carlisle/annotation/$f
-        done
+        bash ./install.sh ./carlisle-v9999.9999.9999-dev
+        ./carlisle-v9999.9999.9999-dev/bin/carlisle --runmode=init --workdir=./output_carlisle
         # TODO: use `carlisle run --mode dryrun`
-        cd output_carlisle
-        docker run -v $PWD:/opt2/output_carlisle snakemake/snakemake:v7.19.1 /bin/bash -c \
+        docker run -v ./output_carlisle:/opt2/output_carlisle snakemake/snakemake:v7.19.1 /bin/bash -c \
           "cd /opt2/output_carlisle && snakemake --dryrun --configfile .test/config_lint.yaml"
