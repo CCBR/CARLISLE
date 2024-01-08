@@ -20,6 +20,7 @@ rule macs2_narrow:
         peak_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
         summit_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.summits.bed"),
         bg_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
+        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.xls"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -88,6 +89,7 @@ rule macs2_narrow:
         # mv output and rename for consistency
         mv $TMPDIR/${{file_base}}_peaks.narrowPeak {output.peak_file}
         mv $TMPDIR/${{file_base}}_summits.bed {output.summit_file}
+        mv $TMPDIR/${{file_base}}_peaks.xls {output.xls_file}
         
         # create bigbed files, zip
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/narrow.bed
@@ -108,6 +110,7 @@ rule macs2_broad:
         peak_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
         summit_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.summits.bed"),
         bg_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
+        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.xls"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -177,6 +180,7 @@ rule macs2_broad:
         # mv output and rename for consistency
         mv $TMPDIR/${{file_base}}_peaks.broadPeak {output.peak_file}
         mv $TMPDIR/${{file_base}}_summits.bed {output.summit_file}
+        mv $TMPDIR/${{file_base}}_peaks.xls {output.xls_file}
 
         # create bigbed files
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/broad.bed
