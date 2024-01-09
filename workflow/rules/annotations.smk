@@ -3,7 +3,7 @@ def get_peak_file(wildcards):
     if wildcards.peak_caller_type == "macs2_narrow":
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.summits.bed")
     if wildcards.peak_caller_type == "macs2_broad":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.summits.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
 
     # SEACR OPTIONS
     if wildcards.peak_caller_type =="seacr_stringent":

@@ -108,7 +108,6 @@ rule macs2_broad:
         align_stats = rules.gather_alignstats.output,
     output:
         peak_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
-        summit_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.summits.bed"),
         bg_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
         xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.xls"),
     params:
@@ -179,7 +178,6 @@ rule macs2_broad:
             
         # mv output and rename for consistency
         mv $TMPDIR/${{file_base}}_peaks.broadPeak {output.peak_file}
-        mv $TMPDIR/${{file_base}}_summits.bed {output.summit_file}
         mv $TMPDIR/${{file_base}}_peaks.xls {output.xls_file}
 
         # create bigbed files
