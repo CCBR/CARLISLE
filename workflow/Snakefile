@@ -44,6 +44,8 @@ def run_macs2(wildcards):
         files.extend(n)
         n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(n2)
+        n3=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.summits.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        files.extend(n3)
     if "macs2_broad" in PEAKTYPE:
         b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
         files.extend(b)

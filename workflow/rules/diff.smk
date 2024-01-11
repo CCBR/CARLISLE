@@ -191,70 +191,89 @@ rule DESeq:
         mkdir -p ${{TMPDIR_AUC}}/knit_root_dir
         cd $TMPDIR_AUC
 
-        Rscript {params.rscript_diff} \\
-            --rmd {params.rmd} \\
-            --countsmatrix {input.cm_auc} \\
-            --sampleinfo {input.si} \\
-            --dupstatus {params.dupstatus} \\
-            --condition1 ${{condition1}} \\
-            --condition2 ${{condition2}} \\
-            --fdr_cutoff {params.fdr_cutoff} \\
-            --log2fc_cutoff {params.log2fc_cutoff} \\
-            --results {output.results_auc} \\
-            --report {output.html_auc} \\
-            --elbowlimits {output.elbowlimits_auc} \\
-            --spiked {params.spiked} \\
-            --rawcountsprescaled \\
-            --scalesfbymean \\
-            --contrast_data {input.contrast_data} \\
-            --tmpdir $TMPDIR_AUC \\
-            --species {params.species} \\
-            --gtf {params.gtf}
+        # if there is only one sample per group, DESEQ2 is not the tool to use
+        # check the sampleinfo file to determine how many samples are in each group. If any samplegroupp has a count of 1
+        # create empty files with message that the file cannot be created due to conditions provided
+        search_list=`awk '{{print $2}}' {input.si} | grep -v "group" | sort | uniq -c | sort -nr | grep -o 1`
+        check="1"
+        _contains () {{  # Check if space-separated list $1 contains line $2
+            echo "$1" | tr ' ' '\n' | grep -F -x -q "$2"
+        }}
+        if _contains "${{check}}" "${{search_list}}"; then
+            echo "There is only one sample per group, which is not allowed in DESEQ2"
+            touch {output.results_auc}
+            touch {output.html_auc}
+            touch {output.elbowlimits_auc}
+            touch {output.results_frag}
+            touch {output.html_frag}
+            touch {output.elbowlimits_frag}
+            touch {output.pdf}
+        else
+            Rscript {params.rscript_diff} \\
+                --rmd {params.rmd} \\
+                --countsmatrix {input.cm_auc} \\
+                --sampleinfo {input.si} \\
+                --dupstatus {params.dupstatus} \\
+                --condition1 ${{condition1}} \\
+                --condition2 ${{condition2}} \\
+                --fdr_cutoff {params.fdr_cutoff} \\
+                --log2fc_cutoff {params.log2fc_cutoff} \\
+                --results {output.results_auc} \\
+                --report {output.html_auc} \\
+                --elbowlimits {output.elbowlimits_auc} \\
+                --spiked {params.spiked} \\
+                --rawcountsprescaled \\
+                --scalesfbymean \\
+                --contrast_data {input.contrast_data} \\
+                --tmpdir $TMPDIR_AUC \\
+                --species {params.species} \\
+                --gtf {params.gtf}
 
-        # change elbow limits to provided log2fc if limit is set to .na.real
-        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_auc}
-        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_auc}
+            # change elbow limits to provided log2fc if limit is set to .na.real
+            sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_auc}
+            sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_auc}
 
-        ## Run FRAG method
-        mkdir -p ${{TMPDIR_FRAG}}
-        mkdir -p ${{TMPDIR_FRAG}}/intermediates_dir
-        mkdir -p ${{TMPDIR_FRAG}}/knit_root_dir
-        cd $TMPDIR_FRAG
+            ## Run FRAG method
+            mkdir -p ${{TMPDIR_FRAG}}
+            mkdir -p ${{TMPDIR_FRAG}}/intermediates_dir
+            mkdir -p ${{TMPDIR_FRAG}}/knit_root_dir
+            cd $TMPDIR_FRAG
 
-        # Do not use --rawcountsprescaled as these counts are not prescaled!
-        Rscript {params.rscript_diff} \\
-            --rmd {params.rmd} \\
-            --countsmatrix {input.cm_frag} \\
-            --sampleinfo {input.si} \\
-            --dupstatus {params.dupstatus} \\
-            --condition1 ${{condition1}} \\
-            --condition2 ${{condition2}} \\
-            --fdr_cutoff {params.fdr_cutoff} \\
-            --log2fc_cutoff {params.log2fc_cutoff} \\
-            --results {output.results_frag} \\
-            --report {output.html_frag} \\
-            --elbowlimits {output.elbowlimits_frag} \\
-            --spiked {params.spiked} \\
-            --scalesfbymean \\
-            --contrast_data {input.contrast_data} \\
-            --tmpdir $TMPDIR_FRAG \\
-            --species {params.species} \\
-            --gtf {params.gtf}
+            # Do not use --rawcountsprescaled as these counts are not prescaled!
+            Rscript {params.rscript_diff} \\
+                --rmd {params.rmd} \\
+                --countsmatrix {input.cm_frag} \\
+                --sampleinfo {input.si} \\
+                --dupstatus {params.dupstatus} \\
+                --condition1 ${{condition1}} \\
+                --condition2 ${{condition2}} \\
+                --fdr_cutoff {params.fdr_cutoff} \\
+                --log2fc_cutoff {params.log2fc_cutoff} \\
+                --results {output.results_frag} \\
+                --report {output.html_frag} \\
+                --elbowlimits {output.elbowlimits_frag} \\
+                --spiked {params.spiked} \\
+                --scalesfbymean \\
+                --contrast_data {input.contrast_data} \\
+                --tmpdir $TMPDIR_FRAG \\
+                --species {params.species} \\
+                --gtf {params.gtf}
 
-        # change elbow limits to provided log2fc if limit is set to .na.real
-        sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_frag}
-        sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_frag}
+            # change elbow limits to provided log2fc if limit is set to .na.real
+            sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_frag}
+            sed -i "s/up_limit: .na.real/up_limit: {params.log2fc_cutoff}/g" {output.elbowlimits_frag}
 
-        ## Run venns
-        mkdir -p ${{TMPDIR_VENN}}
-        mkdir -p ${{TMPDIR_VENN}}/intermediates_dir
-        mkdir -p ${{TMPDIR_VENN}}/knit_root_dir
-        cd $TMPDIR_VENN
-        Rscript {params.rscript_venn} \\
-            --aucresults {output.results_auc} \\
-            --fragmentsresults {output.results_frag} \\
-            --pdf {output.pdf} \\
-            --title "${{condition1}}_vs_${{condition2}}__{params.dupstatus}__{params.peak_caller_type}"
+            ## Run venns
+            mkdir -p ${{TMPDIR_VENN}}
+            mkdir -p ${{TMPDIR_VENN}}/intermediates_dir
+            mkdir -p ${{TMPDIR_VENN}}/knit_root_dir
+            cd $TMPDIR_VENN
+            Rscript {params.rscript_venn} \\
+                --aucresults {output.results_auc} \\
+                --fragmentsresults {output.results_frag} \\
+                --pdf {output.pdf} \\
+                --title "${{condition1}}_vs_${{condition2}}__{params.dupstatus}__{params.peak_caller_type}"
+        fi
         """
 
 rule diffbb:
@@ -287,21 +306,33 @@ rule diffbb:
             mkdir -p $TMPDIR
         fi
 
-        python {params.script} \\
-            --results {input.results} \\
-            --fdr_cutoff {params.fdr} \\
-            --log2FC_cutoff {params.lfc} \\
-            --elbowyaml {input.elbowlimits} \\
-            --bed {output.bed}
+        ## add check to ensure that DESEQ2 ran to completion
+        ## mainly used in tinytest scenarios, but also used if 
+        ## Nsamples/group is 1
+        check=`wc -c {input.results} | cut -f1 -d" "`
+        if [[ $check == 0 ]]; then
+            echo "There is only 1 sample per group - this is not allowed in DESEQ2 and leads to incomplete DIFFBB results"
+            touch {output.bed}
+            touch {output.bigbed}
+            touch {output.fbed}
+            touch {output.fbigbed}
+        else
+            python {params.script} \\
+                --results {input.results} \\
+                --fdr_cutoff {params.fdr} \\
+                --log2FC_cutoff {params.lfc} \\
+                --elbowyaml {input.elbowlimits} \\
+                --bed {output.bed}
 
-        bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
+            bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
 
-        python {params.script} \\
-            --results {input.fresults} \\
-            --fdr_cutoff {params.fdr} \\
-            --log2FC_cutoff {params.lfc} \\
-            --elbowyaml {input.felbowlimits} \\
-            --bed {output.fbed}
+            python {params.script} \\
+                --results {input.fresults} \\
+                --fdr_cutoff {params.fdr} \\
+                --log2FC_cutoff {params.lfc} \\
+                --elbowyaml {input.felbowlimits} \\
+                --bed {output.fbed}
 
-        bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
+            bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
+        fi
         """
