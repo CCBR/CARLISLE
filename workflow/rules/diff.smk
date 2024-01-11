@@ -194,12 +194,12 @@ rule DESeq:
         # if there is only one sample per group, DESEQ2 is not the tool to use
         # check the sampleinfo file to determine how many samples are in each group. If any samplegroupp has a count of 1
         # create empty files with message that the file cannot be created due to conditions provided
-        search_list=`awk '{{print /$2}}' {input.si} | grep -v "group" | sort | uniq -c | sort -nr | grep -o 1`
+        search_list=`awk '{{print $2}}' {input.si} | grep -v "group" | sort | uniq -c | sort -nr | grep -o 1`
         check="1"
         _contains () {{  # Check if space-separated list $1 contains line $2
-            echo "/$1" | tr ' ' '\n' | grep -F -x -q "/$2"
+            echo "$1" | tr ' ' '\n' | grep -F -x -q "$2"
         }}
-        if _contains "/${{check}}" "/${{myitem}}"; then
+        if _contains "${{check}}" "${{search_list}}"; then
             echo "There is only one sample per group, which is not allowed in DESEQ2"
             touch {output.results_auc}
             touch {output.html_auc}
@@ -306,21 +306,33 @@ rule diffbb:
             mkdir -p $TMPDIR
         fi
 
-        python {params.script} \\
-            --results {input.results} \\
-            --fdr_cutoff {params.fdr} \\
-            --log2FC_cutoff {params.lfc} \\
-            --elbowyaml {input.elbowlimits} \\
-            --bed {output.bed}
+        ## add check to ensure that DESEQ2 ran to completion
+        ## mainly used in tinytest scenarios, but also used if 
+        ## Nsamples/group is 1
+        check=`wc -c {input.results} | cut -f1 -d" "`
+        if [[ $check == 0 ]]; then
+            echo "There is only 1 sample per group - this is not allowed in DESEQ2 and leads to incomplete DIFFBB results"
+            touch {output.bed}
+            touch {output.bigbed}
+            touch {output.fbed}
+            touch {output.fbigbed}
+        else
+            python {params.script} \\
+                --results {input.results} \\
+                --fdr_cutoff {params.fdr} \\
+                --log2FC_cutoff {params.lfc} \\
+                --elbowyaml {input.elbowlimits} \\
+                --bed {output.bed}
 
-        bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
+            bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
 
-        python {params.script} \\
-            --results {input.fresults} \\
-            --fdr_cutoff {params.fdr} \\
-            --log2FC_cutoff {params.lfc} \\
-            --elbowyaml {input.felbowlimits} \\
-            --bed {output.fbed}
+            python {params.script} \\
+                --results {input.fresults} \\
+                --fdr_cutoff {params.fdr} \\
+                --log2FC_cutoff {params.lfc} \\
+                --elbowyaml {input.felbowlimits} \\
+                --bed {output.fbed}
 
-        bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
+            bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
+        fi
         """
