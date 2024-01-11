@@ -1,21 +1,29 @@
 cff-version: 1.2.0
 message: "If you use CARLISLE, please cite it as below."
 authors:
-- family-names: "Sevilla"
-  given-names: "Samantha"
-  orcid: "https://orcid.org/0000-0002-8734-9875"
-- family-names: "Koparde"
-  given-names: "Vishal"
-  orcid: "https://orcid.org/0000-0001-8978-8495"
-- family-names: "Chou"
-  given-names: "Hsien-chao"
-  orcid: "https://orcid.org/0000-0002-4870-9663"
-- family-names: "Kim"
-  given-names: "Sohyoung"
-- family-names: "Hu"
-  given-names: "Yue"
-- family-names: "Saloura"
-  given-names: "Vassiliki"
+  - family-names: "Sevilla"
+    given-names: "Samantha"
+    orcid: "https://orcid.org/0000-0002-8734-9875"
+    affiliation: Advanced Biomedical Computational Science, Frederick National Laboratory for Cancer Research, Frederick, MD 21702, USA
+  - family-names: "Koparde"
+    given-names: "Vishal"
+    orcid: "https://orcid.org/0000-0001-8978-8495"
+    affiliation: Advanced Biomedical Computational Science, Frederick National Laboratory for Cancer Research, Frederick, MD 21702, USA
+  - family-names: "Chou"
+    given-names: "Hsien-chao"
+    orcid: "https://orcid.org/0000-0002-4870-9663"
+  - family-names: "Kim"
+    given-names: "Sohyoung"
+  - family-names: "Hu"
+    given-names: "Yue"
+  - family-names: "Saloura"
+    given-names: "Vassiliki"
 title: "Cut And Run anaLysIS pipeLinE (CARLISLE)"
+url: https://ccbr.github.io/CARLISLE/
+repository-code: https://github.com/CCBR/CARLISLE
+identifiers:
+  - description: Archived snapshots of all versions
+    type: doi
+    value: 10.5281/zenodo.10483876
 version: 2.4.1
-url: "https://github.com/CCBR/CARLISLE"
+date-released: 2024-01-10
