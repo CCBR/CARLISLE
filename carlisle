@@ -65,7 +65,8 @@ function usage() {
       *) dryrun : dry run snakemake to generate DAG
       *) unlock : unlock workdir if locked by snakemake
       *) runlocal : run without submitting to sbatch
-      *) testrun: run on cluster with included test dataset
+      *) test_hg38: run on cluster with included hg38 test dataset
+      *) test_mm10: run on cluster with included mm10 test dataset
   2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
   "
 }
@@ -152,23 +153,6 @@ function set_singularity_binds(){
   SINGULARITY_BINDS="-B $EXTRA_SINGULARITY_BINDS,$binds"
 }
 
-function reconfig(){
-# Rebuild config file and replace the config.yaml in the WORKDIR
-# this is only for dev purposes when new key-value pairs are being added to the config file
-  check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" -e "s/WORKDIR/${WORKDIR//\//\\/}/g" ${PIPELINE_HOME}/config/config.yaml > $WORKDIR/config/config.yaml
-  echo "$WORKDIR/config/config.yaml has been updated!"
-}
-
-function recluster(){
-# Rebuild cluster file and replace the cluster.yaml in the WORKDIR
-# this is only for dev purposes when new key-value pairs are being added to the cluster file
-  check_essential_files
-  cp ${PIPELINE_HOME}/resources/cluster.yaml ${WORKDIR}/config/cluster.yaml
-  echo "$WORKDIR/config/cluster.yaml has been updated!"
-
-}
-
 function rescript(){
 # recopy the scripts folder to WORKDIR
   check_essential_files
@@ -240,14 +224,6 @@ function testrun() {
   cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
   check_essential_files
   runslurm
-}
-
-function tinytestrun() {
-  check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.tinytest.tsv > $WORKDIR/config/samples.tsv
-  cp ${PIPELINE_HOME}/.test/contrasts.tinytest.tsv $WORKDIR/config/contrasts.tsv
-  check_essential_files
-  dryrun
 }
 
 function runslurm() {
@@ -428,11 +404,6 @@ function main(){
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
     testrun) testrun && exit 0;;
-    tinytestrun) tinytestrun && exit 0;;          # hidden option for debugging
-    dry) dryrun && exit 0;;                      # hidden option
-    local) runlocal && exit 0;;                  # hidden option
-    reconfig) reconfig && exit 0;;               # hidden option for debugging
-    recluster) recluster && exit 0;;             # hidden option for debugging
     rescript) rescript && exit 0;;               # hidden option for debugging
     printbinds) printbinds && exit 0;;           # hidden option
     *) err "Unknown RUNMODE \"$RUNMODE\"";;
