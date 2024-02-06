@@ -41,7 +41,7 @@ fragment_len_filter: "1000"
 ### dupstatus: "no_dedup" # means run non-deduplicated analysis only
 ## complete list:
 ### dupstatus: "dedup, no_dedup"
-dupstatus: "dedup"
+dupstatus: "dedup, no_dedup"
 
 # which peaktypes to consider for differential analysis:
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
@@ -76,7 +76,8 @@ macs2_control: "N"
 ### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
 ### default GOPEAKS qvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md; [link to issue]
 ### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
-quality_thresholds: "0.1, 0.05"
+# quality_thresholds: "0.1, 0.05"
+quality_thresholds: "0.05"
 
 ## MACS2, broad-peaks specific, quality threshold
 ### if broadPeak is seleted as a 'peaktype', an additional quality threshold can be used
