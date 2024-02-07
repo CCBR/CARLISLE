@@ -218,12 +218,22 @@ function runlocal() {
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
 }
 
-function testrun() {
+function hg38() {
   check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.test.tsv > $WORKDIR/config/samples.tsv
-  cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.hg38.test.tsv > $WORKDIR/config/samples.tsv
+  cp ${PIPELINE_HOME}/.test/contrasts.hg38.test.tsv $WORKDIR/config/contrasts.tsv
   check_essential_files
   runslurm
+}
+
+function test_mm10() {
+  check_essential_files
+  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.mm10.test.tsv > $WORKDIR/config/samples.tsv
+  cp ${PIPELINE_HOME}/.test/contrasts.mm10.test.tsv $WORKDIR/config/contrasts.tsv
+  sed -i "s/hg38/mm10/g" $WORKDIR/config/config.yaml
+  check_essential_files
+  run "--dry-run" && echo "Dry-run was successful .... starting slurm execution"
+  # runslurm
 }
 
 function runslurm() {
@@ -403,7 +413,8 @@ function main(){
     run) runslurm && exit 0;;
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
-    testrun) testrun && exit 0;;
+    test_hg38) test_hg38 && exit 0;;
+    test_mm10) test_mm10 && exit 0;;
     rescript) rescript && exit 0;;               # hidden option for debugging
     printbinds) printbinds && exit 0;;           # hidden option
     *) err "Unknown RUNMODE \"$RUNMODE\"";;
