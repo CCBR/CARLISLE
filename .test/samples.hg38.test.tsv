@@ -1,0 +1,5 @@
+sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_R1	path_to_R2
+53_H3K4me3	1	N	HN6_IgG_rabbit_negative_control	1	PIPELINE_HOME/.test/53_H3K4me3_1.R1.fastq.gz	PIPELINE_HOME/.test/53_H3K4me3_1.R2.fastq.gz
+53_H3K4me3	2	N	HN6_IgG_rabbit_negative_control	1	PIPELINE_HOME/.test/53_H3K4me3_2.R1.fastq.gz	PIPELINE_HOME/.test/53_H3K4me3_2.R2.fastq.gz
+HN6_H3K4me3	1	N	HN6_IgG_rabbit_negative_control	1	PIPELINE_HOME/.test/HN6_H3K4me3_1.R1.fastq.gz	PIPELINE_HOME/.test/HN6_H3K4me3_1.R2.fastq.gz
+HN6_IgG_rabbit_negative_control	1	Y	-	-	PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz	PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R2.fastq.gz
