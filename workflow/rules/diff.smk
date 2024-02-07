@@ -197,7 +197,7 @@ rule DESeq:
         search_list=`awk '{{print $2}}' {input.si} | grep -v "group" | sort | uniq -c | sort -nr | grep -o 1`
         check="1"
         _contains () {{  # Check if space-separated list $1 contains line $2
-            echo "$1" | tr ' ' '\n' | grep -F -x -q "$2"
+            echo "$1" | tr ' ' '\\n' | grep -F -x -q "$2"
         }}
         if _contains "${{check}}" "${{search_list}}"; then
             echo "There is only one sample per group, which is not allowed in DESEQ2"
