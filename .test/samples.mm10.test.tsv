@@ -1,0 +1,5 @@
+sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_R1	path_to_R2
+WT_Unt	1	N	CCRGB54_IgG	1	/PIPELINE_HOME/.test/RECQ1.MEF.WT.Unt1.R1.fastq.gz	/PIPELINE_HOME/.test/RECQ1.MEF.WT.Unt1_S1_R2.fastq.gz
+WT_Unt	2	N	CCRGB54_IgG	1	/PIPELINE_HOME/.test/RECQ1.MEF.WT.Unt1.R1.fastq.gz	/PIPELINE_HOME/.test/RECQ1.MEF.WT.Unt1_S1_R2.fastq.gz
+KO_Unt	1	N	CCRGB54_IgG	1	/PIPELINE_HOME/.test/RECQ1.MEF.KO.Unt5.R1.fastq.gz	/PIPELINE_HOME/.test/RECQ1.MEF.KO.Unt5_S5_R2.fastq.gz
+CCRGB54_IgG	1	Y	-	-	/PIPELINE_HOME/.test/IgG-1.R1.fastq.gz	/PIPELINE_HOME/.test/IgG-1.R2.fastq.gz
