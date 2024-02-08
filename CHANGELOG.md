@@ -1,5 +1,9 @@
 ## CARLISLE development version
-
+- Adds a --force flag to allow for re-initialization of a workdir (#97, @slsevilla)
+- Fixes error with testrun in DESEQ2 (#113, @slsevilla)
+- Decreases the number of samples being run with testrun, essentially running tinytest as default and removing tinytest as an option (#115, @slsevilla)
+- Reads version from VERSION file instead of github repo link (#96, #112, @slsevilla)
+- Added a CHANGELOG (#116, @slsevilla)
 - Fix: RNA report bug, caused by hard-coding of PC1-3, when only PC1-2 were generated (#104, @slsevilla)
 - Minor documentation improvements. (#100, @kelly-sovacool)
 - Fix: allow printing the version or help message even if singularity is not in the path. (#110, @kelly-sovacool)
@@ -10,7 +14,6 @@
 - feat: use summits bed for homer input; save temporary files; fix deseq2 bug by @slsevilla in #108
 - docs: adding citation and DOI to pipeline by @slsevilla in #107
 - Test a dryrun with GitHub Actions by @kelly-sovacool in #94
-
 
 ## CARLISLE v2.4.0
 - Feature- Merged Yue's fork, adding DEEPTOOLS by @slsevilla in #85
