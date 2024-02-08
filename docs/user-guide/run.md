@@ -11,7 +11,7 @@ Usage: bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle -m/--runmode=<RUNM
     *) dryrun : dry run snakemake to generate DAG
     *) unlock : unlock workdir if locked by snakemake
     *) runlocal : run without submitting to sbatch
-    *) testrun: run on cluster with included test dataset
+    *) runtest: run on cluster with included test dataset
 2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
 ```
 
@@ -27,7 +27,7 @@ The following explains each of the command options:
     - run: This will submit a master job to the cluster, and subsequent sub-jobs as needed to complete the workflow. An email will be sent when the pipeline begins, if there are any errors, and when it completes.
 - Other Commands (All optional)
     - unlock: This will unlock the pipeline if an error caused it to stop in the middle of a run.
-    - testrun: This will run a test of the pipeline with test data
+    - runtest: This will run a test of the pipeline with test data
 
 To run any of these commands, follow the the syntax:
 ```
