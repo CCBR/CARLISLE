@@ -40,14 +40,13 @@ SNAKEFILE="${PIPELINE_HOME}/workflow/Snakefile"
 
 function get_version_from_path() {
   PIPELINE_HOME=$1
-  VERSION="$(echo $PIPELINE_HOME | grep -oP 'v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?' - )"
+  VERSION="$(cat $PIPELINE_HOME/VERSION)"
   echo -ne $VERSION
 }
 
-# get version from directory name
-# regex source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-#echo "Version: $VERSION"
+function get_version (){
 echo "Version: $(get_version_from_path $PIPELINE_HOME)"
+}
 
 function usage() { 
 # This function prints generic usage of the wrapper script.
@@ -384,6 +383,9 @@ function main(){
         ;;
         -w=*|--workdir=*)
           WORKDIR="${i#*=}"
+        ;;
+        -v|--version)
+          get_version && exit 0
         ;;
         -h|--help)
           usage && exit 0;;
