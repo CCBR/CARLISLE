@@ -20,6 +20,7 @@ The following explains each of the command options:
 
 - Preparation Commands
     - init (REQUIRED): This must be performed before any Snakemake run (dry, local, cluster) can be performed. This will copy the necessary config, manifest and Snakefiles needed to run the pipeline to the provided output directory.
+        - the -f/--force flag can be used in order to re-initialize a workdir that has already been created 
     - dryrun (OPTIONAL): This is an optional step, to be performed before any Snakemake run (local, cluster). This will check for errors within the pipeline, and ensure that you have read/write access to the files needed to run the full pipeline.
 - Processing Commands
     - local: This will run the pipeline on a local node. NOTE: This should only be performed on an interactive node.

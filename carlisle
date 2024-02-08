@@ -66,6 +66,9 @@ function usage() {
       *) runlocal : run without submitting to sbatch
       *) runtest: run on cluster with included hg38 test dataset
   2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
+  
+  Optional Arguments: 
+      *) -f / --force: Force flag will re-initialize a previously initialized workdir
   "
 }
 
@@ -88,7 +91,9 @@ function init() {
 # 2. copying essential files like config.yaml and samples.tsv into the workdir
 # 3. setting up logs and stats folders
   # create output folder
-  if [ -d $WORKDIR ];then err "Folder $WORKDIR already exists!"; fi
+  if [[ -d $WORKDIR ]] && [[ -z $FORCEFLAG ]]; then 
+    err "Folder $WORKDIR already exists! If you'd like to re-initialize use the -f/--force flag $FORCEFLAG|"
+  fi
   mkdir -p $WORKDIR
 
   # copy essential files
@@ -383,6 +388,9 @@ function main(){
         ;;
         -w=*|--workdir=*)
           WORKDIR="${i#*=}"
+        ;;
+        -f|--force)
+          FORCEFLAG="ON"
         ;;
         -v|--version)
           get_version && exit 0
