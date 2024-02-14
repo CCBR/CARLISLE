@@ -155,8 +155,11 @@ rule DESeq:
         elbowlimits_frag=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffanalysis_elbowlimits.yaml"),
         pdf=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.venn.pdf")
     params:
-        rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
+        carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+        Rlib_dir=config["Rlib_dir"],
+        Rpkg_config=config["Rpkg_config"],
+        rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rscript_venn=join(SCRIPTSDIR,"_plot_results_venn.R"),
         contrast_list="{contrast_list}",
         dupstatus = "{dupstatus}",
@@ -211,6 +214,9 @@ rule DESeq:
         else
             Rscript {params.rscript_diff} \\
                 --rmd {params.rmd} \\
+                --carlisle_functions {params.carlisle_functions} \\
+                --Rlib_dir {params.Rlib_dir} \\
+                --Rpkg_config {params.Rpkg_config} \\
                 --countsmatrix {input.cm_auc} \\
                 --sampleinfo {input.si} \\
                 --dupstatus {params.dupstatus} \\
@@ -242,6 +248,9 @@ rule DESeq:
             # Do not use --rawcountsprescaled as these counts are not prescaled!
             Rscript {params.rscript_diff} \\
                 --rmd {params.rmd} \\
+                --carlisle_functions {params.carlisle_functions} \\
+                --Rlib_dir {params.Rlib_dir} \\
+                --Rpkg_config {params.Rpkg_config} \\
                 --countsmatrix {input.cm_frag} \\
                 --sampleinfo {input.si} \\
                 --dupstatus {params.dupstatus} \\

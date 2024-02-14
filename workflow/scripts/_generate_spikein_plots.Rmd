@@ -5,7 +5,10 @@ date: "`r Sys.Date()`"
 output:
   html_document:
 params:
-  sourcefile: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
+  carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
+  Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
+  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/Rpack.config"
+  carlisle_functions: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   bam_list: "~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_IgG_rabbit_negative_control_1.bam.idxstats"
   spikein_control: "NC_000913.3"
 editor_options: 
@@ -15,27 +18,25 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# list packages
-list.of.packages=c("ggplot2","DT")
-list.of.bioconductor.packages=c("chipenrich")
+# source needed functions
+carlisle_functions=params$carlisle_functions
 
-#install as needed
-new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
+# set library dir, load this and remove any other dirs to avoid confusion
+# between personally created pkgs and the pipeline package
+## saving old path "/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library"
+Rlib_dir=params$Rlib_dir
+Rpkg_config=params$Rpkg_config
+print(paste0("Using the lib.loc location: ",Rlib_dir))
+assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
+.libPaths()
 
-if(length(new.packages)) {
-  print(new.packages)
-  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
-}
+# read in package info
+pkg_df=read.csv(Rpkg_config)
+pkg_df=subset(pkg_df,spike_in=="Y")
+pkg_df
 
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) {
-  print(new.packages)
-  install.packages(new.packages, INSTALL_opts = '--no-lock')
-}
-
-# load packages
-invisible(lapply(list.of.packages, library, character.only = TRUE))
-invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
+# for each package check installation, if present then load library
+carlisle_handle_packages(pkg_df)
 ```
 
 
@@ -43,7 +44,6 @@ invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 # set params
 bam_list=params$bam_list
 spikein_control=params$spikein_control
-sourcefile=params$sourcefile
 debug="N"
 
 if (debug=="Y"){
@@ -53,9 +53,6 @@ if (debug=="Y"){
 
 # set up bam list
 bam_list=as.list(strsplit(bam_list, 'xxx'))[[1]]
-
-# source functions file
-source(sourcefile)
 ```
 
 
