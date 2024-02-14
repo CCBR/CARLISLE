@@ -1,4 +1,5 @@
 ## CARLISLE development version
+- Refactors R packages to a common source location (#118, @slsevilla)
 - Adds a --force flag to allow for re-initialization of a workdir (#97, @slsevilla)
 - Fixes error with testrun in DESEQ2 (#113, @slsevilla)
 - Decreases the number of samples being run with testrun, essentially running tinytest as default and removing tinytest as an option (#115, @slsevilla)
