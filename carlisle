@@ -27,7 +27,7 @@ tools_specific_yaml="tools_biowulf.yaml"
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml config/rpackages.csv"
 ESSENTIAL_FOLDERS="workflow/scripts annotation"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -222,6 +222,9 @@ function runlocal() {
 }
 
 function runtest() {
+  module load $PYTHON_VERSION
+  module load $SNAKEMAKE_VERSION
+  module load $SINGULARITY_VERSION
   check_essential_files
   sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.test.tsv > $WORKDIR/config/samples.tsv
   cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv

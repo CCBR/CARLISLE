@@ -147,3 +147,9 @@ spikein_reference:
     fa: "PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
+
+#####################################################################################
+# R Packages
+#####################################################################################
+Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
+Rpkg_config: "WORKDIR/config//Rpack.config"
