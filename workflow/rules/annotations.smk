@@ -329,6 +329,7 @@ if config["run_contrasts"] == "Y":
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
                 --Rlib_dir {params.Rlib_dir} \\
+                --Rpkg_config {params.Rpkg_config} \\
                 --output_dir {params.output_dir} \\
                 --report {output.html} \\
                 --peak_list "$clean_sample_list" \\

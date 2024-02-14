@@ -78,9 +78,9 @@ if (debug){
   tmpdir="/dev/shm"
   gtf="~/../../Volumes/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
 } else {
-  carlisle_functions=args$carlisle_functions,
-  Rlib_dir=args$Rlib_dir,
-  Rpkg_config=args$Rpkg_config,
+  carlisle_functions=args$carlisle_functions
+  Rlib_dir=args$Rlib_dir
+  Rpkg_config=args$Rpkg_config
   rawcountsmatrix=args$countsmatrix
   coldata=args$sampleinfo
   dupstatus=args$dupstatus
