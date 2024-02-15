@@ -1,7 +1,7 @@
 ########################################################################
 # LIBRARY
 ########################################################################
-carlisle_handle_packages<-function(pkg_df){
+CARLISLE_HANDLE_PACKAGES<-function(pkg_df){
   for (rowid in rownames(pkg_df)){
     pkg=pkg_df[rowid,"package"]
     source=pkg_df[rowid,"source"]
@@ -13,7 +13,7 @@ carlisle_handle_packages<-function(pkg_df){
       print(paste0("Installing: ", pkg))
       if (source=="bc") BiocManager::install(pkg,ask=FALSE,update=FALSE)
       if (source=="cr") install.packages(pkg,version=version,repos = "http://cran.us.r-project.org",
-                                         local = FALSE,ask=FALSE,update=FALSE)
+                                         local = FALSE,ask=FALSE,update=FALSE,dependencies=TRUE)
       if (source=="gh") remotes::install_github(gh_name,version=version,local = FALSE,update=FALSE)
     }
     
