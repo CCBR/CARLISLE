@@ -29,7 +29,7 @@ debug="FALSE"
 if (debug){
   carlisle_functions="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
   Rlib_dir="/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/Rpack.config"
+  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   output_dir="~/../../Volumes/data/tmp"
   report="~/../../Volumes/data/tmp/carlisle/report.html"
   peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"

@@ -59,7 +59,7 @@ gtf <- args$gtf
 if (debug){
   carlisle_functions="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
   Rlib_dir="/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/Rpack.config"
+  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   rawcountsmatrix="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/counts_matrix.txt"
   coldata="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/sample_info.txt"
   dupstatus="dedup"

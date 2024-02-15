@@ -7,7 +7,7 @@ output:
 params:
   carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
   Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/Rpack.config"
+  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   carlisle_functions: "~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   bam_list: "~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_IgG_rabbit_negative_control_1.bam.idxstats"
   spikein_control: "NC_000913.3"
@@ -18,8 +18,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# source needed functions
-carlisle_functions=params$carlisle_functions
+# source functions file
+source(params$carlisle_functions)
 
 # set library dir, load this and remove any other dirs to avoid confusion
 # between personally created pkgs and the pipeline package
@@ -36,7 +36,7 @@ pkg_df=subset(pkg_df,spike_in=="Y")
 pkg_df
 
 # for each package check installation, if present then load library
-carlisle_handle_packages(pkg_df)
+CARLISLE_HANDLE_PACKAGES(pkg_df)
 ```
 
 

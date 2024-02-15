@@ -5,7 +5,7 @@ output:
 params:
   carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
   Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/Rpack.config"
+  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   rawcountsmatrix: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_countsmatrix.txt"
   coldata: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_sampleinfo.txt"
   dupstatus: "dedup" # dedup or no_dedup
@@ -30,8 +30,8 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# source needed functions
-carlisle_functions=params$carlisle_functions
+# source functions file
+source(params$carlisle_functions)
 
 # set library dir, load this and remove any other dirs to avoid confusion
 # between personally created pkgs and the pipeline package
@@ -48,7 +48,7 @@ pkg_df=subset(pkg_df,diff=="Y")
 pkg_df
 
 # for each package check installation, if present then load library
-carlisle_handle_packages(pkg_df)
+CARLISLE_HANDLE_PACKAGES(pkg_df)
 
 ##handle ELBOW separately - it requires an older version of bioconductor / R
 if("ELBOW" %in% new.packages){
