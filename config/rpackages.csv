@@ -1,4 +1,6 @@
 package,source,version,gh_name,diff,spike_in,go
+BiocManager,cr,3.18,NA,Y,Y,Y
+htmltools,cr,,NA,Y,N,Y
 DT,cr,0.29,NA,Y,Y,N
 RColorBrewer,cr,,NA,Y,N,N
 dplyr,cr,,NA,Y,N,N
@@ -11,7 +13,6 @@ reshape2,cr,,NA,Y,N,N
 stringr,cr,1.5.0,NA,Y,N,N
 tidyverse,cr,,NA,Y,N,N
 yaml,cr,,NA,Y,N,N
-BiocManager,cr,3.17,NA,Y,N,N
 ChIPseeker,bc,,NA,Y,N,N
 DESeq2,bc,,NA,Y,N,N
 ELBOW,bc,,NA,Y,N,N
@@ -24,8 +25,9 @@ TxDb.Mmusculus.UCSC.mm10.knownGene,bc,,NA,Y,N,N
 edgeR,bc,,NA,Y,N,N
 org.Hs.eg.db,bc,3.17.0,NA,Y,N,N
 org.Mm.eg.db,bc,3.17.0,NA,Y,N,N
-rtracklayer,bc,,NA,Y,N,N
+rtracklayer,bc,,NA,Y,N,Y
 BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0,bc,,NA,Y,N,Y
+stringi,bc,,NA,N,N,Y
 chipenrich,bc,,NA,N,Y,Y
 latticeExtra,cr,,NA,N,N,Y
 pdp,cr,,NA,N,N,Y
