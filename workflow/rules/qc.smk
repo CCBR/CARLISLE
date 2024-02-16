@@ -99,7 +99,6 @@ rule spikein_assessment:
         Rlib_dir=config["Rlib_dir"],
         Rpkg_config=config["Rpkg_config"],
         rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
-        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
         spikein=config["spikein_genome"],
     envmodules:
         TOOLS["R"],

@@ -250,7 +250,8 @@ Poly-Enrich also allows weighting of individual genomic regions based on a score
 ```{r narrow2b, echo=FALSE}
 for (rowid in rownames(peak_df[c(1:max_samples),])){
     peaktype=peak_df[rowid,"peak_type"]
-  if(peaktype=="narrow"){
+    peakcaller=peak_df[rowid,"peak_caller"]
+  if(peaktype=="narrow" & peakcaller != "gopeaks"){
     GO_ANALYSIS_MAIN(rowid,"poly_weighted")
   }
 }
