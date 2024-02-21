@@ -5,8 +5,12 @@ suppressPackageStartupMessages(library("argparse"))
 parser <- ArgumentParser()
 parser$add_argument("--rmd", type="character", required=TRUE,
                     help="path to rmd")
-parser$add_argument("--sourcefile", type="character", required=TRUE,
-                    help="path to function file")
+parser$add_argument("--carlisle_functions", type="character", required=TRUE, 
+          help="path to carlisle functions file")
+parser$add_argument("--Rlib_dir", type="character", required=TRUE, 
+          help="path to R lib directory")
+parser$add_argument("--Rpkg_config", type="character", required=TRUE, 
+          help="path to package config")
 parser$add_argument("--output_dir", type="character", required=FALSE,
                     help = "output_dir")
 parser$add_argument("--report", type="character", required=TRUE,
@@ -23,7 +27,9 @@ args <- parser$parse_args()
 
 debug="FALSE"
 if (debug){
-  sourcefile="~/../../Volumes/Pipelines/CARLISLE_dev/workflow/scripts/_go_enrichment_functions.R"
+  carlisle_functions="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
+  Rlib_dir="/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
+  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   output_dir="~/../../Volumes/data/tmp"
   report="~/../../Volumes/data/tmp/carlisle/report.html"
   peak_list="macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
@@ -31,7 +37,9 @@ if (debug){
   geneset_id="GOBP"
   dedup_status="dedup"
 } else {
-  sourcefile=args$sourcefile
+  carlisle_functions=args$carlisle_functions
+  Rlib_dir=args$Rlib_dir
+  Rpkg_config=args$Rpkg_config
   output_dir=args$output_dir
   report=args$report
   peak_list=args$peak_list
@@ -40,12 +48,15 @@ if (debug){
   dedup_status=args$dedup_status
 }
 
-parameters=list(sourcefile=sourcefile,
-                output_dir=output_dir,
-                peak_list=peak_list,
-                species=species,
-                geneset_id=geneset_id,
-                dedup_status=dedup_status)
+parameters=list(
+  carlisle_functions=carlisle_functions,
+  Rlib_dir=Rlib_dir,
+  Rpkg_config=Rpkg_config,
+  output_dir=output_dir,
+  peak_list=peak_list,
+  species=species,
+  geneset_id=geneset_id,
+  dedup_status=dedup_status)
 
 rmarkdown::render(args$rmd,
                   params=parameters,

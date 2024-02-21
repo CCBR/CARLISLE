@@ -95,10 +95,13 @@ rule spikein_assessment:
     params:
         rscript_wrapper=join(SCRIPTSDIR,"_generate_spikein_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_generate_spikein_plots.Rmd"),
-        rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+        carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+        Rlib_dir=config["Rlib_dir"],
+        Rpkg_config=config["Rpkg_config"],
+        rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         spikein=config["spikein_genome"],
     envmodules:
-        TOOLS['R'],
+        TOOLS["R"],
     output:
         html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
     shell:
@@ -112,7 +115,9 @@ rule spikein_assessment:
         # rum script       
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
-            --sourcefile {params.rscript_functions} \\
+            --carlisle_functions {params.carlisle_functions} \\
+            --Rlib_dir {params.Rlib_dir} \\
+            --Rpkg_config {params.Rpkg_config} \\
             --report {output.html} \\
             --bam_list "$clean_sample_list" \\
             --spikein_control $species_name

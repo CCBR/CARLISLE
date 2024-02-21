@@ -1,4 +1,28 @@
 ########################################################################
+# LIBRARY
+########################################################################
+CARLISLE_HANDLE_PACKAGES<-function(pkg_df){
+  for (rowid in rownames(pkg_df)){
+    pkg=pkg_df[rowid,"package"]
+    source=pkg_df[rowid,"source"]
+    version=pkg_df[rowid,"version"]
+    gh_name=pkg_df[rowid,"gh_name"]
+    
+    need_install <- pkg[!(pkg %in% installed.packages()[,"Package"])]
+    if (length(need_install)!=0){
+      print(paste0("Installing: ", pkg))
+      if (source=="bc") BiocManager::install(pkg,ask=FALSE,update=FALSE)
+      if (source=="cr") install.packages(pkg,version=version,repos = "http://cran.us.r-project.org",
+                                         local = FALSE,ask=FALSE,update=FALSE,dependencies=TRUE)
+      if (source=="gh") remotes::install_github(gh_name,version=version,local = FALSE,update=FALSE)
+    }
+    
+    print(paste0("Loading: ",pkg))
+    invisible(lapply(pkg, library, character.only = TRUE))
+  }
+}
+
+########################################################################
 # SPIKE IN PLOT
 ########################################################################
 GENERATE_SPIKEIN_PLOT<-function(input_df,spike_type){

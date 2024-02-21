@@ -27,7 +27,7 @@ tools_specific_yaml="tools_biowulf.yaml"
 # essential files
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
-ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml"
+ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml config/rpackages.csv"
 ESSENTIAL_FOLDERS="workflow/scripts annotation"
 # set extra singularity bindings
 EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
@@ -40,14 +40,13 @@ SNAKEFILE="${PIPELINE_HOME}/workflow/Snakefile"
 
 function get_version_from_path() {
   PIPELINE_HOME=$1
-  VERSION="$(echo $PIPELINE_HOME | grep -oP 'v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?' - )"
+  VERSION="$(cat $PIPELINE_HOME/VERSION)"
   echo -ne $VERSION
 }
 
-# get version from directory name
-# regex source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
-#echo "Version: $VERSION"
+function get_version (){
 echo "Version: $(get_version_from_path $PIPELINE_HOME)"
+}
 
 function usage() { 
 # This function prints generic usage of the wrapper script.
@@ -65,8 +64,11 @@ function usage() {
       *) dryrun : dry run snakemake to generate DAG
       *) unlock : unlock workdir if locked by snakemake
       *) runlocal : run without submitting to sbatch
-      *) testrun: run on cluster with included test dataset
+      *) runtest: run on cluster with included hg38 test dataset
   2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
+  
+  Optional Arguments: 
+      *) -f / --force: Force flag will re-initialize a previously initialized workdir
   "
 }
 
@@ -89,7 +91,9 @@ function init() {
 # 2. copying essential files like config.yaml and samples.tsv into the workdir
 # 3. setting up logs and stats folders
   # create output folder
-  if [ -d $WORKDIR ];then err "Folder $WORKDIR already exists!"; fi
+  if [[ -d $WORKDIR ]] && [[ -z $FORCEFLAG ]]; then 
+    err "Folder $WORKDIR already exists! If you'd like to re-initialize use the -f/--force flag $FORCEFLAG|"
+  fi
   mkdir -p $WORKDIR
 
   # copy essential files
@@ -150,23 +154,6 @@ function set_singularity_binds(){
   rm -f ${WORKDIR}/tmp?
   binds=$(echo $binds|awk '{print substr($1,1,length($1)-1)}')
   SINGULARITY_BINDS="-B $EXTRA_SINGULARITY_BINDS,$binds"
-}
-
-function reconfig(){
-# Rebuild config file and replace the config.yaml in the WORKDIR
-# this is only for dev purposes when new key-value pairs are being added to the config file
-  check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" -e "s/WORKDIR/${WORKDIR//\//\\/}/g" ${PIPELINE_HOME}/config/config.yaml > $WORKDIR/config/config.yaml
-  echo "$WORKDIR/config/config.yaml has been updated!"
-}
-
-function recluster(){
-# Rebuild cluster file and replace the cluster.yaml in the WORKDIR
-# this is only for dev purposes when new key-value pairs are being added to the cluster file
-  check_essential_files
-  cp ${PIPELINE_HOME}/resources/cluster.yaml ${WORKDIR}/config/cluster.yaml
-  echo "$WORKDIR/config/cluster.yaml has been updated!"
-
 }
 
 function rescript(){
@@ -234,20 +221,16 @@ function runlocal() {
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
 }
 
-function testrun() {
+function runtest() {
+  module load $PYTHON_VERSION
+  module load $SNAKEMAKE_VERSION
+  module load $SINGULARITY_VERSION
   check_essential_files
   sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.test.tsv > $WORKDIR/config/samples.tsv
   cp ${PIPELINE_HOME}/.test/contrasts.test.tsv $WORKDIR/config/contrasts.tsv
   check_essential_files
+  run "--dry-run" && echo "Dry-run was successful .... starting slurm execution"
   runslurm
-}
-
-function tinytestrun() {
-  check_essential_files
-  sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" ${PIPELINE_HOME}/.test/samples.tinytest.tsv > $WORKDIR/config/samples.tsv
-  cp ${PIPELINE_HOME}/.test/contrasts.tinytest.tsv $WORKDIR/config/contrasts.tsv
-  check_essential_files
-  dryrun
 }
 
 function runslurm() {
@@ -409,6 +392,12 @@ function main(){
         -w=*|--workdir=*)
           WORKDIR="${i#*=}"
         ;;
+        -f|--force)
+          FORCEFLAG="ON"
+        ;;
+        -v|--version)
+          get_version && exit 0
+        ;;
         -h|--help)
           usage && exit 0;;
         *)
@@ -427,12 +416,7 @@ function main(){
     run) runslurm && exit 0;;
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
-    testrun) testrun && exit 0;;
-    tinytestrun) tinytestrun && exit 0;;          # hidden option for debugging
-    dry) dryrun && exit 0;;                      # hidden option
-    local) runlocal && exit 0;;                  # hidden option
-    reconfig) reconfig && exit 0;;               # hidden option for debugging
-    recluster) recluster && exit 0;;             # hidden option for debugging
+    runtest) runtest && exit 0;;
     rescript) rescript && exit 0;;               # hidden option for debugging
     printbinds) printbinds && exit 0;;           # hidden option
     *) err "Unknown RUNMODE \"$RUNMODE\"";;

@@ -16,7 +16,7 @@ The following are sub-commands used within CARLISLE:
 - unlock: unlock directory
 - DAG: create DAG report
 - report: create SNAKEMAKE report
-- testrun: copies test manifests and files to WORKDIR
+- runtest: copies test manifests and files to WORKDIR
 
 ## 1.2 Setup Dependencies
 CARLISLE has several dependencies listed below. These dependencies can be installed by a sysadmin. All dependencies will be automatically loaded if running from Biowulf.

@@ -1,3 +1,6 @@
+## mm10 download
+https://bitbucket.org/young_computation/rose/src/master/annotation/mm10_refseq.ucsc
+
 `create_hs1_ucsc.sh` script was used to create the hs1 ucsc file.
 
 #### hg19_refseq.ucsc and hg38_refseq.ucsc source

@@ -3,6 +3,9 @@ title: "DifferentialCutAndRun"
 output:
   html_document:
 params:
+  carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
+  Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
+  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   rawcountsmatrix: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_countsmatrix.txt"
   coldata: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_sampleinfo.txt"
   dupstatus: "dedup" # dedup or no_dedup
@@ -26,64 +29,33 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-# list packages
-list.of.packages=c( "DT",
-                    "RColorBrewer",
-                    "dplyr",
-                    "ggfortify",
-                    "ggplot2",
-                    "ggrepel",
-                    "pander",
-                    "plotly",
-                    "reshape2",
-                    "stringr",
-                    "tidyverse",
-                    "yaml")
-list.of.bioconductor.packages=c("BiocManager",
-                                "ChIPseeker",
-                                "DESeq2",
-                                "ELBOW",
-                                "EnhancedVolcano",
-                                "GenomicFeatures",
-                                "HTSFilter",
-                                "TxDb.Hsapiens.UCSC.hg19.knownGene",
-                                "TxDb.Hsapiens.UCSC.hg38.knownGene",
-                                "TxDb.Mmusculus.UCSC.mm10.knownGene",
-                                "edgeR",
-                                "org.Hs.eg.db",
-                                "org.Mm.eg.db",
-                                "rtracklayer")
 
-## add extra packages for HS1
-if (params$species=="hs1"){
-  print("going to install")
-  #https://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0.html
-  list.of.bioconductor.packages=c(list.of.bioconductor.packages,"BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0")
-}
+# source functions file
+source(params$carlisle_functions)
 
-#install as needed
-new.packages <- list.of.bioconductor.packages[!(list.of.bioconductor.packages %in% installed.packages()[,"Package"])]
+# set library dir, load this and remove any other dirs to avoid confusion
+# between personally created pkgs and the pipeline package
+## saving old path "/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library"
+Rlib_dir=params$Rlib_dir
+Rpkg_config=params$Rpkg_config
+print(paste0("Using the lib.loc location: ",Rlib_dir))
+assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
+.libPaths()
+
+# read in package info
+pkg_df=read.csv(Rpkg_config)
+pkg_df=subset(pkg_df,diff=="Y")
+pkg_df
+
+# for each package check installation, if present then load library
+CARLISLE_HANDLE_PACKAGES(pkg_df)
+
 ##handle ELBOW separately - it requires an older version of bioconductor / R
 if("ELBOW" %in% new.packages){
-  install.packages("/data/CCBR_Pipeliner/Pipelines/CARLISLE_dev/resources/other/ELBOW_1.10.0.tar.gz", 
+  install.packages(paste0(Rlib_dir,"ELBOW_1.10.0.tar.gz"), 
     repos = NULL, type="source", INSTALL_opts = '--no-lock')
   new.packages=new.packages[names(new.packages) != "ELBOW"]
 }
-##handle all other pkgs
-if(length(new.packages)) {
-  print(new.packages)
-  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
-}
-
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-if(length(new.packages)) {
-  print(new.packages)
-  install.packages(new.packages, INSTALL_opts = '--no-lock')
-}
-
-# load packages
-invisible(lapply(list.of.packages, library, character.only = TRUE))
-invisible(lapply(list.of.bioconductor.packages, library, character.only = TRUE))
 ```
 
 ## Loading SampleInfo and Counts
