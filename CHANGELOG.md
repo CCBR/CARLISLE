@@ -1,4 +1,6 @@
 ## CARLISLE development version
+
+## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)
 - Adds a --force flag to allow for re-initialization of a workdir (#97, @slsevilla)
 - Fixes error with testrun in DESEQ2 (#113, @slsevilla)
