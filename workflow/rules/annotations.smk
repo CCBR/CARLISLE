@@ -303,6 +303,10 @@ if config["run_contrasts"] == "Y":
         params:
             rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
             rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
+            carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
+            Rlib_dir=config["Rlib_dir"],
+            Rpkg_config=config["Rpkg_config"],
+            rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
             rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
             output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
             species = config["genome"],
@@ -323,7 +327,9 @@ if config["run_contrasts"] == "Y":
             # rum script       
             Rscript {params.rscript_wrapper} \\
                 --rmd {params.rmd} \\
-                --sourcefile {params.rscript_functions} \\
+                --carlisle_functions {params.carlisle_functions} \\
+                --Rlib_dir {params.Rlib_dir} \\
+                --Rpkg_config {params.Rpkg_config} \\
                 --output_dir {params.output_dir} \\
                 --report {output.html} \\
                 --peak_list "$clean_sample_list" \\

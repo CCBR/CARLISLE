@@ -2,9 +2,4 @@ sampleName	replicateNumber	isControl	controlName	controlReplicateNumber	path_to_
 53_H3K4me3	1	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/53_H3K4me3_1.R1.fastq.gz	/opt2/.test/53_H3K4me3_1.R2.fastq.gz
 53_H3K4me3	2	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/53_H3K4me3_2.R1.fastq.gz	/opt2/.test/53_H3K4me3_2.R2.fastq.gz
 HN6_H3K4me3	1	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/HN6_H3K4me3_1.R1.fastq.gz	/opt2/.test/HN6_H3K4me3_1.R2.fastq.gz
-HN6_H3K4me3	2	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/HN6_H3K4me3_2.R1.fastq.gz	/opt2/.test/HN6_H3K4me3_2.R2.fastq.gz
-53_H4K20m3	1	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/53_H4K20m3_1.R1.fastq.gz	/opt2/.test/53_H4K20m3_1.R2.fastq.gz
-53_H4K20m3	2	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/53_H4K20m3_2.R1.fastq.gz	/opt2/.test/53_H4K20m3_2.R2.fastq.gz
-HN6_H4K20me3	1	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/HN6_H4K20me3_1.R1.fastq.gz	/opt2/.test/HN6_H4K20me3_1.R2.fastq.gz
-HN6_H4K20me3	2	N	HN6_IgG_rabbit_negative_control	1	/opt2/.test/HN6_H4K20me3_2.R1.fastq.gz	/opt2/.test/HN6_H4K20me3_2.R2.fastq.gz
 HN6_IgG_rabbit_negative_control	1	Y	-	-	/opt2/.test/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz	/opt2/.test/HN6_IgG_rabbit_negative_control_1.R2.fastq.gz

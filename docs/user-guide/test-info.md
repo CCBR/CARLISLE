@@ -16,11 +16,11 @@ Test data is included in the .test directory as well as the config directory.
 
 A Run the test command to prepare the data, perform a dry-run and submit to the cluster
 ```
-bash ./path/to/dir/carlisle --runmode=testrun --workdir=/path/to/output/dir
+bash ./path/to/dir/carlisle --runmode=runtest --workdir=/path/to/output/dir
 
 ```
 
-- An expected output for the `testrun` is as follows:
+- An expected output for the `runtest` is as follows:
 ```
 Job stats:
 job                              count    min threads    max threads
