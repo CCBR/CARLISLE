@@ -39,7 +39,7 @@ source(params$carlisle_functions)
 Rlib_dir=params$Rlib_dir
 Rpkg_config=params$Rpkg_config
 print(paste0("Using the lib.loc location: ",Rlib_dir))
-assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
+#assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
 .libPaths()
 
 # read in package info
@@ -51,11 +51,11 @@ pkg_df
 CARLISLE_HANDLE_PACKAGES(pkg_df)
 
 ##handle ELBOW separately - it requires an older version of bioconductor / R
-if("ELBOW" %in% new.packages){
-  install.packages(paste0(Rlib_dir,"ELBOW_1.10.0.tar.gz"), 
-    repos = NULL, type="source", INSTALL_opts = '--no-lock')
-  new.packages=new.packages[names(new.packages) != "ELBOW"]
-}
+#if("ELBOW" %in% new.packages){
+#  install.packages(paste0(Rlib_dir,"ELBOW_1.10.0.tar.gz"), 
+#    repos = NULL, type="source", INSTALL_opts = '--no-lock')
+#  new.packages=new.packages[names(new.packages) != "ELBOW"]
+#}
 ```
 
 ## Loading SampleInfo and Counts
