@@ -46,7 +46,7 @@ for ( f in files ){
 
 # run once for dedup, once for nondedup
 final_df=data.frame()
-for (dedup_type in c("dedup_nreads_genome","nodedup_nreads_genome")){
+for (dedup_type in c("dedup_nreads_genome","no_dedup_nreads_genome")){
   # determine scaling factor dependent on library size
   col_median=median(df[,dedup_type])
   if (col_median>1000000000){
@@ -70,7 +70,8 @@ for (dedup_type in c("dedup_nreads_genome","nodedup_nreads_genome")){
   df$library_size=df[,dedup_type]/lib_factor
   df$sampleid=rownames(df)
   df$dedup_type=strsplit(dedup_type,"_")[[1]][1]
-  
+  df$dedup_type=gsub("no","no_dedup",df$dedup_type)
+
   # create final df
   select_cols=c("sampleid","library_size","dedup_type")
   final_df=rbind(final_df,df[,select_cols])
