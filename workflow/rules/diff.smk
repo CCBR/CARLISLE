@@ -264,8 +264,7 @@ rule DESeq:
             --fragmentsresults {output.results_frag} \\
             --pdf {output.pdf} \\
             --title "${{condition1}}_vs_${{condition2}}__{params.dupstatus}__{params.peak_caller_type}"
-    fi
-    """
+        """
 
 rule diffbb:
     input:
