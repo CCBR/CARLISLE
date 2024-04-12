@@ -33,15 +33,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # source functions file
 source(params$carlisle_functions)
 
-# set library dir, load this and remove any other dirs to avoid confusion
-# between personally created pkgs and the pipeline package
-## saving old path "/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library"
-Rlib_dir=params$Rlib_dir
-Rpkg_config=params$Rpkg_config
-print(paste0("Using the lib.loc location: ",Rlib_dir))
-assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
-.libPaths()
-
 # read in package info
 pkg_df=read.csv(Rpkg_config)
 pkg_df=subset(pkg_df,diff=="Y")

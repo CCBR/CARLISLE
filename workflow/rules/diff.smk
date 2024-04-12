@@ -169,8 +169,7 @@ rule DESeq:
         spiked = NORM_METHOD,
         species = config["genome"],
         gtf=config["reference"][config["genome"]]["gtf"]
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['deseq']
     shell:
         """
         set -exo pipefail
