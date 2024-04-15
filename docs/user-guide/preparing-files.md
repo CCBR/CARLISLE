@@ -158,3 +158,5 @@ An example contrast file:
 | condition1 | condition2 |
 | --- | --- |
 | MOC1_siSmyd3_2m_25_HCHO | MOC1_siNC_2m_25_HCHO |
+
+**Note**: you must have more than one sample per condition in order to perform differential analysis with DESeq2
