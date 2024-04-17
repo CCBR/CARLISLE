@@ -9,11 +9,12 @@ ARG REPONAME="000000"
 ENV REPONAME=${REPONAME}
 
 # install conda packages
-COPY environment.yml /data2/
-ENV CONDA_ENV=carlisle_r
-RUN mamba env create -n ${CONDA_ENV} -f /data2/environment.yml && \
-    echo "conda activate ${CONDA_ENV}" > ~/.bashrc
-ENV PATH="/opt2/conda/envs/${CONDA_ENV}/bin:$PATH"
+COPY packages.txt /data2/
+RUN mamba install \
+    --no-channel-priority \
+    -c bioconda -c conda-forge -c r \
+    --file /data2/packages.txt
+ENV PATH="/opt2/conda/bin:$PATH"
 ENV R_LIBS_USER=/opt2/conda/lib/R/library/
 
 # Save Dockerfile in the docker
