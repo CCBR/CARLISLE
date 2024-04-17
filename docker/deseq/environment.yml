@@ -3,7 +3,7 @@ channels:
     - bioconda
     - r
 dependencies:
-    - bioconductor-biocmanager
+    - r-biocmanager
     - bioconductor-bsgenome.hsapiens.ncbi.t2t.chm13v2.0
     - bioconductor-chipenrich
     - bioconductor-chipseeker
