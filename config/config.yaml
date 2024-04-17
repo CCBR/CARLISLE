@@ -150,11 +150,8 @@ spikein_reference:
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
 
 #####################################################################################
-# R Packages
+# CONTAINERS
 #####################################################################################
-Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-Rpkg_config: "WORKDIR/config/rpackages.csv"
-
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
-  deseq: "docker://nciccbr/carlisle_deseq:v1"
+  carlisle_r: "docker://nciccbr/carlisle_r:v1"

@@ -13,10 +13,6 @@ parser$add_argument("--rmd", type="character", required=TRUE,
           help="path to rmd")
 parser$add_argument("--carlisle_functions", type="character", required=TRUE, 
           help="path to carlisle functions file")
-parser$add_argument("--Rlib_dir", type="character", required=TRUE, 
-          help="path to R lib directory")
-parser$add_argument("--Rpkg_config", type="character", required=TRUE, 
-          help="path to package config")
 parser$add_argument("--spiked", type="character", required=TRUE, 
           help="type of normalization used")
 parser$add_argument("--rawcountsprescaled", action='store_true',
@@ -58,8 +54,6 @@ args <- parser$parse_args()
 gtf <- args$gtf
 if (debug){
   carlisle_functions="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
-  Rlib_dir="/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config="/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   rawcountsmatrix="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/counts_matrix.txt"
   coldata="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff/sample_info.txt"
   dupstatus="dedup"
@@ -79,8 +73,6 @@ if (debug){
   gtf="~/../../Volumes/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
 } else {
   carlisle_functions=args$carlisle_functions
-  Rlib_dir=args$Rlib_dir
-  Rpkg_config=args$Rpkg_config
   rawcountsmatrix=args$countsmatrix
   coldata=args$sampleinfo
   dupstatus=args$dupstatus
@@ -104,8 +96,6 @@ if (debug){
 
 parameters=list(
   carlisle_functions=carlisle_functions,
-  Rlib_dir=Rlib_dir,
-  Rpkg_config=Rpkg_config,
   rawcountsmatrix=rawcountsmatrix,
   coldata=coldata,
   spiked=spiked,

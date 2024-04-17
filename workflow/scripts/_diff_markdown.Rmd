@@ -4,8 +4,6 @@ output:
   html_document:
 params:
   carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
-  Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   rawcountsmatrix: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_countsmatrix.txt"
   coldata: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_sampleinfo.txt"
   dupstatus: "dedup" # dedup or no_dedup
@@ -32,21 +30,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # source functions file
 source(params$carlisle_functions)
-
-# read in package info
-pkg_df=read.csv(Rpkg_config)
-pkg_df=subset(pkg_df,diff=="Y")
-pkg_df
-
-# for each package check installation, if present then load library
-CARLISLE_HANDLE_PACKAGES(pkg_df)
-
-##handle ELBOW separately - it requires an older version of bioconductor / R
-if("ELBOW" %in% new.packages){
-  install.packages(paste0(Rlib_dir,"ELBOW_1.10.0.tar.gz"), 
-    repos = NULL, type="source", INSTALL_opts = '--no-lock')
-  new.packages=new.packages[names(new.packages) != "ELBOW"]
-}
+load_packages()
 ```
 
 ## Loading SampleInfo and Counts

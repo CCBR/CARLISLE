@@ -6,8 +6,6 @@ output:
   html_document:
 params:
   carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
-  Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-  Rpkg_config: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/conf/rpackages.csv"
   bam_list: "~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H3K4me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/53_H4K20m3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_1.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_H4K20me3_2.bam.idxstatsxxx~/../../Volumes/data/carlisle/v2.0/results/bam/raw/HN6_IgG_rabbit_negative_control_1.bam.idxstats"
   spikein_control: "NC_000913.3"
 editor_options: 
@@ -19,23 +17,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # source functions file
 source(params$carlisle_functions)
-
-# set library dir, load this and remove any other dirs to avoid confusion
-# between personally created pkgs and the pipeline package
-## saving old path "/Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library"
-Rlib_dir=params$Rlib_dir
-Rpkg_config=params$Rpkg_config
-print(paste0("Using the lib.loc location: ",Rlib_dir))
-assign(".lib.loc", Rlib_dir, envir = environment(.libPaths))
-.libPaths()
-
-# read in package info
-pkg_df=read.csv(Rpkg_config)
-pkg_df=subset(pkg_df,spike_in=="Y")
-pkg_df
-
-# for each package check installation, if present then load library
-CARLISLE_HANDLE_PACKAGES(pkg_df)
+load_packages()
 ```
 
 

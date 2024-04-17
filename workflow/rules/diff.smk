@@ -157,8 +157,6 @@ rule DESeq:
     params:
         rmd=join(SCRIPTSDIR,"_diff_markdown.Rmd"),
         carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-        Rlib_dir=config["Rlib_dir"],
-        Rpkg_config=config["Rpkg_config"],
         rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         rscript_venn=join(SCRIPTSDIR,"_plot_results_venn.R"),
         contrast_list="{contrast_list}",
@@ -169,7 +167,7 @@ rule DESeq:
         spiked = NORM_METHOD,
         species = config["genome"],
         gtf=config["reference"][config["genome"]]["gtf"]
-    container: config['containers']['deseq']
+    container: config['containers']['carlisle_r']
     shell:
         """
         set -exo pipefail
@@ -214,8 +212,6 @@ rule DESeq:
             Rscript {params.rscript_diff} \\
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
-                --Rlib_dir {params.Rlib_dir} \\
-                --Rpkg_config {params.Rpkg_config} \\
                 --countsmatrix {input.cm_auc} \\
                 --sampleinfo {input.si} \\
                 --dupstatus {params.dupstatus} \\
@@ -248,8 +244,6 @@ rule DESeq:
             Rscript {params.rscript_diff} \\
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
-                --Rlib_dir {params.Rlib_dir} \\
-                --Rpkg_config {params.Rpkg_config} \\
                 --countsmatrix {input.cm_frag} \\
                 --sampleinfo {input.si} \\
                 --dupstatus {params.dupstatus} \\

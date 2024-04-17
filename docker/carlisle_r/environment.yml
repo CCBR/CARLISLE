@@ -3,7 +3,6 @@ channels:
     - bioconda
     - r
 dependencies:
-    - r-biocmanager
     - bioconductor-bsgenome.hsapiens.ncbi.t2t.chm13v2.0
     - bioconductor-chipenrich
     - bioconductor-chipseeker
@@ -19,8 +18,11 @@ dependencies:
     - bioconductor-txdb.hsapiens.ucsc.hg19.knowngene
     - bioconductor-TxDb.Hsapiens.UCSC.hg38.knownGene
     - bioconductor-TxDb.Mmusculus.UCSC.mm10.knownGene
+    - r-argparse
+    - r-biocmanager
     - r-DT
     - r-ggfortify
+    - r-ggvenn
     - r-htmltools
     - r-latticeextra
     - r-pander
