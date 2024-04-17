@@ -3,7 +3,6 @@ bioconductor-chipenrich
 bioconductor-chipseeker
 bioconductor-deseq2
 bioconductor-edger
-bioconductor-elbow
 bioconductor-enhancedvolcano
 bioconductor-genomicfeatures
 bioconductor-htsfilter
