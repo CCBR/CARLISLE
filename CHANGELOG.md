@@ -1,5 +1,8 @@
 ## CARLISLE development version
 
+- Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
+    The `Rlib_dir` and `Rpkg_config` config options have been removed as they are no longer needed.
+
 ## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)
 - Adds a --force flag to allow for re-initialization of a workdir (#97, @slsevilla)
