@@ -1,4 +1,10 @@
 ## CARLISLE development version
+- Bug fixes (#127, @epehrsson)
+- Removes single-sample group check for DESeq.
+- Increases memory for DESeq.
+- Ensures control replicate number is an integer.
+- Fixes FDR cutoff misassigned to log2FC cutoff.
+- Fixes `no_dedup` variable names in library normalization scripts.
 
 ## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)

@@ -87,7 +87,7 @@ if (debug){
   condition1=args$condition1
   condition2=args$condition2
   fdr_cutoff=args$fdr_cutoff
-  log2fc_cutoff=args$fdr_cutoff
+  log2fc_cutoff=args$log2fc_cutoff
   indexcols="peakID"
   results=args$results
   report=args$report
