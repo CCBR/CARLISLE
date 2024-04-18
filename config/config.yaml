@@ -4,6 +4,12 @@
 # The working dir... output will be in the results subfolder of the workdir
 workdir: "WORKDIR"
 
+# scripts directory
+# by default, use the scripts copied to the working directory.
+# alternatively, use the scripts from the pipeline source.
+scriptsdir: "WORKDIR/scripts"
+#scriptsdir: "PIPELINE_HOME/scripts"
+
 # tab delimited samples file .. see samplefile for format details
 samplemanifest: "WORKDIR/config/samples.tsv"
 
