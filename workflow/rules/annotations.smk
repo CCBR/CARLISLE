@@ -273,25 +273,7 @@ if config["run_contrasts"] == "Y":
             peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
         shell:
             """
-            set -exo pipefail
-            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
-                TMPDIR="/lscratch/$SLURM_JOB_ID"
-            else
-                TMPDIR="/dev/shm"
-            fi
-
-            # for each of the file, find matches to the peak_type
-            if [[ -f $$TMPDIR/merge.txt ]]; then rm $TMPDIR/merge.txt; fi
-
-            # pull file list
-            # /data/sevillas2/carlisle/v2.0/results/peaks/0.05/contrasts/53_H3K4me3_vs_HN6_H3K4me3.dedup/53_H3K4me3_vs_HN6_H3K4me3.dedup.seacr_stringent.txt
-            for f in {params.search_dir}/{params.contrast_list}.{params.dupstatus}/{params.contrast_list}.{params.dupstatus}.{params.peak_caller}*.txt; do
-                    cat $f >> $TMPDIR/merge.txt
-            done
-
-            # save to output
-            cat $TMPDIR/merge.txt | sort | uniq > {output.peak_contrast_files}
-            rm $TMPDIR/merge.txt
+            cat {input.contrast_files} | sort | uniq > {output.peak_contrast_files}
             """
 
     rule go_enrichment:
