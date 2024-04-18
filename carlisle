@@ -29,8 +29,6 @@ tools_specific_yaml="tools_biowulf.yaml"
 # these are copied into the WORKDIR
 ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml config/rpackages.csv"
 ESSENTIAL_FOLDERS="workflow/scripts annotation"
-# set extra singularity bindings
-EXTRA_SINGULARITY_BINDS="-B /data/CCBR_Pipeliner/,/lscratch"
 
 # ## setting PIPELINE_HOME
 PIPELINE_HOME=$(readlink -f $(dirname "$0"))
@@ -144,7 +142,10 @@ function check_essential_files() {
 function set_singularity_binds(){
 # this functions tries find what folders to bind
 # biowulf specific
-  echo "$PIPELINE_HOME" > ${WORKDIR}/tmp1
+  # set extra singularity bindings
+  EXTRA_SINGULARITY_BINDS="/lscratch"
+
+  echo "$PIPELINE_HOME" >> ${WORKDIR}/tmp1
   echo "$WORKDIR" >> ${WORKDIR}/tmp1
   grep -o '\/.*' <(cat ${WORKDIR}/config/config.yaml ${WORKDIR}/config/samples.tsv)|tr '\t' '\n'|grep -v ' \|\/\/'|sort|uniq >> ${WORKDIR}/tmp1
   grep gpfs ${WORKDIR}/tmp1|awk -F'/' -v OFS='/' '{print $1,$2,$3,$4,$5}' |sort|uniq > ${WORKDIR}/tmp2
@@ -153,7 +154,8 @@ function set_singularity_binds(){
   binds=$(cat ${WORKDIR}/tmp2 ${WORKDIR}/tmp3 ${WORKDIR}/tmp4|sort|uniq |tr '\n' ',')
   rm -f ${WORKDIR}/tmp?
   binds=$(echo $binds|awk '{print substr($1,1,length($1)-1)}')
-  SINGULARITY_BINDS="-B $EXTRA_SINGULARITY_BINDS,$binds"
+
+  SINGULARITY_BINDS=" -B $EXTRA_SINGULARITY_BINDS,$binds "
 }
 
 function rescript(){
@@ -168,7 +170,6 @@ function runcheck(){
   check_essential_files
   module load $PYTHON_VERSION
   module load $SNAKEMAKE_VERSION
-  # SINGULARITY_BINDS="$EXTRA_SINGULARITY_BINDS -B ${PIPELINE_HOME}:${PIPELINE_HOME} -B ${WORKDIR}:${WORKDIR}"
 }
 
 function controlcheck(){
