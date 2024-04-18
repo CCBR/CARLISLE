@@ -51,8 +51,8 @@ column_order = c("sample_name",
                  "scaling_factor",
                  "duplication_rate_genome",
                  "duplication_rate_spikein",
-                 "nodedup_nreads_genome",
-                 "nodedup_nreads_spikein",
+                 "no_dedup_nreads_genome",
+                 "no_dedup_nreads_spikein",
                  "dedup_nreads_genome",
                  "dedup_nreads_spikein")
 

@@ -26,8 +26,8 @@ dedup_idxstats = pandas.read_csv(sys.argv[6],sep="\t",header=None)
 stats["raw_nreads_genome"] = sum(list(raw_idxstats[raw_idxstats[0].isin(list(genomelen[0]))][2]))
 stats["raw_nreads_spikein"] = sum(list(raw_idxstats[raw_idxstats[0].isin(list(spikeinlen[0]))][2]))
 
-stats["nodedup_nreads_genome"] = sum(list(nodedup_idxstats[nodedup_idxstats[0].isin(list(genomelen[0]))][2]))
-stats["nodedup_nreads_spikein"] = sum(list(nodedup_idxstats[nodedup_idxstats[0].isin(list(spikeinlen[0]))][2]))
+stats["no_dedup_nreads_genome"] = sum(list(nodedup_idxstats[nodedup_idxstats[0].isin(list(genomelen[0]))][2]))
+stats["no_dedup_nreads_spikein"] = sum(list(nodedup_idxstats[nodedup_idxstats[0].isin(list(spikeinlen[0]))][2]))
 
 stats["dedup_nreads_genome"] = sum(list(dedup_idxstats[dedup_idxstats[0].isin(list(genomelen[0]))][2]))
 stats["dedup_nreads_spikein"] = sum(list(dedup_idxstats[dedup_idxstats[0].isin(list(spikeinlen[0]))][2]))

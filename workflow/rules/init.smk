@@ -117,10 +117,10 @@ TREATMENT_WITHOUTCONTROL_LIST=[]
 TREAT_to_CONTRL_DICT=dict()
 for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
-    c=crow.controlName+"_"+str(crow.controlReplicateNumber)
+    c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
     if not c in REPLICATES:
         print("# Control NOT found for sampleName_replicateNumber:"+t)
-        print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+crow.controlReplicateNumber)
+        print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
         exit()        
     print("## "+str(i+1)+") "+t+"        "+c)
     process_replicates.extend([t,c])
