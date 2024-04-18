@@ -8,7 +8,7 @@ workdir: "WORKDIR"
 # by default, use the scripts copied to the working directory.
 # alternatively, use the scripts from the pipeline source.
 scriptsdir: "WORKDIR/scripts"
-#scriptsdir: "PIPELINE_HOME/scripts"
+#scriptsdir: "PIPELINE_HOME/workflow/scripts"
 
 # tab delimited samples file .. see samplefile for format details
 samplemanifest: "WORKDIR/config/samples.tsv"
