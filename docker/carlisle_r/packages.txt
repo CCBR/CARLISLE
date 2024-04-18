@@ -24,4 +24,5 @@ r-plotly
 r-rcolorbrewer
 r-reshape2
 r-tidyverse
+r-xfun>=0.43
 r-yaml
