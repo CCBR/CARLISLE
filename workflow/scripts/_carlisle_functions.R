@@ -1,6 +1,7 @@
 ########################################################################
 # LIBRARY
 ########################################################################
+library(tidyverse)
 load_packages <- function(){
   pkgs <- 'BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
 chipenrich
