@@ -469,3 +469,49 @@ rule deeptools_heatmap:
         plotProfile -m {input.metamat} -out {output.metaline} --plotHeight 15 --plotWidth 15 --perGroup --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-right
         plotProfile -m {input.TSSmat} -out {output.TSSline} --plotHeight 15 --plotWidth 15 --perGroup --yAxisLabel 'average RPGC' --plotType 'se' --legendLocation upper-left
         """
+
+rule cov_correlation:
+    """
+    Create replicate correlation plots from filtered BAM files
+    """
+    input:
+        bams=expand(join(RESULTSDIR,"bam","{replicate}.{{dupstatus}}.bam"),replicate=REPLICATES),
+        align_table=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+    output:
+        counts=join(RESULTSDIR,"deeptools","all.{dupstatus}.readCounts.npz"),
+        pearson_corr=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.tab"),
+        pearson_plot=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.png"),
+        pca=join(RESULTSDIR,"deeptools","all.{dupstatus}.PCA.tab"),
+        hc=join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),
+        pca_format=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png")        
+    params:
+        rscript=join(SCRIPTSDIR,"plot_correlation.R"),
+        dupstatus="{dupstatus}"
+    envmodules:
+        TOOLS["deeptools"],
+        TOOLS["R"]
+    threads: getthreads("cov_correlation")
+    shell:
+        """
+        # Calculate genome-wide coverage
+        multiBamSummary bins \
+         --bamfiles {input.bams} \
+         --smartLabels \
+         -out {output.counts} \
+         -p {threads}
+
+        # Plot heatmap - Pearson
+        plotCorrelation \
+         -in {output.counts} \
+         --corMethod pearson --skipZeros \
+         --whatToPlot heatmap --plotNumbers \
+         -o {output.pearson_plot} \
+         --removeOutliers \
+         --outFileCorMatrix {output.pearson_corr}
+        
+        # Plot PCA
+        plotPCA -in {output.counts}  --outFileNameData {output.pca}
+
+        # Plot heatmap and PCA (formatted)
+        Rscript {params.rscript} {output.pearson_corr} {output.pca} {input.align_table} {params.dupstatus} {output.hc} {output.pca_format}
+        """
