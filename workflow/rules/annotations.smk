@@ -18,7 +18,7 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
 
-localrules: create_contrast_peakcaller_files
+localrules: create_contrast_peakcaller_files, homer_enrich
 rule findMotif:
     """
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
@@ -58,6 +58,26 @@ rule findMotif:
         else
             findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
         fi
+        """
+
+rule homer_enrich:
+    """
+    Plot enrichment over genic features
+    """
+    input: 
+        annotation_summary=expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_M)#+expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_SG)
+    output:
+        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png")
+    params:
+        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer"),
+        peak_mode="{peak_caller_type}",
+        dupstatus="{dupstatus}",
+        rscript=join(SCRIPTSDIR,"plot_feature_enrichment.R")
+    envmodules:
+        TOOLS["R"]
+    shell:
+        """
+        Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
         """
 
 rule rose:

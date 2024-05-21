@@ -144,6 +144,19 @@ def get_motifs(wildcards):
         files.extend(anno_s)
     return files
 
+def get_enrich(wildcards):
+    files=[]
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="macs2",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
+        files.extend(anno_m)
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
+        files.extend(anno_g)
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="seacr",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
+        files.extend(anno_s)
+    return files
+
 def get_rose(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
@@ -225,6 +238,7 @@ rule all:
         
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
         unpack(get_motifs),
+        unpack(get_enrich),
         unpack(get_rose),
         unpack(get_enrichment)
 
