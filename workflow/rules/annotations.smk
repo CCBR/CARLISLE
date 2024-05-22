@@ -18,7 +18,7 @@ def get_peak_file(wildcards):
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
 
-localrules: create_contrast_peakcaller_files, homer_enrich
+localrules: create_contrast_peakcaller_files, homer_enrich, combine_homer
 rule findMotif:
     """
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
@@ -65,7 +65,7 @@ rule homer_enrich:
     Plot enrichment over genic features
     """
     input: 
-        annotation_summary=expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_M)#+expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_SG)
+        annotation_summary=expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_M)
     output:
         enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png")
     params:
@@ -78,6 +78,24 @@ rule homer_enrich:
     shell:
         """
         Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
+        """
+
+rule combine_homer:
+    """
+    Add MACS2 q-value and FC to HOMER peak annotation
+    """
+    input:
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
+    output:
+        combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
+    envmodules:
+        TOOLS["R"]
+    params:
+        rscript=join(SCRIPTSDIR,"combine_macs2_homer.R")
+    shell:
+        """
+        Rscript {params.rscript} {input.xls_file} {input.annotation} {output.combined}
         """
 
 rule rose:
