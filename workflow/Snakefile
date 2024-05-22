@@ -157,6 +157,13 @@ def get_enrich(wildcards):
         files.extend(anno_s)
     return files
 
+def get_combined(wildcards):
+    files = []
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):    
+        combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
+        files.extend(combined_m)
+    return files
+
 def get_rose(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
@@ -239,6 +246,7 @@ rule all:
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
         unpack(get_motifs),
         unpack(get_enrich),
+        unpack(get_combined),
         unpack(get_rose),
         unpack(get_enrichment)
 

@@ -66,7 +66,7 @@ print(Heatmap(heatmap,
           title = "Pearson\ncorrelation"
         ),
         column_dend_height = unit(0.8,"inches"),
-        name="Pearson correlation, genome-wide 10kb bin coverage"))
+        name="Pearson correlation, genome-wide coverage (10kb bins)"))
 dev.off()
 
 # PCA
@@ -87,6 +87,6 @@ print(ggplot(pca,aes(x=`1`,y=`2`,color=Sample)) + geom_point(size=3) +
   xlab(paste("PC1 (",round(eigenvalue$Variance[1],1),"%)",sep="")) +
   ylab(paste("PC2 (",round(eigenvalue$Variance[2],1),"%)",sep="")) +
   scale_color_manual(values=sample_colors) +
-  ggtitle("PCA, genome-wide 10kb bin coverage") +
+  ggtitle("PCA, genome-wide coverage (10kb bins)") +
   theme_classic() + theme(legend.position="bottom"))
 dev.off()

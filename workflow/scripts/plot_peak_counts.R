@@ -52,13 +52,13 @@ png(paste("duplication_corr.",threshold,".png",sep=""),width = 350, height = 300
 dev.off()
 
 # Plot summary across callers
-width=(length(unique(peaks_threshold$Sample))*100)+100
+width=(length(unique(peaks_threshold$Sample))*50)+100
 height=(length(unique(peaks_threshold$Caller))*100)+100
 png(paste("peaks_by_caller.",threshold,".png",sep=""),width = width, height = height)
     print(ggplot(peaks_threshold[which(peaks_threshold$Duplication == "dedup"),],aes(x=Sample,y=Peaks)) +
   	geom_boxplot() +
 	facet_wrap(~Caller,nrow=length(unique(peaks_threshold$Caller)),scales="free_y") +
 	theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) +
- 	ggtitle(paste("Peaks, q-value threshold ",threshold,",\ndeduplicated reads",sep="")))	
+ 	ggtitle(paste("Peaks,\nq-value threshold ",threshold,",\ndeduplicated reads",sep="")))	
 dev.off()
 }
