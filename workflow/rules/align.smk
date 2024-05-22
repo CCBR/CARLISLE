@@ -485,7 +485,7 @@ rule cov_correlation:
         hc=join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),
         pca_format=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png")        
     params:
-        rscript=join(SCRIPTSDIR,"plot_correlation.R"),
+        rscript=join(SCRIPTSDIR,"_plot_correlation.R"),
         dupstatus="{dupstatus}"
     envmodules:
         TOOLS["deeptools"],

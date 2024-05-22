@@ -468,7 +468,7 @@ rule count_peaks:
         peak_table=join(RESULTSDIR,"peaks","Peak counts.xlsx"),
     params:
         outdir=join(RESULTSDIR,"peaks"),
-        rscript=join(SCRIPTSDIR,"plot_peak_counts.R")
+        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R")
     envmodules:
         TOOLS["R"]
     shell:

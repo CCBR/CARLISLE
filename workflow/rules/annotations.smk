@@ -72,7 +72,7 @@ rule homer_enrich:
         annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer"),
         peak_mode="{peak_caller_type}",
         dupstatus="{dupstatus}",
-        rscript=join(SCRIPTSDIR,"plot_feature_enrichment.R")
+        rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
     envmodules:
         TOOLS["R"]
     shell:
@@ -92,7 +92,7 @@ rule combine_homer:
     envmodules:
         TOOLS["R"]
     params:
-        rscript=join(SCRIPTSDIR,"combine_macs2_homer.R")
+        rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
     shell:
         """
         Rscript {params.rscript} {input.xls_file} {input.annotation} {output.combined}

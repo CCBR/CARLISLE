@@ -220,7 +220,10 @@ rule all:
         unpack(run_deeptools_heatmap),
 
         # ALIGN / deeptools_corr
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.tab"),dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PCA.tab"),dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png"),dupstatus=DUPSTATUS),
 
         # ALIGN / create_library_norm_scales
         unpack(run_library_norm),
@@ -235,6 +238,7 @@ rule all:
         unpack(run_macs2),
         unpack(run_seacr),
         unpack(run_gopeaks),
+        join(RESULTSDIR,"peaks","Peak counts.xlsx"),
         join(RESULTSDIR,"peaks","all.peaks.txt"),
 
         # QC

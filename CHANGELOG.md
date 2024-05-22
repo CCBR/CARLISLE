@@ -5,6 +5,8 @@
 - Ensures control replicate number is an integer.
 - Fixes FDR cutoff misassigned to log2FC cutoff.
 - Fixes `no_dedup` variable names in library normalization scripts.
+- Adds rules cov_correlation, homer_enrich, combine_homer, count_peaks
+- Adds peak caller to MACS2 peak xls filename
 
 ## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)
