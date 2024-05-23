@@ -44,7 +44,7 @@ metadata = metadata[match(rownames(heatmap),metadata$Replicate),]
 print(metadata)
 
 # Create colors
-sample_colors = setNames(brewer.pal(length(unique(metadata$Sample)),"Spectral"),
+sample_colors = setNames(colorRampPalette(brewer.pal(11, "Spectral"))(length(unique(metadata$Sample))),
                        unique(metadata$Sample))
 depth_colors = colorRamp2(breaks=c(0,30,60),colors=c("white","grey50","black"))
 
