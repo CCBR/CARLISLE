@@ -27,8 +27,8 @@ rule trim:
     input:
         unpack(get_input_fastqs)
     output:
-        R1 = join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),
-        R2 = join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),
+        R1 = temp(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz")),
+        R2 = temp(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz")),
     params:
         adapters = config["adapters"],
     threads: getthreads("trim")
@@ -71,10 +71,10 @@ rule align:
         R2 = rules.trim.output.R2,
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
     output:
-        bam=join(RESULTSDIR,"bam","raw","{replicate}.bam"),
-        bai=join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),
-        bamflagstat=join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),
-        bamidxstats=join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),
+        bam=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam")),
+        bai=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai")),
+        bamflagstat=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat")),
+        bamidxstats=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats")),
     params:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
