@@ -256,7 +256,7 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
-if config["run_contrasts"] == "Y":
+if config["run_contrasts"]:
     rule create_contrast_peakcaller_files:
         """
         Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
