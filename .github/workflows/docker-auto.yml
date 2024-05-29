@@ -6,11 +6,6 @@ on:
       - main
     paths:
       - "docker/**"
-  pull_request:
-    branches:
-      - main
-    paths:
-      - "docker/**"
 
 jobs:
   generate-matrix:

@@ -1,25 +1,36 @@
 ########################################################################
 # LIBRARY
 ########################################################################
-CARLISLE_HANDLE_PACKAGES<-function(pkg_df){
-  for (rowid in rownames(pkg_df)){
-    pkg=pkg_df[rowid,"package"]
-    source=pkg_df[rowid,"source"]
-    version=pkg_df[rowid,"version"]
-    gh_name=pkg_df[rowid,"gh_name"]
-    
-    need_install <- pkg[!(pkg %in% installed.packages()[,"Package"])]
-    if (length(need_install)!=0){
-      print(paste0("Installing: ", pkg))
-      if (source=="bc") BiocManager::install(pkg,ask=FALSE,update=FALSE)
-      if (source=="cr") install.packages(pkg,version=version,repos = "http://cran.us.r-project.org",
-                                         local = FALSE,ask=FALSE,update=FALSE,dependencies=TRUE)
-      if (source=="gh") remotes::install_github(gh_name,version=version,local = FALSE,update=FALSE)
-    }
-    
-    print(paste0("Loading: ",pkg))
-    invisible(lapply(pkg, library, character.only = TRUE))
-  }
+library(tidyverse)
+load_packages <- function(){
+  pkgs <- 'BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+chipenrich
+ChIPseeker
+DESeq2
+edgeR
+ELBOW
+EnhancedVolcano
+GenomicFeatures
+ggfortify
+ggrepel
+htmltools
+HTSFilter
+latticeExtra
+org.Hs.eg.db
+org.Mm.eg.db
+pander
+pdp
+plotly
+RColorBrewer
+reshape2
+rtracklayer
+tidyverse
+TxDb.Hsapiens.UCSC.hg19.knownGene
+TxDb.Hsapiens.UCSC.hg38.knownGene
+TxDb.Mmusculus.UCSC.mm10.knownGene
+yaml'
+  package_vctr <- pkgs %>% stringr::str_split('\n') %>% unlist()
+  invisible(lapply(package_vctr, library, character.only = TRUE))
 }
 
 ########################################################################
