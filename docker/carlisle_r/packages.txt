@@ -1,6 +1,7 @@
 bioconductor-bsgenome.hsapiens.ncbi.t2t.chm13v2.0
 bioconductor-chipenrich
 bioconductor-chipseeker
+bioconductor-ComplexHeatmap
 bioconductor-deseq2
 bioconductor-edger
 bioconductor-enhancedvolcano
@@ -15,7 +16,6 @@ bioconductor-TxDb.Mmusculus.UCSC.mm10.knownGene
 deeptools
 r-argparse
 r-circlize
-r-ComplexHeatmap
 r-DT
 r-ggfortify
 r-ggvenn
