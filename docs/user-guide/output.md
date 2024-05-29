@@ -10,9 +10,9 @@ The following directories are created under the WORKDIR/results directory:
         - contrasts: this directory includes the contrasts for each line listed in the contrast manifest
         - peak_caller: this directory includes all peak calls from each peak_caller (SEACR, MACS2, GOPEAKS) for each sample
             - annotation
-                - go_enrichment: this directory includes gene set enrichment pathway predictions
+                - go_enrichment: this directory includes gene set enrichment pathway predictions when `run_go_enrichment` is set to `true` in the config file.
                 - homer: this directory includes the annotation output from HOMER
-                - rose: this directory includes the annotation output from ROSE
+                - rose: this directory includes the annotation output from ROSE when `run_rose` is set to `true` in the config file.
 - qc: this directory includes MULTIQC reports and spike-in control reports (when applicable)
 
 ```

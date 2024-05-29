@@ -185,7 +185,7 @@ QTRESHOLDS=config["quality_thresholds"]
 QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 
 # set contrast settings
-if config["run_contrasts"] == "Y":
+if config["run_contrasts"]:
     print("#"*100)
     print("# Checking constrasts to run...")
     contrasts_table = config["contrasts"]
