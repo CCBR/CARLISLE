@@ -97,7 +97,7 @@ def run_qc(wildcards):
 
 def run_contrasts(wildcards):
     files=[]
-    if config["run_contrasts"] == "Y":
+    if config["run_contrasts"]:
         files.append(join(RESULTSDIR,"replicate_sample.tsv"))
         
         # inputs for matrix
@@ -159,7 +159,7 @@ def get_rose(wildcards):
 
 def get_enrichment(wildcards):
     files=[]
-    if config["run_contrasts"] == "Y":
+    if config["run_contrasts"] and config['run_go_enrichment']:
         if (GENOME == "hg19") or (GENOME == "hg38"):
             if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
                 t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)

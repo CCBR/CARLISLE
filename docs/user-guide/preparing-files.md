@@ -30,7 +30,7 @@ The pipeline allows for the use of a species specific spike-in control, or the u
 
 For example for ecoli spike-in:
 ```
-run_contrasts: "Y"
+run_contrasts: true
 norm_method: "spikein"
 spikein_genome: "ecoli"
 spikein_reference:
@@ -41,7 +41,7 @@ spikein_reference:
 
 For example for drosophila spike-in:
 ```
-run_contrasts: "Y"
+run_contrasts: true
 norm_method: "spikein"
 spikein_genome: "drosophila"
 spikein_reference:

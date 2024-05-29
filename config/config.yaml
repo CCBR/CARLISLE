@@ -17,10 +17,11 @@ samplemanifest: "WORKDIR/config/samples.tsv"
 # User parameters
 #####################################################################################
 # run sample contrasts
-run_contrasts: "Y" # Y or N
-contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be "Y"
-contrasts_fdr_cutoff: "0.05"
-contrasts_lfc_cutoff: "0.59" # FC of 1.5
+run_contrasts: true # true or false, no quotes
+contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be `true`
+contrasts_fdr_cutoff: 0.05
+contrasts_lfc_cutoff: 0.59 # FC of 1.5
+run_go_enrichment: false # this step is long-running. use `true` if you would like to run it.
 
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
