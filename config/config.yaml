@@ -160,4 +160,4 @@ adapters: "PIPELINE_HOME/resources/other/adapters.fa"
 #####################################################################################
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
-  carlisle_r: "docker://nciccbr/carlisle_r:v1"
+  carlisle_r: "docker://nciccbr/carlisle_r:v2"

@@ -73,8 +73,7 @@ rule homer_enrich:
         peak_mode="{peak_caller_type}",
         dupstatus="{dupstatus}",
         rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     shell:
         """
         Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
@@ -89,8 +88,7 @@ rule combine_homer:
         xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
     output:
         combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     params:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
     shell:

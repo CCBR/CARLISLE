@@ -469,8 +469,7 @@ rule count_peaks:
     params:
         outdir=join(RESULTSDIR,"peaks"),
         rscript=join(SCRIPTSDIR,"_plot_peak_counts.R")
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     shell:
         """
         wc -l {input.peaks} > {output.peak_count}
