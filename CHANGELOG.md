@@ -8,7 +8,9 @@
     - Fixes `no_dedup` variable names in library normalization scripts.
 - Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
     - The `Rlib_dir` and `Rpkg_config` config options have been removed as they are no longer needed.
-- GO enrichment is now optional, with a new parameter `run_go_enrichment` (default: `false`) in the config file to control whether GO enrichment runs. (#133, @kelly-sovacool)
+- New parameters in the config file to make certain rules optional: (#133, @kelly-sovacool)
+    - GO enrichment is controlled by `run_go_enrichment` (default: `false`)
+    - rose is controlled by `run_rose` (default: `false`)
   
 
 ## CARLISLE v2.5.0

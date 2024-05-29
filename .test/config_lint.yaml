@@ -16,6 +16,7 @@ contrasts: "/opt2/.test/contrasts.test.tsv"  # run_contrasts needs to be "Y"
 contrasts_fdr_cutoff: 0.05
 contrasts_lfc_cutoff: 0.59 # FC of 1.5
 run_go_enrichment: true
+run_rose: true
 
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
