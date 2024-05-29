@@ -3,21 +3,6 @@ rm(list=ls())
 
 # package list
 list.of.packages=c("argparse","ggvenn")
-
-#install as needed
-new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
-## handle ggvenn separately - it requires an older version of bioconductor / R
-if("ggvenn" %in% new.packages){
-  install.packages("/data/CCBR_Pipeliner/Pipelines/CARLISLE_dev/resources/other/ggvenn_0.1.9.tar.gz", 
-    repos = NULL, type="source", INSTALL_opts = '--no-lock')
-  new.packages=new.packages[names(new.packages) != "ggvenn"]
-}
-##handle all other pkgs
-if(length(new.packages)) {
-  print(new.packages)
-  BiocManager::install(new.packages, INSTALL_opts = '--no-lock')
-}
-
 # load packages
 invisible(lapply(list.of.packages, library, character.only = TRUE))
 
