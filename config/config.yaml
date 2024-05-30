@@ -4,6 +4,12 @@
 # The working dir... output will be in the results subfolder of the workdir
 workdir: "WORKDIR"
 
+# scripts directory
+# by default, use the scripts copied to the working directory.
+# alternatively, use the scripts from the pipeline source.
+scriptsdir: "WORKDIR/scripts"
+#scriptsdir: "PIPELINE_HOME/workflow/scripts"
+
 # tab delimited samples file .. see samplefile for format details
 samplemanifest: "WORKDIR/config/samples.tsv"
 
@@ -11,10 +17,14 @@ samplemanifest: "WORKDIR/config/samples.tsv"
 # User parameters
 #####################################################################################
 # run sample contrasts
-run_contrasts: "Y" # Y or N
-contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be "Y"
-contrasts_fdr_cutoff: "0.05"
-contrasts_lfc_cutoff: "0.59" # FC of 1.5
+run_contrasts: true # true or false, no quotes
+contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be `true`
+contrasts_fdr_cutoff: 0.05
+contrasts_lfc_cutoff: 0.59 # FC of 1.5
+
+# these steps are long-running. use `true` if you would like to run them
+run_go_enrichment: false 
+run_rose: false
 
 # reference
 genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
@@ -150,7 +160,8 @@ spikein_reference:
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
 
 #####################################################################################
-# R Packages
+# CONTAINERS
 #####################################################################################
-Rlib_dir: "/data/CCBR_Pipeliner/db/PipeDB/Rlibrary_4.3_carlisle/"
-Rpkg_config: "WORKDIR/config/rpackages.csv"
+containers:
+  base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
+  carlisle_r: "docker://nciccbr/carlisle_r:v2"

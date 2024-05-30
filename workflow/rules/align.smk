@@ -487,9 +487,7 @@ rule cov_correlation:
     params:
         rscript=join(SCRIPTSDIR,"_plot_correlation.R"),
         dupstatus="{dupstatus}"
-    envmodules:
-        TOOLS["deeptools"],
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     threads: getthreads("cov_correlation")
     shell:
         """

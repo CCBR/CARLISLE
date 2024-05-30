@@ -92,18 +92,15 @@ rule spikein_assessment:
     """
     input:
         bams = expand(rules.align.output.bamidxstats,replicate=REPLICATES,dupstatus=DUPSTATUS),
+    output:
+        html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
     params:
         rscript_wrapper=join(SCRIPTSDIR,"_generate_spikein_wrapper.R"),
         rmd=join(SCRIPTSDIR,"_generate_spikein_plots.Rmd"),
         carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-        Rlib_dir=config["Rlib_dir"],
-        Rpkg_config=config["Rpkg_config"],
         rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
         spikein=config["spikein_genome"],
-    envmodules:
-        TOOLS["R"],
-    output:
-        html=join(RESULTSDIR,'qc',"spikein_qc_report.html"),
+    container: config['containers']['carlisle_r']
     shell:
         """
         if [[ {params.spikein} == "ecoli" ]]; then species_name="NC_000913.3"; else species_name=""; fi
@@ -116,8 +113,6 @@ rule spikein_assessment:
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --carlisle_functions {params.carlisle_functions} \\
-            --Rlib_dir {params.Rlib_dir} \\
-            --Rpkg_config {params.Rpkg_config} \\
             --report {output.html} \\
             --bam_list "$clean_sample_list" \\
             --spikein_control $species_name

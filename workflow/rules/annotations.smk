@@ -73,8 +73,7 @@ rule homer_enrich:
         peak_mode="{peak_caller_type}",
         dupstatus="{dupstatus}",
         rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     shell:
         """
         Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
@@ -89,8 +88,7 @@ rule combine_homer:
         xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
     output:
         combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
-    envmodules:
-        TOOLS["R"]
+    container: config['containers']['carlisle_r']
     params:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
     shell:
@@ -294,7 +292,7 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
-if config["run_contrasts"] == "Y":
+if config["run_contrasts"]:
     rule create_contrast_peakcaller_files:
         """
         Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
@@ -324,18 +322,15 @@ if config["run_contrasts"] == "Y":
             rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
             rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
             carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            Rlib_dir=config["Rlib_dir"],
-            Rpkg_config=config["Rpkg_config"],
             rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
             rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
             output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
             species = config["genome"],
             geneset_id = GENESET_ID,
             dedup_status =  "{dupstatus}"
-        envmodules:
-            TOOLS["R"],
         output:
             html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
+        container: config['containers']['carlisle_r']
         shell:
             """
             set -exo pipefail
@@ -348,8 +343,6 @@ if config["run_contrasts"] == "Y":
             Rscript {params.rscript_wrapper} \\
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
-                --Rlib_dir {params.Rlib_dir} \\
-                --Rpkg_config {params.Rpkg_config} \\
                 --output_dir {params.output_dir} \\
                 --report {output.html} \\
                 --peak_list "$clean_sample_list" \\
