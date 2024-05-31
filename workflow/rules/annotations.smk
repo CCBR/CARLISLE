@@ -94,15 +94,15 @@ rule combine_homer:
     """
     input:
         annotation=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
-        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
+        peaks_file=join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
     output:
-        combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
+        combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv")
     container: config['containers']['carlisle_r']
     params:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
     shell:
         """
-        Rscript {params.rscript} {input.xls_file} {input.annotation} {output.combined}
+        Rscript {params.rscript} {input.peaks_file} {input.annotation} {output.combined}
         """
 
 rule rose:
