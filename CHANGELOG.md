@@ -11,7 +11,7 @@
 - New parameters in the config file to make certain rules optional: (#133, @kelly-sovacool)
     - GO enrichment is controlled by `run_go_enrichment` (default: `false`)
     - rose is controlled by `run_rose` (default: `false`)
-  
+- Fig bug that added nonexistent directories to the singularity bind paths. (#135, @kelly-sovacool)
 
 ## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)
