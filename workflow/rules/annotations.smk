@@ -60,12 +60,21 @@ rule findMotif:
         fi
         """
 
+def get_annotation_files(wildcards):
+    """
+    treatment_control_list depends on the peak caller
+    """
+    return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer",
+           "{treatment_control_list}" + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".annotation.summary"),
+           treatment_control_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG)
+    
+
 rule homer_enrich:
     """
     Plot enrichment over genic features
     """
     input: 
-        annotation_summary=expand(join(RESULTSDIR,"peaks","{{qthresholds}}","{{peak_caller}}","annotation","homer","{treatment_control_list}.{{dupstatus}}.{{peak_caller_type}}.annotation.summary"),treatment_control_list=TREATMENT_LIST_M)
+        annotation_summary=get_annotation_files
     output:
         enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png")
     params:
