@@ -1,6 +1,8 @@
 # Add peak statistics to HOMER annotations file
 
-library(tidyverse)
+library(readr)
+library(dplyr)
+library(tidyr)
 
 args  <- commandArgs(trailingOnly=TRUE)
 
