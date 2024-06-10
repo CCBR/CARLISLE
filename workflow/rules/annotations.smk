@@ -51,7 +51,7 @@ rule findMotif:
         else
             annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
         fi
-        
+
         # hs1 is not part of HOMER's config genome db. Must add it as a separate param
         if [[ {params.genome} == "hs1" ]]; then
             findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
@@ -67,13 +67,13 @@ def get_annotation_files(wildcards):
     return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer",
            "{treatment_control_list}" + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".annotation.summary"),
            treatment_control_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG)
-    
+
 
 rule homer_enrich:
     """
     Plot enrichment over genic features
     """
-    input: 
+    input:
         annotation_summary=get_annotation_files
     output:
         enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png")
@@ -96,7 +96,8 @@ rule combine_homer:
         annotation=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
         peaks_file=join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
     output:
-        combined=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv")
+        combined_tsv=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),
+        combined_xlsx=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
     container: config['containers']['carlisle_r']
     params:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
@@ -107,10 +108,10 @@ rule combine_homer:
 
 rule rose:
     """
-    Developed from code: 
+    Developed from code:
     https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
-    outdated verison of rose: https://github.com/younglab/ROSE
-            
+    outdated version of rose: https://github.com/younglab/ROSE
+
     # SEACR bed file output format
     <1>     <2>     <3>     <4>             <5>             <6>
     <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
@@ -124,8 +125,8 @@ rule rose:
     https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
     <1>     <2>     <3>     <4>     <5>                             <6>     <7>             <8>             <9>             <10>
     <chr>   <start> <end>   <name>  <integer score for display>     <empty> <fold-change> <-log10pvalue>    <-log10qvalue>  <relative summit position to peak start>
-    ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff. 
-    ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100) 
+    ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff.
+    ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100)
     ### by using the following 1-liner awk: awk -v OFS="\t" '{$5=$5>1000?1000:$5} {print}' NAME_peaks.narrowPeak
     ## broadPeak does not have 10th column
     ### Since in the broad peak calling mode, the peak summit won't be called, the values in the 5th, and 7-9th columns are the mean value across all positions in the peak region
@@ -177,20 +178,20 @@ rule rose:
         """
         # set tmp
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
             TMPDIR="/dev/shm/$dirname"
             mkdir -p $TMPDIR
         fi
-                
+
         # set ROSE specific paths
         PATHTO=/usr/local/apps/ROSE/1.3.1
         PYTHONPATH=/usr/local/apps/ROSE/1.3.1/src/lib
         export PYTHONPATH
         export PATH=$PATH:$PATHTO/bin
-                
+
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
@@ -204,11 +205,11 @@ rule rose:
         samtools view -b ${{treat_bam}} {params.regions} > $TMPDIR/subset.bam
         samtools index $TMPDIR/subset.bam
         grep -v "NC_" {input.peak_file} > $TMPDIR/subset.bed
-                      
+
         # prep for ROSE
         # macs2 output is prepared for ROSE formatting
         # seacr and gopeaks must be edited to correct for formatting
-        
+
         ## correct GOPEAKS
         ### original: <chr>   <start> <end>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <0> <.>
@@ -219,7 +220,7 @@ rule rose:
             nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="${{treatment}}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
             paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
         fi
-        
+
         ## correct SEACR
         ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
@@ -241,11 +242,11 @@ rule rose:
         if [[ ${{num_of_peaks}} -gt 5 ]]; then
             echo "## More than 5 usable peaks detected ${{num_of_peaks}} - Running rose"
             cd {params.workdir}
-            
+
             # if macs2 control is off, there will be no macs2 control to annotate
             if [[ {params.control_flag} == "N" ]] & [[ {params.peak_caller_type} == "macs2_narrow" ]] || [[ {params.peak_caller_type} == "macs2_broad" ]]; then
                 echo "#### No control was used"
-                rose_files="$TMPDIR/subset.bam"  
+                rose_files="$TMPDIR/subset.bam"
             else
                 echo "#### A control used ${{cntrl_bam}}"
                 rose_files="$TMPDIR/subset.bam ${{cntrl_bam}}"
@@ -258,7 +259,7 @@ rule rose:
                     -r ${{rose_files}} \
                     -t {params.tss_distance} \
                     -s {params.stitch_distance} \
-                    -o {params.file_base}                        
+                    -o {params.file_base}
             else
                 ROSE_main.py \
                     -i {output.no_tss_bed} \
@@ -268,16 +269,16 @@ rule rose:
                     -s {params.stitch_distance} \
                     -o {params.file_base}
             fi
-                        
+
             # rose to bed file
             echo "## Convert bed"
             # developed from https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/scripts/roseTable2Bed.sh
             grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==0 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/regular
             bedtools sort -i $TMPDIR/regular > {output.regular}
-                        
+
             grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==1 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/super
             bedtools sort -i $TMPDIR/super > {output.super}
-                        
+
             # cut rose output files, create summits
             echo "## Cut and summit"
             cut -f1-3 {output.regular} > {output.regular_great}
@@ -348,7 +349,7 @@ if config["run_contrasts"]:
             sample_list=`awk '{{print $3}}' {input.contrast_file}`
             clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
 
-            # rum script       
+            # rum script
             Rscript {params.rscript_wrapper} \\
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
