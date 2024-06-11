@@ -160,7 +160,7 @@ def get_enrich(wildcards):
 def get_combined(wildcards):
     files = []
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):    
-        combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
+        combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
         files.extend(combined_m)
     return files
 

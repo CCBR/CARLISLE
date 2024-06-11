@@ -1,19 +1,27 @@
 # Add peak statistics to HOMER annotations file
 
-library(openxlsx)
+library(readr)
+library(dplyr)
+library(tidyr)
 
-args = commandArgs(trailingOnly=TRUE)
+args <- commandArgs(trailingOnly = TRUE)
 
-peaks.file = args[1]
-homer.file = args[2]
-combined.file = args[3]
+peaks_file <- args[1]
+homer_file <- args[2]
+combined_tsv <- args[3]
+combined_xlsx <- args[4]
 
 # Load peak file
-peaks = read.table(peaks.file,skip = 23,header=TRUE,sep='\t',check.names = FALSE)
+# the file extension is '.xls' but it's actually just a tsv file
+peaks <- read_tsv(peaks_file, comment = "#") %>%
+  select(c("name", "fold_enrichment", "-log10(qvalue)"))
 
 # Load HOMER annotations
-homer = read.table(homer.file,header=TRUE,sep='\t',check.names=FALSE,comment.char="",quote="")
+homer <- read_tsv(homer_file) %>%
+  # rename first column to match peaks file
+  rename(name = 1)
 
 # Combine tables and write out
-combined = merge(homer,peaks[,c("name","fold_enrichment","-log10(qvalue)")],by.x=1,by.y="name")
-write.xlsx(combined,file=combined.file)
+combined <- full_join(homer, peaks, by = "name")
+write_tsv(combined, file = combined_tsv)
+openxlsx::write.xlsx(combined, file = combined_xlsx)
