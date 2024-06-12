@@ -103,7 +103,7 @@ rule combine_homer:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
     shell:
         """
-        Rscript {params.rscript} {input.peaks_file} {input.annotation} {output.combined}
+        Rscript {params.rscript} {input.peaks_file} {input.annotation} {output.combined_tsv} {output.combined_xlsx}
         """
 
 rule rose:

@@ -1,5 +1,6 @@
 # Add peak statistics to HOMER annotations file
 
+library(openxlsx)
 library(readr)
 library(dplyr)
 library(tidyr)
