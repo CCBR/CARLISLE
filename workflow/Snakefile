@@ -144,6 +144,26 @@ def get_motifs(wildcards):
         files.extend(anno_s)
     return files
 
+def get_enrich(wildcards):
+    files=[]
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="macs2",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
+        files.extend(anno_m)
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
+        files.extend(anno_g)
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="seacr",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
+        files.extend(anno_s)
+    return files
+
+def get_combined(wildcards):
+    files = []
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):    
+        combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
+        files.extend(combined_m)
+    return files
+
 def get_rose(wildcards):
     files=[]
     if config['run_rose']:
@@ -200,6 +220,12 @@ rule all:
         # ALIGN / deeptools_heatmap
         unpack(run_deeptools_heatmap),
 
+        # ALIGN / deeptools_corr
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.tab"),dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PCA.tab"),dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),dupstatus=DUPSTATUS),
+        expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png"),dupstatus=DUPSTATUS),
+
         # ALIGN / create_library_norm_scales
         unpack(run_library_norm),
 
@@ -213,6 +239,8 @@ rule all:
         unpack(run_macs2),
         unpack(run_seacr),
         unpack(run_gopeaks),
+        join(RESULTSDIR,"peaks","Peak counts.xlsx"),
+        join(RESULTSDIR,"peaks","all.peaks.txt"),
 
         # QC
         unpack(run_qc),
@@ -222,6 +250,8 @@ rule all:
         
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
         unpack(get_motifs),
+        unpack(get_enrich),
+        unpack(get_combined),
         unpack(get_rose),
         unpack(get_enrichment)
 

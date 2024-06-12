@@ -8,6 +8,32 @@
 # 6)bed
 # /results/fragments/53_H3K4me3_1.dedup.fragments.bed
 
+localrules: count_peaks
+
+def get_all_peak_files(wildcards):
+    files=[]
+    if "macs2_narrow" in PEAKTYPE:
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        files.extend(n)
+    if "macs2_broad" in PEAKTYPE:
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
+        files.extend(b)
+    if "seacr_stringent" in PEAKTYPE:
+        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(s)
+    if "seacr_relaxed" in PEAKTYPE:
+        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(r)
+    if "gopeaks_narrow" in PEAKTYPE:
+        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(n)
+    if "gopeaks_broad" in PEAKTYPE:
+        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
+        files.extend(b)
+
+    files_list=list(itertools.chain.from_iterable(files))
+    return files_list
+
 rule macs2_narrow:
     '''
     MACS2 can be run with and without a control. This featured is controlled in the config.yaml filen
@@ -20,7 +46,7 @@ rule macs2_narrow:
         peak_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),
         summit_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.summits.bed"),
         bg_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),
-        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.xls"),
+        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.macs2_narrow.peaks.xls"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -109,7 +135,7 @@ rule macs2_broad:
     output:
         peak_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),
         bg_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),
-        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.xls"),
+        xls_file = join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.macs2_broad.peaks.xls"),
     params:
         frag_bed_path=join(RESULTSDIR,"fragments"),
         tc_file="{treatment_control_list}",
@@ -432,4 +458,20 @@ rule gopeaks_broad:
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/broad.bed 
         bedToBigBed -type=bed3 ${{TMPDIR}}/broad.bed  {input.genome_len} ${{TMPDIR}}/broad.bigbed
         bgzip -c ${{TMPDIR}}/broad.bigbed > {output.bg_file}
+        """
+
+rule count_peaks:
+    input:
+        peaks=get_all_peak_files
+    output:
+        peak_count=join(RESULTSDIR,"peaks","all.peaks.txt"),
+        peak_table=join(RESULTSDIR,"peaks","Peak counts.xlsx"),
+    params:
+        outdir=join(RESULTSDIR,"peaks"),
+        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R")
+    container: config['containers']['carlisle_r']
+    shell:
+        """
+        wc -l {input.peaks} > {output.peak_count}
+        Rscript {params.rscript} {output.peak_count} {params.outdir}
         """
