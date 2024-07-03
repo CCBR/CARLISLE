@@ -30,7 +30,7 @@ authors:
     given-names: "Yue"
   - family-names: "Saloura"
     given-names: "Vassiliki"
-title: "Cut And Run anaLysIS pipeLinE (CARLISLE)"
+title: "CARLISLE: Cut And Run anaLysIS pipeLinE"
 url: https://ccbr.github.io/CARLISLE/
 repository-code: https://github.com/CCBR/CARLISLE
 identifiers:
