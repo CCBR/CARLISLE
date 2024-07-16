@@ -11,7 +11,7 @@
 
 PYTHON_VERSION="python/3.9"
 SNAKEMAKE_VERSION="snakemake/7.19.1"
-SINGULARITY_VERSION="singularity/3.10.5"
+SINGULARITY_VERSION="singularity"
 
 set -eo pipefail
 

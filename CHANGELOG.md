@@ -6,15 +6,18 @@
     - Ensures control replicate number is an integer.
     - Fixes FDR cutoff misassigned to log2FC cutoff.
     - Fixes `no_dedup` variable names in library normalization scripts.
-- Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
-    - The `Rlib_dir` and `Rpkg_config` config options have been removed as they are no longer needed.
-- New visualizations: (#132, @epehrsson)
-    - New rules `cov_correlation`, `homer_enrich`, `combine_homer`, `count_peaks`
-    - Add peak caller to MACS2 peak xls filename
-- New parameters in the config file to make certain rules optional: (#133, @kelly-sovacool)
-    - GO enrichment is controlled by `run_go_enrichment` (default: `false`)
-    - ROSE is controlled by `run_rose` (default: `false`)
-- Fig bug that added nonexistent directories to the singularity bind paths. (#135, @kelly-sovacool)
+    - Fig bug that added nonexistent directories to the singularity bind paths. (#135, @kelly-sovacool)
+- New features:
+    - Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
+        - The `Rlib_dir` and `Rpkg_config` config options have been removed as they are no longer needed.
+    - New visualizations: (#132, @epehrsson)
+        - New rules `cov_correlation`, `homer_enrich`, `combine_homer`, `count_peaks`
+        - Add peak caller to MACS2 peak xls filename
+    - New parameters in the config file to make certain rules optional: (#133, @kelly-sovacool)
+        - GO enrichment is controlled by `run_go_enrichment` (default: `false`)
+        - ROSE is controlled by `run_rose` (default: `false`)
+- Misc:
+    - The singularity version is no longer specified, per request of the biowulf admins. (#139, @kelly-sovacool)
 
 ## CARLISLE v2.5.0
 - Refactors R packages to a common source location (#118, @slsevilla)
