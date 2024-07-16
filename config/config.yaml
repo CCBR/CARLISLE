@@ -18,22 +18,22 @@ samplemanifest: "WORKDIR/config/samples.tsv"
 #####################################################################################
 # run sample contrasts
 run_contrasts: true # true or false, no quotes
-contrasts: "WORKDIR/config/contrasts.tsv"  # run_contrasts needs to be `true`
+contrasts: "WORKDIR/config/contrasts.tsv" # run_contrasts needs to be `true`
 contrasts_fdr_cutoff: 0.05
 contrasts_lfc_cutoff: 0.59 # FC of 1.5
 
 # these steps are long-running. use `true` if you would like to run them
-run_go_enrichment: false 
+run_go_enrichment: false
 run_rose: false
 
 # reference
-genome: "hg38"    # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+genome: "hg38" # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 
 # alignment quality threshold
 mapping_quality: 2 #only report alignment records with mapping quality of at least N (>= N).
 
 # normalization method
-## spikein: normalization will be performed based off of spike-in aligned read count; 
+## spikein: normalization will be performed based off of spike-in aligned read count;
 ## library: library normalization will be performed
 ## none: no norm will be performed
 norm_method: "spikein" # method of normalization to be used; currently supports ["spikein","library","none"]
@@ -109,7 +109,7 @@ geneset_id: "GOBP" # ["GOBP" "GOCC" "GOMF" "KEGG"]
 
 #####################################################################################
 # References
-# NOTE: "gtf" is only required if TxDb is not avaiable for the species in 
+# NOTE: "gtf" is only required if TxDb is not avaiable for the species in
 # Bioconductor eg. hs1
 #####################################################################################
 # references:

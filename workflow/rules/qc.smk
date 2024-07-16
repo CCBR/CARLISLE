@@ -39,7 +39,7 @@ rule qc_fastqc:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -49,7 +49,7 @@ rule qc_fastqc:
 
         # run FASTQC
         fastqc {input.R1} {input.R2} -o {params.base}
- 
+
         # Gzip input files
         gunzip -c {input.R1} > ${{TMPDIR}}/{params.R1}
         gunzip -c {input.R2} > ${{TMPDIR}}/{params.R2}
@@ -62,7 +62,7 @@ rule qc_fastqc:
             --subset 1000000 \\
             --aligner bowtie2 \\
             --force
-        
+
         # Run FastQ Validator
         mkdir -p {params.base_val}
         {params.fastq_val} \\
@@ -104,12 +104,12 @@ rule spikein_assessment:
     shell:
         """
         if [[ {params.spikein} == "ecoli" ]]; then species_name="NC_000913.3"; else species_name=""; fi
-        
+
         # get sample list
         sample_list="{input.bams}"
         clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
 
-        # rum script       
+        # rum script
         Rscript {params.rscript_wrapper} \\
             --rmd {params.rmd} \\
             --carlisle_functions {params.carlisle_functions} \\
@@ -146,7 +146,7 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
         shell:
             """
             set -exo pipefail
-            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
                 TMPDIR="/lscratch/$SLURM_JOB_ID"
             else
                 dirname=$(basename $(mktemp))
@@ -190,7 +190,7 @@ else:
         shell:
             """
             set -exo pipefail
-            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
                 TMPDIR="/lscratch/$SLURM_JOB_ID"
             else
                 dirname=$(basename $(mktemp))

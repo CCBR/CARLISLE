@@ -12,7 +12,7 @@ pp = pprint.PrettyPrinter(indent=4)
 #########################################################
 
 #########################################################
-# FILE-ACTION FUNCTIONS 
+# FILE-ACTION FUNCTIONS
 #########################################################
 def check_existence(filename):
   if not os.path.exists(filename):
@@ -42,7 +42,7 @@ def get_file_size(filename):
 #########################################################
 CONFIGFILE = str(workflow.overwrite_configfiles[0])
 
-# set memory limit 
+# set memory limit
 # used for sambamba sort, etc
 MEMORYG="100G"
 
@@ -121,7 +121,7 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     if not c in REPLICATES:
         print("# Control NOT found for sampleName_replicateNumber:"+t)
         print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
-        exit()        
+        exit()
     print("## "+str(i+1)+") "+t+"        "+c)
     process_replicates.extend([t,c])
     TREATMENTS.append(t)
@@ -138,7 +138,7 @@ if len(process_replicates)!=len(REPLICATES):
     REPLICATES = process_replicates
 print("# Contrast manifest is confirmed!")
 
-# write out the treatment:cntrl 
+# write out the treatment:cntrl
 fpath=join(RESULTSDIR,"treatment_control_list.txt")
 originalDF = pd.DataFrame(TREAT_to_CONTRL_DICT.items()).rename(columns={0: 'key', 1: 'val'})
 split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
@@ -366,7 +366,7 @@ rule create_replicate_sample_table:
         print("# %s file created!"%(rg_file))
 
 rule create_reference:
-    input: 
+    input:
         genomefa_source=GENOMEFA,
         blacklist_source=GENOMEBLACKLIST,
     output:
@@ -384,7 +384,7 @@ rule create_reference:
         spiked_source=SPIKED_GENOMEFA,
         spiked_output=join(BOWTIE2_INDEX,"spikein.fa"),
         refdata=refdata,
-    envmodules: 
+    envmodules:
         TOOLS["bowtie2"],
         TOOLS["samtools"],
         TOOLS["bedtools"],
@@ -392,7 +392,7 @@ rule create_reference:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -401,7 +401,7 @@ rule create_reference:
         fi
 
         # create dir and links
-        if [[ -d {params.bowtie2_dir} ]]; then rm -r {params.bowtie2_dir}; fi 
+        if [[ -d {params.bowtie2_dir} ]]; then rm -r {params.bowtie2_dir}; fi
         mkdir -p {params.bowtie2_dir}/ref
         ln -s {input.genomefa_source} {output.genomefa}
         ln -s {input.blacklist_source} {output.blacklist}
