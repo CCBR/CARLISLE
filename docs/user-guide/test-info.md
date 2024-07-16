@@ -1,26 +1,32 @@
 # 5. Pipeline Tutorial
+
 Welcome to the CARLISLE Pipeline Tutorial!
 
 ## 5.1 Getting Started
+
 Review the information on the [Getting Started](https://ccbr.github.io/CARLISLE/user-guide/getting-started/) for a complete overview the pipeline. The tutorial below will use test data available on NIH Biowulf HPC only. All example code will assume you are running v1.0 of the pipeline, using test data available on GitHub.
 
 A. Change working directory to the CARLISLE repository
 
 B. Initialize Pipeline
+
 ```
 bash ./path/to/dir/carlisle --runmode=init --workdir=/path/to/output/dir
 ```
 
 ## 5.2 Submit the test data
+
 Test data is included in the .test directory as well as the config directory.
 
 A Run the test command to prepare the data, perform a dry-run and submit to the cluster
+
 ```
 bash ./path/to/dir/carlisle --runmode=runtest --workdir=/path/to/output/dir
 
 ```
 
 - An expected output for the `runtest` is as follows:
+
 ```
 Job stats:
 job                              count    min threads    max threads
@@ -55,4 +61,5 @@ total                                 478              1             56
 ```
 
 ## 5.3 Review outputs
+
 Review the expected outputs on the [Output](https://ccbr.github.io/CARLISLE/user-guide/output/) page. If there are errors, review and performing stesp described on the [Troubleshooting](https://ccbr.github.io/CARLISLE/user-guide/troubleshooting/) page as needed.

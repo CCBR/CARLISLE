@@ -1,18 +1,19 @@
 # 4. Expected Outputs
+
 The following directories are created under the WORKDIR/results directory:
 
 - alignment_stats: this directory include information on the alignment of each sample
 - bam: this directory includes BAM files, statistics on samples, statistics on spike-in controls for each sample
 - bedgraph: this directory includes BEDGRAPH files and statistic summaries for each sample
-- bigwig: this directory includes the bigwig files for each sample 
+- bigwig: this directory includes the bigwig files for each sample
 - peaks: this directory contains a sub-directory that relates to the quality threshold used.
-    - quality threshold
-        - contrasts: this directory includes the contrasts for each line listed in the contrast manifest
-        - peak_caller: this directory includes all peak calls from each peak_caller (SEACR, MACS2, GOPEAKS) for each sample
-            - annotation
-                - go_enrichment: this directory includes gene set enrichment pathway predictions when `run_go_enrichment` is set to `true` in the config file.
-                - homer: this directory includes the annotation output from HOMER
-                - rose: this directory includes the annotation output from ROSE when `run_rose` is set to `true` in the config file.
+  - quality threshold
+    - contrasts: this directory includes the contrasts for each line listed in the contrast manifest
+    - peak_caller: this directory includes all peak calls from each peak_caller (SEACR, MACS2, GOPEAKS) for each sample
+      - annotation
+        - go_enrichment: this directory includes gene set enrichment pathway predictions when `run_go_enrichment` is set to `true` in the config file.
+        - homer: this directory includes the annotation output from HOMER
+        - rose: this directory includes the annotation output from ROSE when `run_rose` is set to `true` in the config file.
 - qc: this directory includes MULTIQC reports and spike-in control reports (when applicable)
 
 ```

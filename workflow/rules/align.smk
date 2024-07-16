@@ -37,7 +37,7 @@ rule trim:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -62,7 +62,7 @@ rule trim:
 rule align:
     """
     Align using bowtie:
-    * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for 
+    * use --dovetail option via "bowtie2_parameters" in config.yaml. This is recommended for
     Cut and Run where overlapping R1 and R2 alignments are expected
     BAM is sorted and indexed, and stats are collected using flagstat and idxstats
     """
@@ -88,7 +88,7 @@ rule align:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -127,7 +127,7 @@ rule filter:
         bamidxstats=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),
     params:
         replicate = "{replicate}",
-        dupstatus = "{dupstatus}",  # can be "dedup" or "no_dedup"       
+        dupstatus = "{dupstatus}",  # can be "dedup" or "no_dedup"
         fragment_len_filter = config["fragment_len_filter"],
         pyscript = join(SCRIPTSDIR,"_filter_bam.py"),
         memg = getmemg("filter")
@@ -141,7 +141,7 @@ rule filter:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -158,7 +158,7 @@ rule filter:
             --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
             --CREATE_INDEX true \\
             --METRICS_FILE {output.bam}.dupmetrics
-            
+
             python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
             --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
             --fragmentlength {params.fragment_len_filter} \\
@@ -168,12 +168,12 @@ rule filter:
             # deduplicate only the spikeins
             genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $genome_regions | \\
-                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -    
+                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -
 
             spikein_regions=$(cut -f1 {input.spikein_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $spikein_regions | \\
-                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam 
-            
+                samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam
+
             mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
             java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
             --INPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam \\
@@ -321,7 +321,7 @@ rule bam2bg:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -333,16 +333,16 @@ rule bam2bg:
             echo "No spike-in scale was used"
             spikein_scale=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`    
+            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`
             echo "The spike-in is generated from the library size"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
-            
+
             # if the spikein_readcount is below threshold, then there is not enough of the spikein control to use
             total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
             spikein_percent=`echo "scale=6 ; $spikein_readcount / $total_count * 100" | bc`;\
 
-            if [[ $spikein_percent < 0.001 ]]; then 
+            if [[ $spikein_percent < 0.001 ]]; then
                 echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The spikein_scale was set to 1."
                 spikein_scale=1
             else
@@ -353,12 +353,12 @@ rule bam2bg:
         # create fragments file
         samtools view -b -@{threads} {input.bam} {params.regions} | samtools sort -n -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam -
         bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bam > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed
-        
+
         awk -v fl={params.fragment_len_filter} '{{ if ($1==$4 && $6-$2 < fl) {{print $0}}}}' ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.bed > ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed
-        
+
         cut -f 1,2,6 ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.clean.bed | \\
             LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
-        
+
         # run bedtools
         bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
 
@@ -483,7 +483,7 @@ rule cov_correlation:
         pearson_plot=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.png"),
         pca=join(RESULTSDIR,"deeptools","all.{dupstatus}.PCA.tab"),
         hc=join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),
-        pca_format=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png")        
+        pca_format=join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png")
     params:
         rscript=join(SCRIPTSDIR,"_plot_correlation.R"),
         dupstatus="{dupstatus}"
@@ -506,7 +506,7 @@ rule cov_correlation:
          -o {output.pearson_plot} \
          --removeOutliers \
          --outFileCorMatrix {output.pearson_corr}
-        
+
         # Plot PCA
         plotPCA -in {output.counts}  --outFileNameData {output.pca}
 

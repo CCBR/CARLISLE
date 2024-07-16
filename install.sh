@@ -25,7 +25,7 @@ cp $DIRNAME/carlisle $INSTALL_PATH/
 
 ## all config & workflow scripts;
 for subdir in annotation config workflow resources .test
-do  
+do
     mkdir -p ${INSTALL_PATH}/$subdir
     cp -r ${DIRNAME}/$subdir/* ${INSTALL_PATH}/$subdir
 done

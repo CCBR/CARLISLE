@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# input: 
+# input:
 ## intake snakemake log
 ## full path to jobby.py script
 

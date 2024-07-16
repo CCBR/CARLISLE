@@ -46,7 +46,7 @@ function get_version (){
 echo "Version: $(get_version_from_path $PIPELINE_HOME)"
 }
 
-function usage() { 
+function usage() {
 # This function prints generic usage of the wrapper script.
   echo "${SCRIPTBASENAME}
   --> run CARLISLE
@@ -64,13 +64,13 @@ function usage() {
       *) runlocal : run without submitting to sbatch
       *) runtest: run on cluster with included hg38 test dataset
   2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
-  
-  Optional Arguments: 
+
+  Optional Arguments:
       *) -f / --force: Force flag will re-initialize a previously initialized workdir
   "
 }
 
-function err() { 
+function err() {
 # This function print a error message (argument 1), the usage and then exits with non-zero status
   cat <<< "
   #
@@ -80,7 +80,7 @@ function err() {
   #
   #
   #
-  " && usage && exit 1 1>&2; 
+  " && usage && exit 1 1>&2;
 }
 
 function init() {
@@ -89,7 +89,7 @@ function init() {
 # 2. copying essential files like config.yaml and samples.tsv into the workdir
 # 3. setting up logs and stats folders
   # create output folder
-  if [[ -d $WORKDIR ]] && [[ -z $FORCEFLAG ]]; then 
+  if [[ -d $WORKDIR ]] && [[ -z $FORCEFLAG ]]; then
     err "Folder $WORKDIR already exists! If you'd like to re-initialize use the -f/--force flag $FORCEFLAG|"
   fi
   mkdir -p $WORKDIR
@@ -116,7 +116,7 @@ function init() {
   if [ ! -d $WORKDIR/stats ];then mkdir -p $WORKDIR/stats;echo "Stats Dir: $WORKDIR/stats";fi
 
   #create links for rose file
-  if [[ ! -d $WORKDIR/annotation ]]; then 
+  if [[ ! -d $WORKDIR/annotation ]]; then
     mkdir -p $WORKDIR/annotation
     cp ${PIPELINE_HOME}/annotation/* $WORKDIR/annotation/
   fi
@@ -165,9 +165,9 @@ function controlcheck(){
   control_list=`awk '$3 ~ /Y/' ${WORKDIR}/config/samples.tsv | awk '{print $1}'`
   check1=`awk '{print $1}' ${WORKDIR}/config/contrasts.tsv`
   check2=`awk '{print $2}' ${WORKDIR}/config/contrasts.tsv`
-  
+
   for sample_id in ${control_list[@]}; do
-    if [[ $check1 == $sample_id || $check2 == $sample_id ]]; then 
+    if [[ $check1 == $sample_id || $check2 == $sample_id ]]; then
       echo "Controls ($sample_id) cannot be listed in contrast.csv - update and re-run"
       echo "$check1 okkk $check2"
       exit 0
@@ -179,7 +179,7 @@ function dryrun() {
 # Dry-run
   runcheck
   controlcheck
-  
+
   if [ ! -d ${WORKDIR}/logs/dryrun/ ]; then mkdir ${WORKDIR}/logs/dryrun/; fi
 
   if [ -f ${WORKDIR}/dryrun.log ]; then
@@ -192,7 +192,7 @@ function dryrun() {
 function unlock() {
 # Unlock the workdir if previous snakemake run ended abruptly
   runcheck
-  run "--unlock"  
+  run "--unlock"
 }
 
 function dag() {
@@ -234,18 +234,18 @@ function preruncleanup() {
   echo "Running..."
 
   # check initialization
-  check_essential_files 
+  check_essential_files
 
   cd $WORKDIR
   ## Archive previous run files
-  if [ -f ${WORKDIR}/logs/snakemake.log ];then 
+  if [ -f ${WORKDIR}/logs/snakemake.log ];then
     modtime=$(stat ${WORKDIR}/logs/snakemake.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/logs/snakemake.log ${WORKDIR}/stats/snakemake.${modtime}.log
 
-    if [ -f ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ];then 
+    if [ -f ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ];then
       mv ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ${WORKDIR}/stats/snakemake.${modtime}.log.HPC_summary.txt
     fi
-    if [ -f ${WORKDIR}/logs/snakemake.stats ];then 
+    if [ -f ${WORKDIR}/logs/snakemake.stats ];then
       mv ${WORKDIR}/logs/snakemake.stats ${WORKDIR}/stats/snakemake.${modtime}.stats
     fi
   fi
@@ -284,11 +284,11 @@ function run() {
       snakemake -s $SNAKEFILE \
       --report ${WORKDIR}/logs/runlocal_snakemake_report.html \
       --directory $WORKDIR \
-      --configfile ${WORKDIR}/config/config.yaml 
+      --configfile ${WORKDIR}/config/config.yaml
     fi
 
   elif [ "$1" == "slurm" ];then
-  
+
     preruncleanup
 
     cat > ${WORKDIR}/submit_script.sbatch << EOF
@@ -326,7 +326,7 @@ function run() {
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
       --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
-      --configfile ${WORKDIR}/config/config.yaml 
+      --configfile ${WORKDIR}/config/config.yaml
     fi
 
     bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
@@ -334,7 +334,7 @@ EOF
 
     sbatch ${WORKDIR}/submit_script.sbatch
 
-  else # for unlock and dryrun 
+  else # for unlock and dryrun
     snakemake $1 -s $SNAKEFILE \
     --directory $WORKDIR \
     --use-envmodules \
@@ -356,7 +356,7 @@ function reset() {
   echo "Working Dir: $WORKDIR"
 
   if [ ! -d $WORKDIR ];then err "Folder $WORKDIR does not exist!";fi
-  
+
   echo "Deleting $WORKDIR"
   rm -rf $WORKDIR
   echo "Re-Initializing $WORKDIR"

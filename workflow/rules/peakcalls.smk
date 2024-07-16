@@ -1,10 +1,10 @@
 # TSV file should include 6 columns
 # 1)condition     2)sample
-# 53_H3K4me3	    53_H3K4me3_1         
+# 53_H3K4me3	    53_H3K4me3_1
 # 3)bed
 # /results/peaks/gopeaks/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
 # 4)bedgraph                                      5)scaling factor
-# /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176	
+# /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176
 # 6)bed
 # /results/fragments/53_H3K4me3_1.dedup.fragments.bed
 
@@ -63,7 +63,7 @@ rule macs2_narrow:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -75,13 +75,13 @@ rule macs2_narrow:
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-         
+
         # set frag file
         treat_bed={params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed
         cntrl_bed={params.frag_bed_path}/${{control}}.{params.dupstatus}.fragments.bed
 
         # run with or without control
-        if [[ {params.control_flag} == "Y" ]]; then 
+        if [[ {params.control_flag} == "Y" ]]; then
             file_base="${{treatment}}_vs_${{control}}.{params.dupstatus}"
 
             macs2 callpeak \\
@@ -98,7 +98,7 @@ rule macs2_narrow:
             --nomodel
         else
             file_base="${{treatment}}_vs_${{control}}.{params.dupstatus}"
-                                
+
             macs2 callpeak \\
             -t ${{treat_bed}} \\
             -f BED \\
@@ -111,12 +111,12 @@ rule macs2_narrow:
             --call-summits \\
             --nomodel
         fi
-    
+
         # mv output and rename for consistency
         mv $TMPDIR/${{file_base}}_peaks.narrowPeak {output.peak_file}
         mv $TMPDIR/${{file_base}}_summits.bed {output.summit_file}
         mv $TMPDIR/${{file_base}}_peaks.xls {output.xls_file}
-        
+
         # create bigbed files, zip
         cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/narrow.bed
         bedToBigBed -type=bed3 ${{TMPDIR}}/narrow.bed {input.genome_len} ${{TMPDIR}}/narrow.bigbed
@@ -153,7 +153,7 @@ rule macs2_broad:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -165,15 +165,15 @@ rule macs2_broad:
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-            
+
         # set frag file
         treat_bed={params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed
         cntrl_bed={params.frag_bed_path}/${{control}}.{params.dupstatus}.fragments.bed
 
         # run with or without control
-        if [[ {params.control_flag} == "Y" ]]; then 
+        if [[ {params.control_flag} == "Y" ]]; then
             file_base="${{treatment}}_vs_${{control}}.{params.dupstatus}"
-                    
+
             macs2 callpeak \\
             -t ${{treat_bed}} \\
             -c ${{cntrl_bed}} \\
@@ -188,7 +188,7 @@ rule macs2_broad:
             --nomodel
         else
             file_base="${{treatment}}_vs_nocontrol.{params.dupstatus}"
-                    
+
             macs2 callpeak \\
             -t ${{treat_bed}} \\
             -f BED \\
@@ -201,7 +201,7 @@ rule macs2_broad:
             --broad --broad-cutoff {params.broadtreshold} \\
             --nomodel
         fi
-            
+
         # mv output and rename for consistency
         mv $TMPDIR/${{file_base}}_peaks.broadPeak {output.peak_file}
         mv $TMPDIR/${{file_base}}_peaks.xls {output.xls_file}
@@ -237,7 +237,7 @@ rule seacr_stringent:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -249,7 +249,7 @@ rule seacr_stringent:
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-         
+
         # set frag file
         treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
         cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
@@ -262,7 +262,7 @@ rule seacr_stringent:
                 --mode stringent \\
                 --threshold {params.qthresholds} \\
                 --output norm
-            
+
             # mv output and rename for consistency
             mv $TMPDIR/norm.stringent.bed {output.peak_file}
         else
@@ -308,7 +308,7 @@ rule seacr_relaxed:
     shell:
         """
             set -exo pipefail
-            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+            if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
                 TMPDIR="/lscratch/$SLURM_JOB_ID"
             else
                 dirname=$(basename $(mktemp))
@@ -320,7 +320,7 @@ rule seacr_relaxed:
             # pull treatment and control ids
             treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
             control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-            
+
             # set frag file
             treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
             cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
@@ -332,7 +332,7 @@ rule seacr_relaxed:
                     --normalize norm \\
                     --mode relaxed \\
                     --threshold {params.qthresholds} \\
-                    --output norm    
+                    --output norm
 
                 # mv output and rename for consistency
                 mv $TMPDIR/norm.relaxed.bed {output.peak_file}
@@ -344,7 +344,7 @@ rule seacr_relaxed:
                     --mode relaxed \\
                     --threshold {params.qthresholds} \\
                     --output non
-                
+
                 mv $TMPDIR/non.relaxed.bed {output.peak_file}
             fi
 
@@ -378,7 +378,7 @@ rule gopeaks_narrow:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -389,7 +389,7 @@ rule gopeaks_narrow:
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-            
+
         # set bam file
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
         cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
@@ -402,7 +402,7 @@ rule gopeaks_narrow:
         mv $TMPDIR/narrow_gopeaks.json {output.json}
 
         # create bigbed files
-        cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/narrow_peaks.bed 
+        cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/narrow_peaks.bed
         bedToBigBed -type=bed3 ${{TMPDIR}}/narrow_peaks.bed  {input.genome_len} ${{TMPDIR}}/narrow_peaks.bigbed
         bgzip -c ${{TMPDIR}}/narrow_peaks.bigbed > {output.bg_file}
         """
@@ -431,7 +431,7 @@ rule gopeaks_broad:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -442,7 +442,7 @@ rule gopeaks_broad:
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
-            
+
         # set bam file
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
         cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
@@ -455,7 +455,7 @@ rule gopeaks_broad:
         mv $TMPDIR/broad_gopeaks.json {output.json}
 
         # create bigbed files
-        cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/broad.bed 
+        cut -f1-3 {output.peak_file} | LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n | uniq > ${{TMPDIR}}/broad.bed
         bedToBigBed -type=bed3 ${{TMPDIR}}/broad.bed  {input.genome_len} ${{TMPDIR}}/broad.bigbed
         bgzip -c ${{TMPDIR}}/broad.bigbed > {output.bg_file}
         """

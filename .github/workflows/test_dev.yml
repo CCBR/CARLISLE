@@ -13,20 +13,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4.1.0
-    - uses: docker://snakemake/snakemake:v7.19.1
-      with:
-        directory: '.test'
-    - name: dryrun
-      shell: bash {0}
-      run: |
-        bash ./install.sh ./test-workdir/carlisle-v9999.9999.9999-dev
-        ./test-workdir/carlisle-v9999.9999.9999-dev/bin/carlisle --runmode=init --workdir=./test-workdir/output_carlisle
-        cp ./test-workdir/carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml ./test-workdir/output_carlisle/config/config.yaml
-        # TODO: use `carlisle run --mode dryrun`
-        docker run -v ./test-workdir/:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
-          "cd /opt2 && snakemake \
-            -s ./carlisle-v9999.9999.9999-dev/bin/workflow/Snakefile \
-            --dryrun \
-            --configfile carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml \
-            --directory output_carlisle"
+      - uses: actions/checkout@v4.1.0
+      - uses: docker://snakemake/snakemake:v7.19.1
+        with:
+          directory: ".test"
+      - name: dryrun
+        shell: bash {0}
+        run: |
+          bash ./install.sh ./test-workdir/carlisle-v9999.9999.9999-dev
+          ./test-workdir/carlisle-v9999.9999.9999-dev/bin/carlisle --runmode=init --workdir=./test-workdir/output_carlisle
+          cp ./test-workdir/carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml ./test-workdir/output_carlisle/config/config.yaml
+          # TODO: use `carlisle run --mode dryrun`
+          docker run -v ./test-workdir/:/opt2 snakemake/snakemake:v7.19.1 /bin/bash -c \
+            "cd /opt2 && snakemake \
+              -s ./carlisle-v9999.9999.9999-dev/bin/workflow/Snakefile \
+              --dryrun \
+              --configfile carlisle-v9999.9999.9999-dev/bin/.test/config_lint.yaml \
+              --directory output_carlisle"
