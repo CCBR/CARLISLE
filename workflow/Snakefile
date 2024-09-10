@@ -256,10 +256,8 @@ rule all:
         unpack(get_enrichment)
 
 # create jobby tables
-## command for jobby: bash scripts/_run_jobby_on_snakemake_log logs/snakemake.log _jobby.py | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
-## command for spooker: bash scripts/_spooker /data/sevillas2/carlisle/spook1 | tee logs/spooker.log
-jobby_cmd = "bash " + join(SCRIPTSDIR, '_run_jobby_on_snakemake_log') + " " + join('logs', 'snakemake.log') + " " + join(SCRIPTSDIR, '_jobby.py') + " | tee " + join('logs', 'snakemake.log.jobby') + " | cut -f2,3,18 > " + join('logs', 'snakemake.log.jobby.short')
-spook_cmd = "bash " + join(SCRIPTSDIR, '_spooker') + " " + WORKDIR + " | tee " + join('logs', 'spooker.log')
+jobby_cmd = 'run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short'
+spook_cmd = f'spooker {WORKDIR} CARLISLE'
 
 onsuccess:
     print("OnSuccess")
