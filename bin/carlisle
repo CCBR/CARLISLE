@@ -1,8 +1,1 @@
-#!/usr/bin/env bash
-SCRIPTNAME="$BASH_SOURCE"
-SCRIPTDIRNAME=$(readlink -f $(dirname "$SCRIPTNAME"))
-
-TOOLDIR=$(dirname "$SCRIPTDIRNAME")
-TOOLNAME=$(basename "$SCRIPTNAME")
-
-${TOOLDIR}/carlisle "$@" || true
+redirect
