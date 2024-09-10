@@ -21,7 +21,7 @@ params:
   elbowlimits: "~/../../../Volumes/ccbr1155/CS030666/analysis/results/peaks/contrasts/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed/siNC_H4K20me3_vs_siSmyd3_H4K20me3__dedup__narrowGo_peaks.bed_AUCbased_diffanalysis_elbowlimits.yaml"
   species: "hg38"
   gtf: ""
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -35,71 +35,72 @@ load_packages()
 
 ## Loading SampleInfo and Counts
 ```{r sampleinfo, include=TRUE, echo=FALSE}
-sampleinfo = read.csv(params$coldata,header = TRUE,sep="\t",strip.white = TRUE,check.names = FALSE,colClasses = "character")
+sampleinfo <- read.csv(params$coldata, header = TRUE, sep = "\t", strip.white = TRUE, check.names = FALSE, colClasses = "character")
 # filter based off of params
-sampleinfo = sampleinfo[sampleinfo$group == params$condition1 | sampleinfo$group == params$condition2,]
-sampleinfo$group = relevel(as.factor(sampleinfo$group),params$condition2)
-rawcounts = read.csv(params$rawcountsmatrix,
-                     header = TRUE,sep="\t",
-                     comment.char = "#", 
-                     strip.white = TRUE,
-                     check.names = FALSE,
-                     colClasses = "character")
-rawcounts = as.data.frame(rawcounts)
-rawcounts %>% column_to_rownames(var="peakID") -> rawcounts
+sampleinfo <- sampleinfo[sampleinfo$group == params$condition1 | sampleinfo$group == params$condition2, ]
+sampleinfo$group <- relevel(as.factor(sampleinfo$group), params$condition2)
+rawcounts <- read.csv(params$rawcountsmatrix,
+  header = TRUE, sep = "\t",
+  comment.char = "#",
+  strip.white = TRUE,
+  check.names = FALSE,
+  colClasses = "character"
+)
+rawcounts <- as.data.frame(rawcounts)
+rawcounts %>% column_to_rownames(var = "peakID") -> rawcounts
 
 # filter based off of sampleinfo
-rawcounts = rawcounts[,colnames(rawcounts)==sampleinfo$samplename]
+rawcounts <- rawcounts[, colnames(rawcounts) == sampleinfo$samplename]
 
 # convert character to numeric to integer
-x = matrix(as.numeric(as.matrix(rawcounts)),ncol=ncol(rawcounts))
-x = matrix(mapply(x,FUN=as.integer),ncol=ncol(rawcounts))
-x = as.data.frame(x)
-colnames(x) = colnames(rawcounts)
-rownames(x) = rownames(rawcounts)
+x <- matrix(as.numeric(as.matrix(rawcounts)), ncol = ncol(rawcounts))
+x <- matrix(mapply(x, FUN = as.integer), ncol = ncol(rawcounts))
+x <- as.data.frame(x)
+colnames(x) <- colnames(rawcounts)
+rownames(x) <- rownames(rawcounts)
 
 # if lib size is greater than max integer size allowed, handle samples
 # cant replace with the original value since max integer is 2147483647
 # anything larger will be replaced with an NA
-x[is.na(x)]=2147483647
+x[is.na(x)] <- 2147483647
 
-rawcounts = x
-sampleinfo=sampleinfo[sampleinfo$samplename==colnames(rawcounts),]
+rawcounts <- x
+sampleinfo <- sampleinfo[sampleinfo$samplename == colnames(rawcounts), ]
 
-#determine lib reduction factor
-if (mean(colSums(rawcounts))>1000000000){
-  lib_factor=1e8
-}else if (mean(colSums(rawcounts))>100000000){
-  lib_factor=1e7
-}else if (mean(colSums(rawcounts))>10000000){
-  lib_factor=1e6
-} else if (mean(colSums(rawcounts))>1000000){
-    lib_factor=1e5
-} else if (mean(colSums(rawcounts))>100000){
-      lib_factor=1e4
-} else if (mean(colSums(rawcounts))>10000){
-      lib_factor=1e3
-} else if (mean(colSums(rawcounts))>1000){
-      lib_factor=1e2
-} else if (mean(colSums(rawcounts))>100){
-      lib_factor=1e1
+# determine lib reduction factor
+if (mean(colSums(rawcounts)) > 1000000000) {
+  lib_factor <- 1e8
+} else if (mean(colSums(rawcounts)) > 100000000) {
+  lib_factor <- 1e7
+} else if (mean(colSums(rawcounts)) > 10000000) {
+  lib_factor <- 1e6
+} else if (mean(colSums(rawcounts)) > 1000000) {
+  lib_factor <- 1e5
+} else if (mean(colSums(rawcounts)) > 100000) {
+  lib_factor <- 1e4
+} else if (mean(colSums(rawcounts)) > 10000) {
+  lib_factor <- 1e3
+} else if (mean(colSums(rawcounts)) > 1000) {
+  lib_factor <- 1e2
+} else if (mean(colSums(rawcounts)) > 100) {
+  lib_factor <- 1e1
 } else {
-  lib_factor=1e1
+  lib_factor <- 1e1
 }
 
-sampleinfo$library_size=colSums(rawcounts)/lib_factor
-sampleinfodf = as.data.frame(sampleinfo)
-sampleinfodf$dupstatus = params$dupstatus
-rownames(sampleinfo) = sampleinfo$samplename
-pander(sampleinfodf,style="rmarkdown")
-rawcounts_logcpm = log2(cpm(rawcounts))
-cpm_melt=reshape2::melt(rawcounts_logcpm)
-colnames(cpm_melt)=c("peakID","samplename","log2cpm")
-fdr_cutoff=as.double(params$fdr_cutoff)
-log2fc_cutoff=as.double(params$log2fc_cutoff)
+sampleinfo$library_size <- colSums(rawcounts) / lib_factor
+sampleinfodf <- as.data.frame(sampleinfo)
+sampleinfodf$dupstatus <- params$dupstatus
+rownames(sampleinfo) <- sampleinfo$samplename
+pander(sampleinfodf, style = "rmarkdown")
+rawcounts_logcpm <- log2(cpm(rawcounts))
+cpm_melt <- reshape2::melt(rawcounts_logcpm)
+colnames(cpm_melt) <- c("peakID", "samplename", "log2cpm")
+fdr_cutoff <- as.double(params$fdr_cutoff)
+log2fc_cutoff <- as.double(params$log2fc_cutoff)
 ```
 
-Total Peaks: `r nrow(rawcounts)` 
+Total Peaks: `r nrow(rawcounts)`
 Total Samples: `r ncol(rawcounts)`
 
 ```{r fdr_check}
@@ -109,68 +110,75 @@ print(log2fc_cutoff)
 
 
 ```{r cpmplots, echo=FALSE}
-ggplot(cpm_melt,aes(x=samplename,y=log2cpm)) + 
-  geom_boxplot(fill=as.factor(as.numeric(as.factor(sampleinfo$group))+1)) +
+ggplot(cpm_melt, aes(x = samplename, y = log2cpm)) +
+  geom_boxplot(fill = as.factor(as.numeric(as.factor(sampleinfo$group)) + 1)) +
   theme_classic() +
   coord_flip()
-  # theme(legend.title = element_blank(),axis.text.x = element_text(angle = 90),legend.text=element_text(size=6),legend.position = "none")
+# theme(legend.title = element_blank(),axis.text.x = element_text(angle = 90),legend.text=element_text(size=6),legend.position = "none")
 ```
 
 ## Run DESeq2
 
 ```{r dds, include=TRUE, echo=FALSE}
-dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawcounts),
-                                colData = sampleinfo[,c("samplename","group")],
-                                design = ~ group)
-if (params$spiked=="SPIKEIN" & !is.null(params$contrast_data)) {
-  bbpaths_df = read.csv(params$contrast_data,
-                      header = FALSE,sep="\t",
-                      comment.char = "#", 
-                      strip.white = TRUE)
-  colnames(bbpaths_df)=c("sample",
-                        "replicate",
-                        "bedfile",
-                        "bedgraph",
-                        "scalingfactor",
-                        "bed")
-  sf_df=unique(bbpaths_df[,c("replicate","scalingfactor")])
-  dds_cols=colnames(dds)
-  sfs=c()
-  for (i in dds_cols){
-    if (i %in% sf_df$replicate){
-      sfs=c(sfs,sf_df[sf_df$replicate==i,"scalingfactor"])
+dds <- DESeqDataSetFromMatrix(
+  countData = as.matrix(rawcounts),
+  colData = sampleinfo[, c("samplename", "group")],
+  design = ~group
+)
+if (params$spiked == "SPIKEIN" & !is.null(params$contrast_data)) {
+  bbpaths_df <- read.csv(params$contrast_data,
+    header = FALSE, sep = "\t",
+    comment.char = "#",
+    strip.white = TRUE
+  )
+  colnames(bbpaths_df) <- c(
+    "sample",
+    "replicate",
+    "bedfile",
+    "bedgraph",
+    "scalingfactor",
+    "bed"
+  )
+  sf_df <- unique(bbpaths_df[, c("replicate", "scalingfactor")])
+  dds_cols <- colnames(dds)
+  sfs <- c()
+  for (i in dds_cols) {
+    if (i %in% sf_df$replicate) {
+      sfs <- c(sfs, sf_df[sf_df$replicate == i, "scalingfactor"])
     }
   }
-  if (length(sfs)==length(dds_cols)){
-# scaling factor magnitudes are variable and depend on the constant used while scaling using spiked-in reads
-# DESeq2 size factors are generally hovering around 1
-# we try to rescale the scaling factors by dividing them by mean of all scaling factors ... this way they also 
-# start hovering around 1 ... based on suggestion from Sohyoung.
+  if (length(sfs) == length(dds_cols)) {
+    # scaling factor magnitudes are variable and depend on the constant used while scaling using spiked-in reads
+    # DESeq2 size factors are generally hovering around 1
+    # we try to rescale the scaling factors by dividing them by mean of all scaling factors ... this way they also
+    # start hovering around 1 ... based on suggestion from Sohyoung.
     if (params$scalesfbymean == "Y") {
-      adjusted_sfs = sfs/mean(sfs)
+      adjusted_sfs <- sfs / mean(sfs)
     }
-# AUC-based counts are prescaled, but fragmentbased counts are not prescaled
-# DESeq2 should ingest rawcounts ... prescaled counts need to be divided by sfs
-# to convert them back to rawcounts
+    # AUC-based counts are prescaled, but fragmentbased counts are not prescaled
+    # DESeq2 should ingest rawcounts ... prescaled counts need to be divided by sfs
+    # to convert them back to rawcounts
     if (params$rawcountsprescaled == "Y") {
-      rawrawcounts=round(t(t(rawcounts) / sfs))
-      dds <- DESeqDataSetFromMatrix(countData = as.matrix(rawrawcounts),
-                                  colData = sampleinfo[,c("samplename","group")],
-                                  design = ~ group)
+      rawrawcounts <- round(t(t(rawcounts) / sfs))
+      dds <- DESeqDataSetFromMatrix(
+        countData = as.matrix(rawrawcounts),
+        colData = sampleinfo[, c("samplename", "group")],
+        design = ~group
+      )
     }
-    DESeq2::sizeFactors(dds)= 1/adjusted_sfs
+    DESeq2::sizeFactors(dds) <- 1 / adjusted_sfs
   } else {
     print("Samples are spiked, but DESeq2 scaling factors used!!")
   }
-}                                
-                               
+}
+
 dds <- DESeq(dds)
-if ( params$htsfilter == "Y" ){
-  dds <- HTSFilter::HTSFilter(dds,s.len=50, plot=TRUE)$filteredData
+if (params$htsfilter == "Y") {
+  dds <- HTSFilter::HTSFilter(dds, s.len = 50, plot = TRUE)$filteredData
 }
 results <- results(dds)
 results_df <- as.data.frame(results)
-results_df %>% rownames_to_column(var="peakID") -> results_df
+results_df %>% rownames_to_column(var = "peakID") -> results_df
 ```
 
 ### DESeq MAplot
@@ -185,64 +193,66 @@ DESeq2::plotMA(results)
 # default for nsub is 1000, if there are less than 1000 rows with a mean > 5 this will error
 # If there are less than 1K check hether there are enough istances to use nsub value set to the n rows
 # if there are not then variancestablizing must be used
-if (sum( rowMeans( counts(dds, normalized=TRUE)) > 5 ) > 1000){
+if (sum(rowMeans(counts(dds, normalized = TRUE)) > 5) > 1000) {
   print("VST: Using standard method")
   rld <- vst(dds)
-} else{
+} else {
   # run test for dds
-  t <- try(vst(dds,nsub=nrow(dds)),silent = TRUE)
-  
+  t <- try(vst(dds, nsub = nrow(dds)), silent = TRUE)
+
   # if this completes then run nsub equal to nrow
   # if it fails run separate function
-  if (class(t)[1] == "DESeqTransform"){
+  if (class(t)[1] == "DESeqTransform") {
     print("VST: Using nrow as nsub")
-    rld <- vst(dds,nsub=nrow(dds))
-  } else if(grepl( "Error", t, fixed = TRUE)){
-    print ("VST: Using variance Stablizing transformation")
+    rld <- vst(dds, nsub = nrow(dds))
+  } else if (grepl("Error", t, fixed = TRUE)) {
+    print("VST: Using variance Stablizing transformation")
     rld <- varianceStabilizingTransformation(dds)
-  } else{
+  } else {
     print("VST: Using nrow as nsub")
-    rld <- vst(dds,nsub=nrow(dds))
+    rld <- vst(dds, nsub = nrow(dds))
   }
-} 
-
-assayrld = as.data.frame(assay(rld))
-assayrld$row_variance = rowVars(as.matrix(assayrld))
-assayrld = arrange(assayrld,desc(row_variance))
-zero_variance_rows=assayrld$row_variance<1e-5
-assayrld$row_variance = NULL
-assayrld = assayrld[!zero_variance_rows,]
-if (nrow(assayrld) > 500){
-  assayrld=assayrld[1:500,]
 }
-pca=prcomp(t(assayrld),scale. = T)
-m.pc1 = round(pca$sdev[1]^2/sum(pca$sdev^2)*100,2)
-m.pc2 = round(pca$sdev[2]^2/sum(pca$sdev^2)*100,2)
-m.pc3 = round(pca$sdev[3]^2/sum(pca$sdev^2)*100,2)
-xlab=paste0("PC1(",m.pc1,"%)")
-ylab=paste0("PC2(",m.pc2,"%)")
-ggplot(pca$x,aes(x=PC1,y=PC2,label=rownames(pca$x)))+geom_point(col=as.factor(as.numeric(as.factor(sampleinfo$group))+1))+
-  xlab(xlab)+ylab(ylab)+
-  geom_text_repel(max.overlaps = 10,size=2)+
+
+assayrld <- as.data.frame(assay(rld))
+assayrld$row_variance <- rowVars(as.matrix(assayrld))
+assayrld <- arrange(assayrld, desc(row_variance))
+zero_variance_rows <- assayrld$row_variance < 1e-5
+assayrld$row_variance <- NULL
+assayrld <- assayrld[!zero_variance_rows, ]
+if (nrow(assayrld) > 500) {
+  assayrld <- assayrld[1:500, ]
+}
+pca <- prcomp(t(assayrld), scale. = T)
+m.pc1 <- round(pca$sdev[1]^2 / sum(pca$sdev^2) * 100, 2)
+m.pc2 <- round(pca$sdev[2]^2 / sum(pca$sdev^2) * 100, 2)
+m.pc3 <- round(pca$sdev[3]^2 / sum(pca$sdev^2) * 100, 2)
+xlab <- paste0("PC1(", m.pc1, "%)")
+ylab <- paste0("PC2(", m.pc2, "%)")
+ggplot(pca$x, aes(x = PC1, y = PC2, label = rownames(pca$x))) +
+  geom_point(col = as.factor(as.numeric(as.factor(sampleinfo$group)) + 1)) +
+  xlab(xlab) +
+  ylab(ylab) +
+  geom_text_repel(max.overlaps = 10, size = 2) +
   theme_light()
 ```
 
 ### DESeq Elbow
 
 ```{r elbow,include=TRUE,echo=FALSE}
-limits=ELBOW::do_elbow_rnaseq(results)
+limits <- ELBOW::do_elbow_rnaseq(results)
 ELBOW::plot_dataset(results, "log2FoldChange", limits$up_limit, limits$low_limit)
-write_yaml(limits,file=params$elbowlimits)
+write_yaml(limits, file = params$elbowlimits)
 ```
 
 ```{r elbow2,include=TRUE,echo=FALSE}
-lim=c(limits$up_limit,limits$low_limit)
-lim=as.data.frame(lim)
-rownames(lim)=c("UpLimit","DownLimit")
-colnames(lim)="log2FC"
-lim$FC=2^lim$log2FC
-lim["DownLimit","FC"]=-1/lim["DownLimit","FC"]
-lim %>% rownames_to_column(var="Limit") -> lim
+lim <- c(limits$up_limit, limits$low_limit)
+lim <- as.data.frame(lim)
+rownames(lim) <- c("UpLimit", "DownLimit")
+colnames(lim) <- "log2FC"
+lim$FC <- 2^lim$log2FC
+lim["DownLimit", "FC"] <- -1 / lim["DownLimit", "FC"]
+lim %>% rownames_to_column(var = "Limit") -> lim
 pander(lim)
 # DT::datatable(lim) %>% formatSignif(columns=colnames(lim),digits=4)
 ```
@@ -250,119 +260,122 @@ pander(lim)
 ### DESeq Annotation
 
 ```{r annotate,include=TRUE,echo=FALSE}
-x = as.data.frame(rownames(results)) 
-colnames(x) = c("peakID")
-x %>% separate(col = c("peakID"),into = c("chrom","coord"),sep = ":") %>% 
-  separate(col = c("coord"),into = c("start","end"),sep = "-") -> x
+x <- as.data.frame(rownames(results))
+colnames(x) <- c("peakID")
+x %>%
+  separate(col = c("peakID"), into = c("chrom", "coord"), sep = ":") %>%
+  separate(col = c("coord"), into = c("start", "end"), sep = "-") -> x
 peaks <- GenomicRanges::makeGRangesFromDataFrame(x)
 
-if (params$species=="mm10"){
+if (params$species == "mm10") {
   txdb <- TxDb.Mmusculus.UCSC.mm10.knownGene
-  anno_db<-"org.Mm.eg.db"
-} else if (params$species=="hg19"){
+  anno_db <- "org.Mm.eg.db"
+} else if (params$species == "hg19") {
   txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
-  anno_db<-"org.Hs.eg.db"
-} else if (params$species=="hg38"){
+  anno_db <- "org.Hs.eg.db"
+} else if (params$species == "hg38") {
   txdb <- TxDb.Hsapiens.UCSC.hg38.knownGene
-  anno_db<-"org.Hs.eg.db"
-} else if (params$species=="hs1"){
+  anno_db <- "org.Hs.eg.db"
+} else if (params$species == "hs1") {
   # make txdb for T2T HS1
   ## modify seq info to match GTF
-  temp_seqnames = paste0("chr",seqnames(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0))
-  temp_seqnames = gsub("MT","M",temp_seqnames)
+  temp_seqnames <- paste0("chr", seqnames(BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0))
+  temp_seqnames <- gsub("MT", "M", temp_seqnames)
 
   ## rename all other features
-  BSgenome.T2T_updated=BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
-  seqnames(BSgenome.T2T_updated)=temp_seqnames
-  names(seqlengths(BSgenome.T2T_updated))=temp_seqnames
-  names(isCircular(BSgenome.T2T_updated))=temp_seqnames
-  names(genome(BSgenome.T2T_updated))=temp_seqnames
+  BSgenome.T2T_updated <- BSgenome.Hsapiens.NCBI.T2T.CHM13v2.0
+  seqnames(BSgenome.T2T_updated) <- temp_seqnames
+  names(seqlengths(BSgenome.T2T_updated)) <- temp_seqnames
+  names(isCircular(BSgenome.T2T_updated)) <- temp_seqnames
+  names(genome(BSgenome.T2T_updated)) <- temp_seqnames
 
   ## https://rdrr.io/bioc/GenomicFeatures/man/makeTxDbFromGFF.html
   ## create TXDB object
-  txdb<-makeTxDbFromGFF(params$gtf,
-                  format=c("auto"),
-                  dataSource="/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf",
-                  organism="human",
-                  taxonomyId=9606,
-                  chrominfo=seqinfo(BSgenome.T2T_updated))
-  anno_db<-"org.Hs.eg.db"
+  txdb <- makeTxDbFromGFF(params$gtf,
+    format = c("auto"),
+    dataSource = "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf",
+    organism = "human",
+    taxonomyId = 9606,
+    chrominfo = seqinfo(BSgenome.T2T_updated)
+  )
+  anno_db <- "org.Hs.eg.db"
 }
 options(ChIPseeker.downstreamDistance = 0)
 peakAnno <- ChIPseeker::annotatePeak(peaks,
-                                     tssRegion = c(-2000,200),
-                                     TxDb = txdb,
-                                     level = "gene",
-                                     overlap = "all",
-                                     annoDb = anno_db)
+  tssRegion = c(-2000, 200),
+  TxDb = txdb,
+  level = "gene",
+  overlap = "all",
+  annoDb = anno_db
+)
 pa <- as.data.frame(peakAnno)
-pa$shortAnno=stringr::word(pa$annotation,1)
-pa$shortAnno[pa$shortAnno=="5'"]="5'UTR"
-pa$shortAnno[pa$shortAnno=="3'"]="3'UTR"
-pa$peakID = paste0(pa$seqnames,":",pa$start,"-",pa$end)
-results_df = merge(results_df,pa,by=c("peakID"))
-write.table(results_df,file=params$results,quote=FALSE,sep="\t",row.names = FALSE,col.names = TRUE)
+pa$shortAnno <- stringr::word(pa$annotation, 1)
+pa$shortAnno[pa$shortAnno == "5'"] <- "5'UTR"
+pa$shortAnno[pa$shortAnno == "3'"] <- "3'UTR"
+pa$peakID <- paste0(pa$seqnames, ":", pa$start, "-", pa$end)
+results_df <- merge(results_df, pa, by = c("peakID"))
+write.table(results_df, file = params$results, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 
-up=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange > log2fc_cutoff,]$shortAnno))
-down=as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange < -1*log2fc_cutoff,]$shortAnno))
-if(nrow(up)==0){
+up <- as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange > log2fc_cutoff, ]$shortAnno))
+down <- as.data.frame(table(results_df[results_df$padj < fdr_cutoff & results_df$log2FoldChange < -1 * log2fc_cutoff, ]$shortAnno))
+if (nrow(up) == 0) {
   up <- data.frame(matrix(ncol = 2, nrow = 0))
 }
-if(nrow(down)==0){
+if (nrow(down) == 0) {
   down <- data.frame(matrix(ncol = 2, nrow = 0))
 }
-colnames(up)=c("shortAnno","UP")
-colnames(down)=c("shortAnno","DOWN")
-deg=as.data.frame(merge(up,down,by=c("shortAnno"),all=TRUE))
+colnames(up) <- c("shortAnno", "UP")
+colnames(down) <- c("shortAnno", "DOWN")
+deg <- as.data.frame(merge(up, down, by = c("shortAnno"), all = TRUE))
 deg[is.na(deg)] <- 0
-deg %>% column_to_rownames(var="shortAnno") -> deg
-deg=cbind(deg,rowSums(deg))
-deg=rbind(deg,colSums(deg))
-colnames(deg)[length(colnames(deg))]="Total"
-rownames(deg)[length(rownames(deg))]="Total"
-deg %>% rownames_to_column(var="Annotation") -> deg
+deg %>% column_to_rownames(var = "shortAnno") -> deg
+deg <- cbind(deg, rowSums(deg))
+deg <- rbind(deg, colSums(deg))
+colnames(deg)[length(colnames(deg))] <- "Total"
+rownames(deg)[length(rownames(deg))] <- "Total"
+deg %>% rownames_to_column(var = "Annotation") -> deg
 pander(deg)
 
 # add catch for hs1 which names SYMBOLS col as geneId
-if(params$species == "hs1"){
+if (params$species == "hs1") {
   lookup <- c(SYMBOL = "geneId")
-  results_df=results_df %>%
-     dplyr::rename(any_of(lookup))
+  results_df <- results_df %>%
+    dplyr::rename(any_of(lookup))
 }
 ```
 
 ### DESeq Volcano
 
 ```{r volcano,fig.width=8, fig.height=10,include=TRUE,echo=FALSE}
-colors=brewer.pal(7,"Set1")
-anno_types=levels(as.factor(results_df$shortAnno))
-keyvals=rep("grey",times=nrow(results_df))
-names(keyvals)=rep("NS",times=length(keyvals))
-for ( i in seq(1,length(anno_types))) {
-  keyvals[ abs(results_df$log2FoldChange) > log2fc_cutoff & results_df$padj < fdr_cutoff & results_df$shortAnno == anno_types[i] ] = colors[i]
+colors <- brewer.pal(7, "Set1")
+anno_types <- levels(as.factor(results_df$shortAnno))
+keyvals <- rep("grey", times = nrow(results_df))
+names(keyvals) <- rep("NS", times = length(keyvals))
+for (i in seq(1, length(anno_types))) {
+  keyvals[abs(results_df$log2FoldChange) > log2fc_cutoff & results_df$padj < fdr_cutoff & results_df$shortAnno == anno_types[i]] <- colors[i]
   names(keyvals)[keyvals == colors[i]] <- anno_types[i]
 }
 # names(keyvals)[names(keyvals)=="NA"]="NS"
 EnhancedVolcano(results_df,
-                lab = results_df$SYMBOL,
-                x = 'log2FoldChange',
-                y = 'padj',
-                ylab = bquote(~-Log[10] ~ FDR),
-                pCutoff = fdr_cutoff,
-                FCcutoff = log2fc_cutoff,
-                labSize = 4,
-                title = "",
-                subtitle = "",
-                titleLabSize = 1,
-                subtitleLabSize = 1,
-                #captionLabSize = 10,
-                colCustom = keyvals,
-                colAlpha = 1,
-                # boxedLabels = TRUE,
-                # drawConnectors = TRUE,
-                legendLabels = c("NS", expression(Log[2] ~ FC), "FDR", expression(FDR ~ and ~ log[2] ~ FC)),
-                legendLabSize = 10
-  )
+  lab = results_df$SYMBOL,
+  x = "log2FoldChange",
+  y = "padj",
+  ylab = bquote(~ -Log[10] ~ FDR),
+  pCutoff = fdr_cutoff,
+  FCcutoff = log2fc_cutoff,
+  labSize = 4,
+  title = "",
+  subtitle = "",
+  titleLabSize = 1,
+  subtitleLabSize = 1,
+  # captionLabSize = 10,
+  colCustom = keyvals,
+  colAlpha = 1,
+  # boxedLabels = TRUE,
+  # drawConnectors = TRUE,
+  legendLabels = c("NS", expression(Log[2] ~ FC), "FDR", expression(FDR ~ and ~ log[2] ~ FC)),
+  legendLabSize = 10
+)
 ```
 
 ### DESeq Detailed Results

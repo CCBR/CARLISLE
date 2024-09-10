@@ -28,14 +28,14 @@ rule create_contrast_data_files:
     """
     Output file should include 6 columns
     1)condition     2)sample
-    53_H3K4me3	    53_H3K4me3_1 
-    
+    53_H3K4me3	    53_H3K4me3_1
+
     3)bed
     /results/peaks/gopeaks/53_H3K4me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.broadGo_peaks.bed
-    
+
     4)bedgraph                                      5)scaling factor
-    /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176	
-    
+    /results/bedgraph/53_H3K4me3_1.dedup.bedgraph	86.32596685082872928176
+
     6)bed
     /results/fragments/53_H3K4me3_1.dedup.fragments.bed
     """
@@ -130,7 +130,7 @@ rule make_counts_matrix:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -172,7 +172,7 @@ rule DESeq:
         """
         set -exo pipefail
         dirname=$(basename $(mktemp))
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
         else
             TMPDIR="/dev/shm/$dirname"
@@ -281,7 +281,7 @@ rule diffbb:
     shell:
         """
         set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then 
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
         else
             dirname=$(basename $(mktemp))
@@ -290,7 +290,7 @@ rule diffbb:
         fi
 
         ## add check to ensure that DESEQ2 ran to completion
-        ## mainly used in tinytest scenarios, but also used if 
+        ## mainly used in tinytest scenarios, but also used if
         ## Nsamples/group is 1
         check=`wc -c {input.results} | cut -f1 -d" "`
         if [[ $check == 0 ]]; then

@@ -99,7 +99,7 @@ def run_contrasts(wildcards):
     files=[]
     if config["run_contrasts"]:
         files.append(join(RESULTSDIR,"replicate_sample.tsv"))
-        
+
         # inputs for matrix
         inputs=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
         files.extend(inputs)
@@ -159,7 +159,7 @@ def get_enrich(wildcards):
 
 def get_combined(wildcards):
     files = []
-    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):    
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
         combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
         files.extend(combined_m)
     return files
@@ -213,7 +213,7 @@ rule all:
         ##########################################
         # manifests
         unpack(run_pipe_prep),
-        
+
         # ALIGN / deeptools_bw
         unpack(run_deeptools_bw),
 
@@ -231,7 +231,7 @@ rule all:
 
         # ALIGN / alignstats
         expand(join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),replicate=REPLICATES),
-        
+
         # ALIGN / gather_alignstats
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
 
@@ -247,7 +247,7 @@ rule all:
 
         # DIFF / create_contrast_data_files
         unpack(run_contrasts),
-        
+
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
         unpack(get_motifs),
         unpack(get_enrich),
@@ -302,11 +302,11 @@ onerror:
 
         # ALIGN / alignstats
         join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),
-        
+
         # ALIGN / gather_alignstats
         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
 
-        # ALIGN / create_library_norm_scales     
+        # ALIGN / create_library_norm_scales
         join(RESULTSDIR,"alignment_stats","library_scale.tsv"),
 
         # ALIGN / bam2bg
