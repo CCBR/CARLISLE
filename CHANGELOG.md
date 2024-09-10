@@ -20,6 +20,7 @@
 - New parameters in the config file to make certain rules optional: (#133, @kelly-sovacool)
   - GO enrichment is controlled by `run_go_enrichment` (default: `false`)
   - ROSE is controlled by `run_rose` (default: `false`)
+- New `--singcache` argument to provide a singularity cache dir location. The singularity cache dir is automatically set inside `/data/$USER/` or `$WORKDIR/` if `--singcache` is not provided. (#143, @kelly-sovacool)
 
 ### Misc
 
