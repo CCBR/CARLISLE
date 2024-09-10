@@ -268,6 +268,8 @@ function run() {
   if [ "$1" == "local" ]; then
     preruncleanup
 
+    $EXPORT_SING_CACHE_DIR_CMD
+
     snakemake -s $SNAKEFILE \
     --directory $WORKDIR \
     --printshellcmds \
@@ -304,6 +306,8 @@ function run() {
     module load $SINGULARITY_VERSION
 
     cd \$SLURM_SUBMIT_DIR
+
+    $EXPORT_SING_CACHE_DIR_CMD
 
     snakemake -s $SNAKEFILE \
     --directory $WORKDIR \
@@ -384,6 +388,9 @@ function main(){
         -f|--force)
           FORCEFLAG="ON"
         ;;
+        -c=*|--singcache=*)
+          SING_CACHE_DIR="${i#*=}"
+        ;;
         -v|--version)
           get_version && exit 0
         ;;
@@ -397,6 +404,18 @@ function main(){
 
   WORKDIR=$(readlink -m "$WORKDIR")
   echo "Working Dir: $WORKDIR"
+
+  if [[ -z "$SING_CACHE_DIR" ]]; then
+    echo "singularity cache dir (--singcache) is not set"
+    if [[ -d "/data/$USER" ]]; then
+      SING_CACHE_DIR="/data/$USER/.singularity"
+    else
+      SING_CACHE_DIR="${WORKDIR}/.singularity"
+    fi
+    echo "\tusing ${SING_CACHE_DIR}"
+  fi
+  mkdir -p $SING_CACHE_DIR
+  EXPORT_SING_CACHE_DIR_CMD="export SINGULARITY_CACHEDIR=\"${SING_CACHE_DIR}\""
 
   case $RUNMODE in
     init) init && exit 0;;
