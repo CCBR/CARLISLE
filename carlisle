@@ -406,13 +406,12 @@ function main(){
   echo "Working Dir: $WORKDIR"
 
   if [[ -z "$SING_CACHE_DIR" ]]; then
-    echo "singularity cache dir (--singcache) is not set"
     if [[ -d "/data/$USER" ]]; then
       SING_CACHE_DIR="/data/$USER/.singularity"
     else
       SING_CACHE_DIR="${WORKDIR}/.singularity"
     fi
-    echo "\tusing ${SING_CACHE_DIR}"
+    echo "singularity cache dir (--singcache) is not set, using ${SING_CACHE_DIR}"
   fi
   mkdir -p $SING_CACHE_DIR
   EXPORT_SING_CACHE_DIR_CMD="export SINGULARITY_CACHEDIR=\"${SING_CACHE_DIR}\""
