@@ -91,7 +91,7 @@ markdown_extensions:
 
 # Page Tree
 nav:
-  - Background: index.md
+  - Home: index.md
   - Usage:
       - 1. Getting Started: user-guide/getting-started.md
       - 2. Preparing Files: user-guide/preparing-files.md
