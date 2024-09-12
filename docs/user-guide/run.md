@@ -2,10 +2,13 @@
 
 ## 3.1 Pipeline Overview
 
-The Snakemake workflow has a multiple options:
+The Snakemake workflow has a multiple options
+
+### Required arguments
 
 ```
 Usage: bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+
 1.  RUNMODE: [Type: String] Valid options:
     *) init : initialize workdir
     *) run : run with slurm
@@ -16,6 +19,13 @@ Usage: bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle -m/--runmode=<RUNM
     *) runtest: run on cluster with included test dataset
 2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
 ```
+
+### Optional arguments
+
+--help|-h       : print this help.
+--version|-v    : print the version of carlisle.
+--force|-f      : use the force flag for snakemake to force all rules to run.
+--singcache|-c  : singularity cache directory. Default is `/data/${USER}/.singularity` if available, or falls back to `${WORKDIR}/.singularity`. Use this flag to specify a different singularity cache directory.
 
 ## 3.2 Commands explained
 
