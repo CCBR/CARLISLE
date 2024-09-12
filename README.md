@@ -1,4 +1,6 @@
-# Cut And Run anaLysIS pipeLinE [CARLISLE]
+# CARLISLE
+
+**C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E**
 
 [![GitHub releases](https://img.shields.io/github/release/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/releases)
 [![GitHub issues](https://img.shields.io/github/issues/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/issues)
@@ -11,7 +13,7 @@ For comments/suggestions/advice please contact <mailto:CCBR_Pipeliner@mail.nih.g
 
 For detailed documentation on running the pipeline view the [documentation](https://CCBR.github.io/CARLISLE/) website.
 
-## workflow
+## Workflow
 
 <div align="center">
   <img src="https://raw.githubusercontent.com/CCBR/CARLISLE/main/docs/img/CUTandRUN_Workflow.jpeg" width="85%" height="85%">
