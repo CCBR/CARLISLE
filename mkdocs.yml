@@ -1,6 +1,6 @@
 # Project Information
 site_name: CARLISLE Pipeline
-site_author: Samantha Sevilla, Ph.D.
+site_author: CCBR
 site_description: >-
   CARLISLE Pipeline
 # Repository
@@ -39,6 +39,10 @@ plugins:
   - git-revision-date
   - minify:
       minify_html: true
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
+      version_selector: true
 
 # Customization
 extra:
