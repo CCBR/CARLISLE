@@ -1,8 +1,8 @@
 # Project Information
-site_name: CARLISLE Pipeline
+site_name: CARLISLE
 site_author: CCBR
 site_description: >-
-  CARLISLE Pipeline
+  **C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E**
 # Repository
 repo_name: CCBR/CARLISLE
 repo_url: https://github.com/CCBR/CARLISLE
@@ -68,8 +68,6 @@ markdown_extensions:
       permalink: true
   - pymdownx.arithmatex:
       generic: true
-  - pymdownx.betterem:
-      smart_enable: all
   - pymdownx.caret
   - pymdownx.critic
   - pymdownx.details
