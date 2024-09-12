@@ -25,6 +25,7 @@
 ### Misc
 
 - The singularity version is no longer specified, per request of the biowulf admins. (#139, @kelly-sovacool)
+- Minor documentation updates. (#146, @kelly-sovacool)
 
 ## CARLISLE v2.5.0
 
