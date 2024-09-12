@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+## CARLISLE 2.6.0
+
 ### Bug fixes
 
 - Bug fixes for DESeq (#127, @epehrsson)
