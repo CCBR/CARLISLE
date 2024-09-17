@@ -12,7 +12,7 @@ This snakemake pipeline is built to run on [Biowulf](https://hpc.nih.gov/).
 
 For comments/suggestions/advice please contact <mailto:CCBR_Pipeliner@mail.nih.gov>.
 
-For detailed documentation on running the pipeline view the [documentation](https://CCBR.github.io/CARLISLE/) website.
+For detailed documentation on running the pipeline, please view the website: <https://CCBR.github.io/CARLISLE/>
 
 ## Workflow
 
