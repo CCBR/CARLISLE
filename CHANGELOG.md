@@ -11,7 +11,7 @@
   - Fixes FDR cutoff misassigned to log2FC cutoff.
   - Fixes `no_dedup` variable names in library normalization scripts.
 - Fig bug that added nonexistent directories to the singularity bind paths. (#135, @kelly-sovacool)
-  - Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
+- Containerize rules that require R (`deseq`, `go_enrichment`, and `spikein_assessment`) to fix installation issues with common R library path. (#129, @kelly-sovacool)
     - The `Rlib_dir` and `Rpkg_config` config options have been removed as they are no longer needed.
 
 ### New features
