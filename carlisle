@@ -9,8 +9,7 @@
 #
 # DISCLAIMER: This wrapper only works on BIOWULF
 
-PYTHON_VERSION="python/3.9"
-SNAKEMAKE_VERSION="snakemake/7.19.1"
+SNAKEMAKE_VERSION="snakemake/7"
 SINGULARITY_VERSION="singularity"
 
 set -eo pipefail
@@ -156,7 +155,6 @@ function rescript(){
 function runcheck(){
 # Check "job-essential" files and load required modules
   check_essential_files
-  module load $PYTHON_VERSION
   module load $SNAKEMAKE_VERSION
 }
 
@@ -211,7 +209,6 @@ function runlocal() {
 }
 
 function runtest() {
-  module load $PYTHON_VERSION
   module load $SNAKEMAKE_VERSION
   module load $SINGULARITY_VERSION
   check_essential_files
@@ -301,7 +298,6 @@ function run() {
 #SBATCH --time=96:00:00
 #SBATCH --cpus-per-task=2
 
-    module load $PYTHON_VERSION
     module load $SNAKEMAKE_VERSION
     module load $SINGULARITY_VERSION
 
