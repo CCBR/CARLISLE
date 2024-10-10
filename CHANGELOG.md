@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+- Load the module for snakemake v7, but do not specify the minor and patch versions. (#149, @kelly-sovacool)
+
 ## CARLISLE 2.6.0
 
 ### Bug fixes
