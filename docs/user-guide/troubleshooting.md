@@ -30,4 +30,4 @@ bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle --runmode=run --workdir=/
 
 ## 1.4 Contact information
 
-If after troubleshooting, the error cannot be resolved, or if a bug is found, please create an [issue](https://github.com/CCBR/CARLISLE/issues) and send and email to [Samantha Chill](mailto:samantha.sevilla@nih.gov).
+If after troubleshooting, the error cannot be resolved, or if a bug is found, please create an [issue](https://github.com/CCBR/CARLISLE/issues) or send and email to <mailto:CCBR_Pipeliner@mail.nih.gov>
