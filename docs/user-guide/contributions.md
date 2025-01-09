@@ -4,6 +4,7 @@ The following members contributed to the development of the CARLISLE pipeline:
 
 - [Samantha Sevilla](https://github.com/slsevilla)
 - [Vishal Koparde](https://github.com/kopardev)
+- [Kelly Sovacool](https://github.com/kelly-sovacool)
 - [Hsien-chao Chou](https://github.com/hsienchao)
 - Sohyoung Kim
 - [Yue Hu](https://github.com/YueHu-002)

@@ -1,4 +1,4 @@
-# 4. Expected Outputs
+# Expected Outputs
 
 The following directories are created under the WORKDIR/results directory:
 
