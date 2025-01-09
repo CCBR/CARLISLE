@@ -1,13 +1,13 @@
-# 3. Running the Pipeline
+# Running the Pipeline
 
-## 3.1 Pipeline Overview
+## Pipeline Overview
 
 The Snakemake workflow has a multiple options
 
 ### Required arguments
 
 ```
-Usage: bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 
 1.  RUNMODE: [Type: String] Valid options:
     *) init : initialize workdir
@@ -22,12 +22,12 @@ Usage: bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle -m/--runmode=<RUNM
 
 ### Optional arguments
 
---help|-h       : print this help.
---version|-v    : print the version of carlisle.
---force|-f      : use the force flag for snakemake to force all rules to run.
---singcache|-c  : singularity cache directory. Default is `/data/${USER}/.singularity` if available, or falls back to `${WORKDIR}/.singularity`. Use this flag to specify a different singularity cache directory.
+--help|-h : print this help.
+--version|-v : print the version of carlisle.
+--force|-f : use the force flag for snakemake to force all rules to run.
+--singcache|-c : singularity cache directory. Default is `/data/${USER}/.singularity` if available, or falls back to `${WORKDIR}/.singularity`. Use this flag to specify a different singularity cache directory.
 
-## 3.2 Commands explained
+## Commands explained
 
 The following explains each of the command options:
 
@@ -45,17 +45,17 @@ The following explains each of the command options:
 To run any of these commands, follow the the syntax:
 
 ```
-bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle --runmode=COMMAND --workdir=/path/to/output/dir
+carlisle --runmode=COMMAND --workdir=/path/to/output/dir
 ```
 
-## 3.3 Typical Workflow
+## Typical Workflow
 
-A typical command workflow, running on the cluser, is as follows:
+A typical command workflow, running on the cluster, is as follows:
 
 ```
-bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle --runmode=init --workdir=/path/to/output/dir
+carlisle --runmode=init --workdir=/path/to/output/dir
 
-bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle --runmode=dryrun --workdir=/path/to/output/dir
+carlisle --runmode=dryrun --workdir=/path/to/output/dir
 
-bash ./data/CCBR_Pipeliner/Pipelines/CARLISLE/carlisle --runmode=run --workdir=/path/to/output/dir
+carlisle --runmode=run --workdir=/path/to/output/dir
 ```
