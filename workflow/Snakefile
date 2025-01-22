@@ -255,23 +255,25 @@ rule all:
         unpack(get_rose),
         unpack(get_enrichment)
 
-# create jobby tables
-jobby_cmd = 'run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short'
-spook_cmd = f'spooker {WORKDIR} CARLISLE'
+on_complete = f"""
+for cmd in spooker run_jobby_on_snakemake_log; do
+    if ! command -v run_jobby_on_snakemake_log 2>&1 >/dev/null; then
+        export PATH="$PATH:{config['tools_path']}"
+    fi
+done
+run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
+spooker {WORKDIR} CARLISLE
+"""
 
 onsuccess:
     print("OnSuccess")
-    print(jobby_cmd)
-    shell(jobby_cmd)
-    print(spook_cmd)
-    shell(spook_cmd)
+    print(on_complete)
+    shell(on_complete)
 
 onerror:
     print("OnError")
-    print(jobby_cmd)
-    shell(jobby_cmd)
-    print(spook_cmd)
-    shell(spook_cmd)
+    print(on_complete)
+    shell(on_complete)
 
 """
         ##########################################
