@@ -257,7 +257,7 @@ rule all:
 
 on_complete = f"""
 for cmd in spooker run_jobby_on_snakemake_log; do
-    if ! command -v run_jobby_on_snakemake_log 2>&1 >/dev/null; then
+    if ! command -v $cmd 2>&1 >/dev/null; then
         export PATH="$PATH:{config['tools_path']}"
     fi
 done
