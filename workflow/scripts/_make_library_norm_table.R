@@ -57,19 +57,19 @@ final_df <- data.frame()
 for (dedup_type in c("dedup_nreads_genome", "no_dedup_nreads_genome")) {
   # determine scaling factor dependent on library size
   col_median <- median(df[, dedup_type])
-  if (col_median > 1000000000) {
+  if (col_median > 100000000) {
     lib_factor <- 1e8
-  } else if (col_median > 100000000) {
-    lib_factor <- 1e7
   } else if (col_median > 10000000) {
-    lib_factor <- 1e6
+    lib_factor <- 1e7
   } else if (col_median > 1000000) {
-    lib_factor <- 1e5
+    lib_factor <- 1e6
   } else if (col_median > 100000) {
-    lib_factor <- 1e4
+    lib_factor <- 1e5
   } else if (col_median > 10000) {
-    lib_factor <- 1e3
+    lib_factor <- 1e4
   } else if (col_median > 1000) {
+    lib_factor <- 1e3
+  } else if (col_median > 100) {
     lib_factor <- 1e2
   } else {
     lib_factor <- 1e1
