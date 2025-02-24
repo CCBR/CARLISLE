@@ -75,7 +75,7 @@ for (dedup_type in c("dedup_nreads_genome", "no_dedup_nreads_genome")) {
     lib_factor <- 1e1
   }
 
-  df$library_size <- df[, dedup_type] / lib_factor
+  df$library_size <- lib_factor / df[, dedup_type]
   df$sampleid <- rownames(df)
   df$dedup_type <- strsplit(dedup_type, "_")[[1]][1]
   df$dedup_type <- gsub("no", "no_dedup", df$dedup_type)
