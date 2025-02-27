@@ -1,6 +1,7 @@
 ## CARLISLE development version
 
 - Documentation improvements. (#154, @kelly-sovacool)
+- Fix bug that flipped library normalization scaling factor (#157, @epehrsson)
 
 ## CARLISLE 2.6.1
 
