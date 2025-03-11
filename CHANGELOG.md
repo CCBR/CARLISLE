@@ -1,6 +1,7 @@
 ## CARLISLE development version
 
 - Documentation improvements. (#154, @kelly-sovacool)
+- Try adding jobby & spooker to the path on workflow completion. (#155, @kelly-sovacool)
 
 ## CARLISLE 2.6.1
 
