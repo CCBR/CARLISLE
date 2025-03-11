@@ -159,7 +159,7 @@ spikein_reference:
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
 
-tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.1/bin/"
+tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
 #####################################################################################
 # CONTAINERS
 #####################################################################################
