@@ -1,0 +1,5 @@
+SMYD3_1	HN6_IgG_1
+SMYD3_2	HN6_IgG_1
+SMYD3_3	HN6_IgG_1
+SMYD3_ko_1	ko_igG_1
+SMYD3_ko_2	ko_igG_1

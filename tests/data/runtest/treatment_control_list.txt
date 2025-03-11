@@ -1,0 +1,3 @@
+53_H3K4me3_1	HN6_IgG_rabbit_negative_control_1
+53_H3K4me3_2	HN6_IgG_rabbit_negative_control_1
+HN6_H3K4me3_1	HN6_IgG_rabbit_negative_control_1
