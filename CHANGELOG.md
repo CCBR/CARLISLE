@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+## CARLISLE 2.6.2
+
 - Documentation improvements. (#154, @kelly-sovacool)
 - If jobby & spooker are not available, try adding them to the path on workflow completion. (#155, @kelly-sovacool)
 - Fix bug that flipped library normalization scaling factor (#157, @epehrsson)
