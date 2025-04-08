@@ -11,7 +11,8 @@ on:
         required: false
         type: string
         default: ""
-
+permissions:
+  contents: write
 jobs:
   draft-release:
     runs-on: ubuntu-latest

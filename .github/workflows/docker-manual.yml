@@ -14,7 +14,8 @@ on:
         description: Push to DockerHub (uncheck to only build the container without pushing)
         required: true
         default: true
-
+permissions:
+  contents: read
 jobs:
   build-docker:
     runs-on: ubuntu-latest
