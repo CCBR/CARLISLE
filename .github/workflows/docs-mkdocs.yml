@@ -12,7 +12,9 @@ on:
       - "**.md"
       - .github/workflows/docs-mkdocs.yml
       - mkdocs.yml
-
+permissions:
+  contents: write
+  pages: write
 jobs:
   mkdocs:
     runs-on: ubuntu-latest
