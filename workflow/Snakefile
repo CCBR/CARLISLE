@@ -263,7 +263,7 @@ for cmd in spooker run_jobby_on_snakemake_log; do
     fi
 done
 run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
-spooker {WORKDIR} CARLISLE {config['version']}
+spooker {WORKDIR} {config['pipeline']} {config['version']}
 """
 
 onsuccess:
