@@ -2,23 +2,23 @@
 # Folders / Paths
 #####################################################################################
 # The working dir... output will be in the results subfolder of the workdir
-workdir: "WORKDIR"
+workdir: "$WORKDIR"
 
 # scripts directory
 # by default, use the scripts copied to the working directory.
 # alternatively, use the scripts from the pipeline source.
-scriptsdir: "WORKDIR/scripts"
-#scriptsdir: "PIPELINE_HOME/workflow/scripts"
+scriptsdir: "$WORKDIR/scripts"
+#scriptsdir: "$PIPELINE_HOME/workflow/scripts"
 
 # tab delimited samples file .. see samplefile for format details
-samplemanifest: "WORKDIR/config/samples.tsv"
+samplemanifest: "$WORKDIR/config/samples.tsv"
 
 #####################################################################################
 # User parameters
 #####################################################################################
 # run sample contrasts
 run_contrasts: true # true or false, no quotes
-contrasts: "WORKDIR/config/contrasts.tsv" # run_contrasts needs to be `true`
+contrasts: "$WORKDIR/config/contrasts.tsv" # run_contrasts needs to be `true`
 contrasts_fdr_cutoff: 0.05
 contrasts_lfc_cutoff: 0.59 # FC of 1.5
 
@@ -117,47 +117,47 @@ reference:
   hg38:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/hg38.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/genes.gtf"
-    blacklist: "PIPELINE_HOME/resources/blacklistbed/hg38.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg38.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
-    tss_bed: "PIPELINE_HOME/resources/tss_bed/hg38.tss.bed"
-    rose: "WORKDIR/annotation/hg38_refseq.ucsc"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg38.tss.bed"
+    rose: "$WORKDIR/annotation/hg38_refseq.ucsc"
   hg19:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/hg19.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/genes.gtf"
-    blacklist: "PIPELINE_HOME/resources/blacklistbed/hg19.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg19.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
-    tss_bed: "PIPELINE_HOME/resources/tss_bed/hg19.tss.bed"
-    rose: "WORKDIR/annotation/hg19_refseq.ucsc"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg19.tss.bed"
+    rose: "$WORKDIR/annotation/hg19_refseq.ucsc"
   mm10:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/genes.gtf"
-    blacklist: "PIPELINE_HOME/resources/blacklistbed/mm10.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/mm10.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
-    tss_bed: "PIPELINE_HOME/resources/tss_bed/mm10.tss.bed"
-    rose: "WORKDIR/annotation/mm10_refseq.ucsc"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/mm10.tss.bed"
+    rose: "$WORKDIR/annotation/mm10_refseq.ucsc"
   hs1:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/hs1.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
-    blacklist: "PIPELINE_HOME/resources/blacklistbed/hs1.bed"
-    tss_bed: "PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hs1.bed"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "3.1e+8"
-    rose: "WORKDIR/annotation/hs1_refseq.ucsc"
+    rose: "$WORKDIR/annotation/hs1_refseq.ucsc"
 # ref: https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html
 # used faCount from http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/ to get 3.1e+8 value above
 
 spikein_reference:
   ecoli:
-    fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
+    fa: "$PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
   saccharomyces:
-    fa: "PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
+    fa: "$PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
 
-adapters: "PIPELINE_HOME/resources/other/adapters.fa"
+adapters: "$PIPELINE_HOME/resources/other/adapters.fa"
 
 ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
 #####################################################################################
@@ -166,3 +166,7 @@ ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
   carlisle_r: "docker://nciccbr/carlisle_r:v2"
+  
+# Pipeline information
+pipeline_name: "CARLISLE"
+version: "$PIPELINE_VERSION"

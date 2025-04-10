@@ -1,9 +1,6 @@
 from os.path import join
-import itertoolsimport pathlib
+import itertools
 import pathlib
-
-with open(pathlib.Path(__file__).parent.parent / 'VERSION', 'r') as f:
-    VERSION = f.read().strip()
 
 def run_pipe_prep(wildcards):
     files=[]
@@ -266,7 +263,7 @@ for cmd in spooker run_jobby_on_snakemake_log; do
     fi
 done
 run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
-spooker {WORKDIR} CARLISLE {VERSION}
+spooker {WORKDIR} CARLISLE {config['version']}
 """
 
 onsuccess:
