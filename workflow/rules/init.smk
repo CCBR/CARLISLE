@@ -143,7 +143,7 @@ fpath=join(RESULTSDIR,"treatment_control_list.txt")
 originalDF = pd.DataFrame(TREAT_to_CONTRL_DICT.items()).rename(columns={0: 'key', 1: 'val'})
 split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
 finalDF = split_keysDF.join(originalDF['val'])
-finalDF.to_csv(fpath, '\t', header=False, index=False)
+finalDF.to_csv(fpath, sep='\t', header=False, index=False)
 
 # set treatment lists depending on whether controls were used for all peak callers
 # macs2 allows for with or without controls; all other callers require with controls
@@ -187,7 +187,7 @@ QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 # set contrast settings
 if config["run_contrasts"]:
     print("#"*100)
-    print("# Checking constrasts to run...")
+    print("# Checking contrasts to run...")
     contrasts_table = config["contrasts"]
     check_readaccess(contrasts_table)
     contrasts_df=pd.read_csv(contrasts_table,sep="\t",header=0)
