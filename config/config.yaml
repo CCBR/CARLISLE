@@ -90,7 +90,7 @@ macs2_control: "N"
 quality_thresholds: "0.05"
 
 ## MACS2, broad-peaks specific, quality threshold
-### if broadPeak is seleted as a 'peaktype', an additional quality threshold can be used
+### if broadPeak is selected as a 'peaktype', an additional quality threshold can be used
 macs2_broad_peak_threshold: "0.01"
 
 # annotations
@@ -109,7 +109,7 @@ geneset_id: "GOBP" # ["GOBP" "GOCC" "GOMF" "KEGG"]
 
 #####################################################################################
 # References
-# NOTE: "gtf" is only required if TxDb is not avaiable for the species in
+# NOTE: "gtf" is only required if TxDb is not available for the species in
 # Bioconductor eg. hs1
 #####################################################################################
 # references:
@@ -159,7 +159,7 @@ spikein_reference:
 
 adapters: "PIPELINE_HOME/resources/other/adapters.fa"
 
-tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
+ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
 #####################################################################################
 # CONTAINERS
 #####################################################################################
