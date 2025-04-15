@@ -30,7 +30,7 @@ ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv conf
 ESSENTIAL_FOLDERS="workflow/scripts annotation"
 
 # ## setting PIPELINE_HOME
-PIPELINE_HOME=$(readlink -f $(dirname "$0"))
+export PIPELINE_HOME=$(readlink -f $(dirname "$0"))
 echo "Pipeline Dir: $PIPELINE_HOME"
 # set snakefile
 SNAKEFILE="${PIPELINE_HOME}/workflow/Snakefile"
@@ -41,8 +41,9 @@ function get_version_from_path() {
   echo -ne $VERSION
 }
 
+export PIPELINE_VERSION=$(get_version_from_path $PIPELINE_HOME)
 function get_version (){
-echo "Version: $(get_version_from_path $PIPELINE_HOME)"
+echo "Version: $PIPELINE_VERSION"
 }
 
 function usage() {
@@ -92,13 +93,16 @@ function init() {
     err "Folder $WORKDIR already exists! If you'd like to re-initialize use the -f/--force flag $FORCEFLAG|"
   fi
   mkdir -p $WORKDIR
+  export WORKDIR
 
   # copy essential files
   if [[ ! -d $WORKDIR/config ]]; then mkdir $WORKDIR/config; fi
   for f in $ESSENTIAL_FILES; do
     echo "Copying essential file: $f"
     fbn=$(basename $f)
-    sed -e "s/PIPELINE_HOME/${PIPELINE_HOME//\//\\/}/g" -e "s/WORKDIR/${WORKDIR//\//\\/}/g" ${PIPELINE_HOME}/$f > $WORKDIR/config/$fbn
+    cat ${PIPELINE_HOME}/$f |\
+      envsubst '$PIPELINE_HOME $WORKDIR $PIPELINE_VERSION' \
+      > $WORKDIR/config/$fbn
   done
 
   # rename config dependent on partition used

@@ -1,5 +1,6 @@
 from os.path import join
 import itertools
+import pathlib
 
 def run_pipe_prep(wildcards):
     files=[]
@@ -258,11 +259,11 @@ rule all:
 on_complete = f"""
 for cmd in spooker run_jobby_on_snakemake_log; do
     if ! command -v $cmd 2>&1 >/dev/null; then
-        export PATH="$PATH:{config['tools_path']}"
+        export PATH="$PATH:{config['ccbr_tools_path']}"
     fi
 done
 run_jobby_on_snakemake_log logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
-spooker {WORKDIR} CARLISLE
+spooker {WORKDIR} {config['pipeline']} {config['version']}
 """
 
 onsuccess:
