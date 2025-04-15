@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   cleanup:
@@ -18,4 +20,3 @@ jobs:
       - uses: CCBR/actions/post-release@v0.1
         with:
           github-token: ${{ github.token }}
-          update-sliding-branch: false
