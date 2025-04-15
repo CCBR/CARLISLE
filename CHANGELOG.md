@@ -1,4 +1,4 @@
-## CARLISLE development version
+## CARLISLE 2.6.3
 
 - Minor documentation update to use readthedocs theme. (#162, @kelly-sovacool)
 - Fix deprecation warning during initialization. (#163, @kelly-sovacool)
