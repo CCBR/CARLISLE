@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+- Fix driver script: do not try to load the shared conda environment. (#166, @kelly-sovacool)
+
 ## CARLISLE 2.6.3
 
 - Minor documentation update to use readthedocs theme. (#162, @kelly-sovacool)
