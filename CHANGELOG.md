@@ -1,6 +1,7 @@
 ## CARLISLE development version
 
 - Fix driver script: do not try to load the shared conda environment. (#166, @kelly-sovacool)
+- Now depends on ccbr_tools v0.4 for updated jobby & spooker utilities. (#168, @kelly-sovacool)
 
 ## CARLISLE 2.6.3
 

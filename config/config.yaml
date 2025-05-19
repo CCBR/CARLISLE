@@ -170,3 +170,4 @@ containers:
 # Pipeline information
 pipeline: "CARLISLE"
 version: "$PIPELINE_VERSION"
+pipeline_home: "$PIPELINE_HOME"
