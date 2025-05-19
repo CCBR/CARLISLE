@@ -263,7 +263,12 @@ for cmd in spooker run_jobby_on_snakemake_log; do
     fi
 done
 jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
-spooker {WORKDIR} {config['pipeline']} {config['version']} {config['pipeline_home']} > logs/spooker.log 2>&1
+spooker \
+    --outdir {WORKDIR} \
+    --name {config['pipeline']} \
+    --version {config['version']} \
+    --path {config['pipeline_home']} \
+    > logs/spooker.log 2>&1
 """
 
 onsuccess:
