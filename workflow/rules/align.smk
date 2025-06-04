@@ -48,6 +48,8 @@ rule trim:
         --pair-filter=any \\
         --nextseq-trim=2 \\
         --trim-n \\
+        --poly-a \\
+        --compression-level 7 \\
         -n 5 -O 5 \\
         -q 10,10 \\
         -m 35:35 \\
