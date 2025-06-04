@@ -19,7 +19,7 @@ SCRIPTBASENAME=$(readlink -f $(basename $0))
 
 #define cluster, partitions dependent on host
 hostID=`echo $HOSTNAME`
-PARTITIONS="norm,ccr"
+PARTITIONS="norm"
 cluster_specific_yaml="cluster_biowulf.yaml"
 tools_specific_yaml="tools_biowulf.yaml"
 
@@ -294,6 +294,10 @@ function run() {
 
     preruncleanup
 
+    if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
+    
+    echo "Creating submit script for snakemake"
+
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name="CARLISLE"
@@ -333,8 +337,14 @@ function run() {
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
-    bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
 EOF
+    echo "Done creating submit script: ${WORKDIR}/submit_script.sbatch"
+    fi
+    # submit the job
+    echo "Submitting job to slurm scheduler"
+    echo "sbatch ${WORKDIR}/submit_script.sbatch"
+    echo "To check the status of the job, use: squeue -u $USER"
+    echo "To check the logs, use: tail -f ${WORKDIR}/logs/snakemake.log"
 
     sbatch ${WORKDIR}/submit_script.sbatch
 
