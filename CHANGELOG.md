@@ -1,6 +1,6 @@
 ## CARLISLE development version
 
-- hot fix 'ccr' partition issue (#175, @kopardev)
+- Remove deprecated 'ccr' partition. (#176, @kopardev)
 
 ## CARLISLE 2.7.0
 
