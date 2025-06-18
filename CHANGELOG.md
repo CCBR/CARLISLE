@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+- Remove deprecated 'ccr' partition. (#176, @kopardev)
+
 ## CARLISLE 2.7.0
 
 - Now depends on ccbr_tools v0.4 for updated jobby & spooker utilities. (#168, @kelly-sovacool)
