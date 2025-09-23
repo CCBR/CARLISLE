@@ -165,7 +165,7 @@ ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
 #####################################################################################
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
-  carlisle_r: "docker://nciccbr/carlisle_r:v2"
+  carlisle_r: "docker://nciccbr/carlisle_r:v3"
 
 # Pipeline information
 pipeline: "CARLISLE"
