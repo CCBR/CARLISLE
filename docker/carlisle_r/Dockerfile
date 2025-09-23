@@ -20,6 +20,9 @@ ENV R_LIBS_USER=/opt2/conda/lib/R/library/
 RUN wget --no-check-certificate https://bioconductor.riken.jp/packages/3.4/bioc/src/contrib/ELBOW_1.10.0.tar.gz && \
     R -e 'install.packages("ELBOW_1.10.0.tar.gz", repos = NULL, type="source", INSTALL_opts = "--no-lock")'
 
+# write R package versions
+RUN R -s -e "readr::write_tsv(tibble::as_tibble(installed.packages()), '/data2/r-packages.tsv')"
+
 # Save Dockerfile in the docker
 COPY Dockerfile /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
 RUN chmod a+r /opt2/Dockerfile_${REPONAME}.${BUILD_TAG}
