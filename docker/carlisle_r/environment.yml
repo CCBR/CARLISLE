@@ -15,6 +15,7 @@ dependencies:
   - bioconductor-org.Hs.eg.db
   - bioconductor-org.Mm.eg.db
   - bioconductor-rtracklayer
+  - biocondutor-txdbmaker
   - bioconductor-txdb.hsapiens.ucsc.hg19.knowngene
   - bioconductor-TxDb.Hsapiens.UCSC.hg38.knownGene
   - bioconductor-TxDb.Mmusculus.UCSC.mm10.knownGene
