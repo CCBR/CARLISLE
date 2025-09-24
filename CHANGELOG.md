@@ -1,6 +1,6 @@
 ## CARLISLE development version
 
-- Fix the DESeq rule: add the txdbmaker package to the container, which is required since BioC 3.19. (#187, @kelly-sovacool, @wong-nw)
+- Fix the DESeq rule when using the hs1 T2T genome. (#187, @kelly-sovacool, @wong-nw)
 
 ## CARLISLE 2.7.1
 
