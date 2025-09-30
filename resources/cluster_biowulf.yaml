@@ -7,8 +7,8 @@ __default__:
   time: 00-02:00:00
   threads: 2
   name: "{rule}.{wildcards}"
-  output: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.out"
-  error: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.err"
+  output: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.command.out"
+  error: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.command.err"
 ###################################################################
 align:
   mem: 200g
