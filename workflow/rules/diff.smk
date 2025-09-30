@@ -62,8 +62,8 @@ rule create_contrast_data_files:
         condition2=$(echo {params.contrast_list} | awk -F"_vs_" '{{print $2}}')
 
         # set replicates per condition
-        replicates1=$(awk -v condition="$condition1" '$2 == condition {print $1}' {input.replicate_tsv})
-        replicates2=$(awk -v condition="$condition2" '$2 == condition {print $1}' {input.replicate_tsv})
+        replicates1=$(awk -v condition="$condition1" '$2 == condition {{print $1}}' {input.replicate_tsv})
+        replicates2=$(awk -v condition="$condition2" '$2 == condition {{print $1}}' {input.replicate_tsv})
 
 
         # identify peak callers
