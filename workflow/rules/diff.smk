@@ -62,9 +62,9 @@ rule create_contrast_data_files:
         condition2=`echo {params.contrast_list} | awk -F"_vs_" '{{print $2}}'`
 
         # set replicates per condition
-        replicates1=`cat {input.replicate_tsv} | grep "${{condition1}}" | awk '{{print $1}}'`
-        replicates2=`cat {input.replicate_tsv} | grep "${{condition2}}" | awk '{{print $1}}'`
-
+        replicates1=$(awk -v condition="$condition1" '$2 == condition {{print $1}}' {input.replicate_tsv})
+        replicates2=$(awk -v condition="$condition2" '$2 == condition {{print $1}}' {input.replicate_tsv})
+        
         # identify peak callers
         peak_caller=`echo {params.peak_caller_type} | cut -d"_" -f1`
         peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2}}'`
