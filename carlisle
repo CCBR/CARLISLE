@@ -294,6 +294,7 @@ function run() {
 
     preruncleanup
 
+    if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name="CARLISLE"
@@ -335,6 +336,8 @@ function run() {
 
     bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
 EOF
+      echo "Created ${WORKDIR}/submit_script.sbatch"
+    fi
 
     sbatch ${WORKDIR}/submit_script.sbatch
 
