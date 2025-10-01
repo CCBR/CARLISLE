@@ -1,11 +1,10 @@
 #!/usr/bin/env Rscript
 suppressPackageStartupMessages(library("argparse"))
 
-# debug="TRUE"
+# debug=TRUE
 # path="~/CCBR/projects/ccbr1155/CS030586_CARAP/diff"
 
-debug <- "FALSE"
-path <- "/data/CCBR/projects/ccbr1155/CS030586_CARAP/diff"
+debug <- FALSE
 
 # create parser object
 parser <- ArgumentParser()
@@ -144,6 +143,9 @@ if (debug) {
   }
   species <- args$species
   gtf <- args$gtf
+  if (!file.exists(gtf)) {
+    stop(paste("GTF file does not exist:", gtf))
+  }
 }
 
 parameters <- list(
