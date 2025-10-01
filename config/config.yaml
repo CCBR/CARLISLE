@@ -158,13 +158,14 @@ spikein_reference:
 
 adapters: "$PIPELINE_HOME/resources/other/adapters.fa"
 
-ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.2/bin/"
+ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.4/bin/"
+
 #####################################################################################
 # CONTAINERS
 #####################################################################################
 containers:
-  base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v6"
-  carlisle_r: "docker://nciccbr/carlisle_r:v2"
+  base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v7"
+  carlisle_r: "docker://nciccbr/carlisle_r:v5"
 
 # Pipeline information
 pipeline: "CARLISLE"

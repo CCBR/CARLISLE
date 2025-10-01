@@ -65,7 +65,6 @@ rule create_contrast_data_files:
         replicates1=$(awk -v condition="$condition1" '$2 == condition {print $1}' {input.replicate_tsv})
         replicates2=$(awk -v condition="$condition2" '$2 == condition {print $1}' {input.replicate_tsv})
 
-
         # identify peak callers
         peak_caller=`echo {params.peak_caller_type} | cut -d"_" -f1`
         peak_type=`echo {params.peak_caller_type} | awk -F"_" '{{print $2}}'`
@@ -146,7 +145,8 @@ rule DESeq:
         contrast_data=rules.create_contrast_data_files.output.contrast_data,
         cm_auc=rules.make_counts_matrix.output.cm,
         cm_frag=rules.make_counts_matrix.output.fcm,
-        si=rules.make_counts_matrix.output.si
+        si=rules.make_counts_matrix.output.si,
+        gtf=config["reference"][config["genome"]]["gtf"]
     output:
         results_auc=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),
         html_auc=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffanalysis.html"),
@@ -166,8 +166,7 @@ rule DESeq:
         fdr_cutoff = FDRCUTOFF,
         log2fc_cutoff = LFCCUTOFF,
         spiked = NORM_METHOD,
-        species = config["genome"],
-        gtf=config["reference"][config["genome"]]["gtf"]
+        species = config["genome"]
     container: config['containers']['carlisle_r']
     shell:
         """
@@ -211,7 +210,7 @@ rule DESeq:
             --contrast_data {input.contrast_data} \\
             --tmpdir $TMPDIR_AUC \\
             --species {params.species} \\
-            --gtf {params.gtf}
+            --gtf {input.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
         sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_auc}
@@ -242,7 +241,7 @@ rule DESeq:
             --contrast_data {input.contrast_data} \\
             --tmpdir $TMPDIR_FRAG \\
             --species {params.species} \\
-            --gtf {params.gtf}
+            --gtf {input.gtf}
 
         # change elbow limits to provided log2fc if limit is set to .na.real
         sed -i "s/low_limit: .na.real/low_limit: -{params.log2fc_cutoff}/" {output.elbowlimits_frag}

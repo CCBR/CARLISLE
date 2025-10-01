@@ -257,18 +257,43 @@ rule all:
         unpack(get_enrichment)
 
 on_complete = f"""
-for cmd in spooker run_jobby_on_snakemake_log; do
+################################################################################################
+# OnComplete: Generate jobby table and run spooker
+################################################################################################
+set -exo pipefail
+for cmd in spooker jobby; do
     if ! command -v $cmd 2>&1 >/dev/null; then
         export PATH="$PATH:{config['ccbr_tools_path']}"
     fi
 done
-jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | cut -f2,3,18 > logs/snakemake.log.jobby.short
+cd {WORKDIR}
+jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
 spooker \
     --outdir {WORKDIR} \
     --name {config['pipeline']} \
     --version {config['version']} \
     --path {config['pipeline_home']} \
     > logs/spooker.log 2>&1
+
+# Check if files were created
+if [ -f logs/snakemake.log.jobby ]; then
+    echo "✅ logs/snakemake.log.jobby created."
+else
+    echo "❌ logs/snakemake.log.jobby NOT created."
+fi
+
+if [ -f logs/snakemake.log.jobby.short ]; then
+    echo "✅ logs/snakemake.log.jobby.short created."
+else
+    echo "❌ logs/snakemake.log.jobby.short NOT created."
+fi
+
+if [ -f logs/spooker.log ]; then
+    echo "✅ logs/spooker.log created."
+else
+    echo "❌ logs/spooker.log NOT created."
+fi
+################################################################################################   
 """
 
 onsuccess:
