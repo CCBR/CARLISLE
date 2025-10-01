@@ -110,8 +110,8 @@ rule align:
 rule filter:
     """
     Raw alignment BAMs are filtered for:
-    * duplicates only in spikein regions for no_dedup DUPSTATUS
-    * all duplicates removed for all regions for dedup DUPSTATUS
+    * no duplicates removed for no_dedup DUPSTATUS
+    * all linear duplicates (except spikein regions) removed for all regions for dedup DUPSTATUS
     * alignments which are not proper pairs are removed.
     * alignments with fragment length larger than "fragment_len_filter" from config.yaml are removed.
     """
@@ -149,22 +149,7 @@ rule filter:
             mkdir -p $TMPDIR
         fi
         if [[ "{params.dupstatus}" == "dedup" ]];then
-            mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
 
-            java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-            --INPUT {input.bam} \\
-            --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
-            --ASSUME_SORT_ORDER coordinate \\
-            --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
-            --CREATE_INDEX true \\
-            --METRICS_FILE {output.bam}.dupmetrics
-
-            python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.tmp1.bam \\
-            --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
-            --fragmentlength {params.fragment_len_filter} \\
-            --removemarkedduplicates
-
-        else
             # deduplicate only the spikeins
             genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $genome_regions | \\
@@ -174,23 +159,33 @@ rule filter:
             samtools view -@{threads} -b {input.bam} $spikein_regions | \\
                 samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam
 
-            mkdir -p ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp
-            java -Xmx{params.memg} -jar $PICARDJARPATH/picard.jar MarkDuplicates \\
-            --INPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam \\
-            --OUTPUT ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
-            --ASSUME_SORT_ORDER coordinate \\
-            --TMP_DIR ${{TMPDIR}}/{params.replicate}_{params.dupstatus}_picardtmp \\
-            --CREATE_INDEX true \\
-            --METRICS_FILE {output.bam}.spikeinonly.dupmetrics
+            samtools index ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam
+            samtools index ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam
 
-            python {params.pyscript} --inputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.tmp1.bam \\
-            --outputBAM ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam \\
-            --fragmentlength 1000000 --removemarkedduplicates
+            # remove linear duplicates from genome only
+            python {params.pyscript} --bam_in ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam \\
+            --bam_out ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.filtered.bam \\
+            --metrics_path ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.metrics.txt \\
+            --fraglen {params.fragment_len_filter} \\
+            --minmapq 20
+
+            # only filter spikein bam
+            python {params.pyscript} --bam_in ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.bam \\
+            --bam_out ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.filtered.bam \\
+            --metrics_path ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.metrics.txt \\
+            --fraglen {params.fragment_len_filter} \\
+            --minmapq 20 --no-linear-dedup          
 
             samtools merge -@{threads} -O BAM -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
-                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam \\
-                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.spikein.bam
-
+                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.filtered.bam \\
+                ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.spikein.filtered.bam
+        else
+            # no_dedup
+            python {params.pyscript} --bam_in {input.bam} \\
+            --bam_out ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam \\
+            --metrics_path ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.metrics.txt \\
+            --fraglen {params.fragment_len_filter} \\
+            --minmapq 20 --no-linear-dedup
         fi
 
         samtools sort -T ${{TMPDIR}} -@{threads} -o {output.bam} ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.filtered.bam

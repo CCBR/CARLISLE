@@ -27,7 +27,7 @@ run_go_enrichment: false
 run_rose: false
 
 # reference
-genome: "hg38" # currently supports hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
+genome: "hg38" # currently supports hs1 (T2T), hg38, hg19 and mm10. Custom genome can be added with appropriate additions to "reference" section below.
 
 # alignment quality threshold
 mapping_quality: 2 #only report alignment records with mapping quality of at least N (>= N).
@@ -46,12 +46,10 @@ bowtie2_parameters: "--dovetail --phred33  --very-sensitive"
 fragment_len_filter: "1000"
 
 # duplication status
-## users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup)
+## users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) later but run the pipeline with both!
 ### dupstatus: "dedup" # means run deduplicated analysis only
 ### dupstatus: "no_dedup" # means run non-deduplicated analysis only
-## complete list:
-### dupstatus: "dedup, no_dedup"
-dupstatus: "dedup, no_dedup"
+dupstatus: "dedup, no_dedup" # do not change this!
 
 # which peaktypes to consider for differential analysis:
 # | Peak Caller | Narrow              | Broad             | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
@@ -77,8 +75,9 @@ peaktype: "macs2_narrow, macs2_broad, seacr_stringent, seacr_relaxed, gopeaks_na
 
 ## macs2 additional option
 ### macs2 can be run with or without the control. adding a control will increase peak specificity
-### default is "N"; selecting "Y" will run the paired control sample provided in the sample manifest
-macs2_control: "N"
+### default is "Y"; selecting "Y" will run the paired control sample provided in the sample manifest
+### options: "Y" or "N"
+macs2_control: "Y"
 
 # qvalues
 ## thresholds to be used for peak callers
