@@ -257,12 +257,16 @@ rule all:
         unpack(get_enrichment)
 
 on_complete = f"""
+################################################################################################
+# OnComplete: Generate jobby table and run spooker
+################################################################################################
+set -exo pipefail
 for cmd in spooker jobby; do
     if ! command -v $cmd 2>&1 >/dev/null; then
         export PATH="$PATH:{config['ccbr_tools_path']}"
     fi
 done
-jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby |awk -F"\t" -v OFS="\t" '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short &&
+jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
 spooker \
     --outdir {WORKDIR} \
     --name {config['pipeline']} \
@@ -287,7 +291,8 @@ if [ -f logs/spooker.log ]; then
     echo "✅ logs/spooker.log created."
 else
     echo "❌ logs/spooker.log NOT created."
-fi   
+fi
+################################################################################################   
 """
 
 onsuccess:
