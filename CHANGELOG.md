@@ -1,5 +1,6 @@
 ## CARLISLE development version
 
+- Fix how singularity bind paths are set. (#187, @kelly-sovacool)
 - Fix the DESeq rule when using the hs1 T2T genome. (#187, @kelly-sovacool, @wong-nw)
 
 ## CARLISLE 2.7.1
