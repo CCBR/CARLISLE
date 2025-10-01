@@ -1,4 +1,4 @@
-FROM nciccbr/ccbr_ubuntu_base_20.04:v6
+FROM nciccbr/ccbr_ubuntu_base_20.04:v7
 
 # build time variables
 ARG BUILD_DATE="000000"
