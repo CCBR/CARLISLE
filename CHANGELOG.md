@@ -1,6 +1,7 @@
 ## CARLISLE development version
 
 - Fix incorrect jobby version (needs v0.4). (#194, @kelly-sovacool)
+- Fix jobby usage to output stdout/stderr to log file. (#196, @kopardev)
 
 ## CARLISLE 2.7.1
 
