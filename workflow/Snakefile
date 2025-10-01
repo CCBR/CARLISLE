@@ -262,7 +262,7 @@ for cmd in spooker jobby; do
         export PATH="$PATH:{config['ccbr_tools_path']}"
     fi
 done
-jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby |awk -F"\t" -v OFS="\t" '{print $2,$3,$18}' > logs/snakemake.log.jobby.short &&
+jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby |awk -F"\t" -v OFS="\t" '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short &&
 spooker \
     --outdir {WORKDIR} \
     --name {config['pipeline']} \
