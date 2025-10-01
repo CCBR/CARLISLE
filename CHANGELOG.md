@@ -4,6 +4,7 @@
 - Fix the DESeq rule when using the hs1 T2T genome. (#187, @kelly-sovacool, @wong-nw)
 - Fix incorrect jobby version (needs v0.4). (#194, @kelly-sovacool)
 - Fix jobby usage to output stdout/stderr to log file. (#196, @kopardev)
+- Fix numpy error. (#198, @kelly-sovacool)
 
 ## CARLISLE 2.7.1
 

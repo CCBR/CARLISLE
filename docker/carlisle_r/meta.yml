@@ -1,4 +1,4 @@
 dockerhub_namespace: nciccbr
 image_name: carlisle_r
-version: v4
+version: v5
 container: "$(dockerhub_namespace)/$(image_name):$(version)"
