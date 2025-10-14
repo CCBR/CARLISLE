@@ -1,31 +1,58 @@
 # Pipeline Tutorial
 
-Welcome to the CARLISLE Pipeline Tutorial!
+Welcome to the **CARLISLE Pipeline Tutorial!** This guide walks you through running the CARLISLE pipeline using the provided test dataset on the **[NIH Biowulf HPC](https://hpc.nih.gov/)** environment.
+
+---
 
 ## Getting Started
 
-Review the information on the [Getting Started](https://ccbr.github.io/CARLISLE/user-guide/getting-started/) for a complete overview the pipeline. The tutorial below will use test data available on NIH Biowulf HPC only. All example code will assume you are running v1.0 of the pipeline, using test data available on GitHub.
+Before beginning, review the [Getting Started Guide](https://ccbr.github.io/CARLISLE/user-guide/getting-started/) for installation, environment setup, and dependency loading instructions.
 
-A. Change working directory to your project directory
 
-B. Initialize Pipeline
+---
 
+### Step 1. Set Your Working Directory
+
+Navigate to your project directory on Biowulf:
+
+```bash
+cd /path/to/your/project/directory
 ```
+
+---
+
+### Step 2. Initialize the Pipeline
+
+Load the CARLISLE module and initialize your working directory:
+
+```bash
 module load ccbrpipeliner
 carlisle --runmode=init --workdir=/path/to/output/dir
 ```
 
-## Submit the test data
+This command copies the required configuration, manifest, and Snakefiles into your chosen output directory (`WORKDIR`). Initialization must be done before any other CARLISLE operation.
 
-Test data is included in the .test directory as well as the config directory.
+---
 
-A Run the test command to prepare the data, perform a dry-run and submit to the cluster
+## Submitting the Test Data
 
-```
+The test dataset provided with CARLISLE enables you to validate the installation and confirm correct execution. The test includes minimal FASTQ files, configurations, and manifests.
+
+### Step 3. Run the Test Command
+
+Execute the built-in test run to validate pipeline functionality:
+
+```bash
 carlisle --runmode=runtest --workdir=/path/to/output/dir
 ```
 
-- An expected output for the `runtest` is as follows:
+This command prepares the test data, performs a dry-run to validate workflow dependencies, and then submits the pipeline to the Biowulf SLURM cluster.
+
+---
+
+### Expected Output
+
+During a successful test run, you should see a job summary similar to the one below, detailing the number of tasks executed per Snakemake rule:
 
 ```
 Job stats:
@@ -60,6 +87,4 @@ trim                                    9             56             56
 total                                 478              1             56
 ```
 
-## Review outputs
-
-Review the expected outputs on the [Output](https://ccbr.github.io/CARLISLE/user-guide/output/) page. If there are errors, review and performing stesp described on the [Troubleshooting](https://ccbr.github.io/CARLISLE/user-guide/troubleshooting/) page as needed.
+> 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestratio
