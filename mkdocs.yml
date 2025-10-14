@@ -72,11 +72,11 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Usage:
-      - 1. Getting Started: user-guide/getting-started.md
-      - 2. Preparing Files: user-guide/preparing-files.md
-      - 3. Running the Pipeline: user-guide/run.md
-      - 4. Expected Output: user-guide/output.md
-      - 5. Running Test Data: user-guide/test-info.md
+      - Getting Started: user-guide/getting-started.md
+      - Preparing Files: user-guide/preparing-files.md
+      - Running the Pipeline: user-guide/run.md
+      - Expected Output: user-guide/output.md
+      - Running Test Data: user-guide/test-info.md
   - FAQ:
       - Troubleshooting: user-guide/troubleshooting.md
       - Contributions: user-guide/contributions.md
