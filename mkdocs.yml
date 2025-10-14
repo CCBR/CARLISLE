@@ -6,7 +6,7 @@ site_description: >-
 # Repository
 repo_name: CCBR/CARLISLE
 repo_url: https://github.com/CCBR/CARLISLE
-edit_uri: https://github.com/CCBR/CARLISLE/edit/main/docs/
+edit_uri: null
 
 # Copyright
 copyright: Copyright &copy; 2022-{{ now().year }} CCBR
