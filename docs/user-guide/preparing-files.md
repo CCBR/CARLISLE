@@ -1,186 +1,168 @@
 # Preparing Files
 
-The pipeline is controlled through editing configuration and manifest files. Defaults are found in the /WORKDIR/config and /WORKDIR/manifest directories, after initialization.
+The CARLISLE pipeline is configured and controlled through a set of editable configuration and manifest files. Upon initialization, default templates for these files are automatically generated under the `/WORKDIR/config` and `/WORKDIR/manifest` directories.
 
-## Configs
+> ⚙️ **Technical Note:** CARLISLE follows a Snakemake-driven workflow architecture where all configuration parameters are read dynamically at runtime. Users are encouraged to version-control configuration files (e.g., via Git) to ensure reproducibility across runs.
 
-The configuration files control parameters and software of the pipeline. These files are listed below:
+> 🚀 **Future Development:** While dependencies are currently module-loaded on the **[Biowulf HPC environment](https://hpc.nih.gov/)**, future releases will adopt containerization using **[Singularity/Apptainer](https://apptainer.org/)** and **[Docker](https://www.docker.com/)**. This shift will provide complete environment encapsulation, allowing consistent execution across HPC and cloud environments.
 
-- config/config.yaml
-- resources/cluster.yaml
-- resources/tools.yaml
+---
 
-### Cluster Config
+## Configuration Files
 
-The cluster configuration file dictates the resources to be used during submission to Biowulf HPC. There are two different ways to control these parameters - first, to control the default settings, and second, to create or edit individual rules. These parameters should be edited with caution, after significant testing.
+CARLISLE’s configuration system is modular and designed for both flexibility and transparency. The main configuration files include:
 
-### Tools Config
+* `config/config.yaml` – global pipeline settings and user parameters.
+* `resources/cluster.yaml` – cluster resource specifications for **[Biowulf](https://hpc.nih.gov/)** or other SLURM-based systems.
+* `resources/tools.yaml` – software versions, tool paths, and binary locations.
 
-The tools configuration file dictates the version of each software or program that is being used in the pipeline.
+### Cluster Configuration (`cluster.yaml`)
 
-### Config YAML
+The cluster configuration file defines computational resources such as memory, CPU cores, and runtime limits for each Snakemake rule. Parameters can be adjusted globally or per rule. Edits should be made with caution, as inappropriate resource settings may cause job failures or queuing delays.
 
-There are several groups of parameters that are editable for the user to control the various aspects of the pipeline. These are :
 
-- Folders and Paths
-  - These parameters will include the input and output files of the pipeline, as well as list all manifest names.
-- User parameters
-  - These parameters will control the pipeline features. These include thresholds and whether to perform processes.
-- References
-  - These parameters will control the location of index files, spike-in references, adaptors and species calling information.
+### Tools Configuration (`tools.yaml`)
 
-#### User Parameters
+This file specifies which versions of each tool are used during execution. When running on Biowulf, tools are automatically loaded from environment modules, ensuring consistency across users. Once CARLISLE transitions to containers, these version pins will map to container image tags instead of module versions, guaranteeing strict reproducibility.
 
-##### Spike in Controls
+### Primary Configuration (`config.yaml`)
 
-The pipeline allows for the use of a species specific spike-in control, or the use of normalization via library size. The parameter `spikein_genome` should be set to the species term used in `spikein_reference`.
+The main configuration file (`config.yaml`) contains parameters grouped into logical sections:
 
-For example for ecoli spike-in:
+* **Folders and Paths:** defines input/output directories and manifest file locations.
+* **User Parameters:** controls feature-level behavior (e.g., thresholds, normalization methods, peak calling options).
+* **References:** specifies genome assemblies, index paths, spike-in references, and species annotations.
 
-```
+> ⚠️ **Important:** Always verify that reference genome paths and spike-in references correspond to accessible Biowulf or shared filesystem locations.
+
+---
+
+## User Parameters
+
+### Spike-in Controls
+
+CARLISLE supports spike-in normalization using reference genomes such as *E. coli* or *Drosophila melanogaster*. The parameter `spikein_genome` defines the spike-in species, and `spikein_reference` provides the corresponding FASTA path.
+
+Example for *E. coli* spike-in:
+
+```yaml
 run_contrasts: true
 norm_method: "spikein"
 spikein_genome: "ecoli"
 spikein_reference:
   ecoli:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
-
 ```
 
-For example for drosophila spike-in:
+Example for *Drosophila* spike-in:
 
-```
+```yaml
 run_contrasts: true
 norm_method: "spikein"
 spikein_genome: "drosophila"
 spikein_reference:
   drosophila:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
-
 ```
 
-If it's determined that the amount of spike-in is not sufficient for the run, a library normaliaztion can be performed.
+If spike-ins are unavailable or insufficient, normalization can alternatively be performed based on library size. Recommended workflow:
 
-1. Complete a CARLISLE run with spike-in set to "Y". This will allow for the complete assessment of the spike-in.
-2. Run initial QC analysis on the output data
-3. Add the alignment_stats dir to the configuration file.
-4. Re-run the CARLISLE pipeline
+1. Run CARLISLE with `norm_method: spikein` for an initial QC assessment.
+2. Evaluate spike-in alignment statistics.
+3. Add `alignment_stats` to your configuration.
+4. Re-run CARLISLE using library-size normalization.
 
-##### Duplication Status
+### Duplication Status
 
-Users can select duplicated peaks (dedup) or non-deduplicated peaks (no_dedup) through the user parameter.
+Control deduplication behavior using the `dupstatus` parameter:
 
-```
+```yaml
 dupstatus: "dedup, no_dedup"
 ```
+> ✅ **Recommendation:** Keep this setting unchanged, let CARLISLIE run with dedup and no_dedup options and then choose which peakSets to use later.
 
-##### Peak Caller
+> 🧬 **Note:** Linear deduplication is essential for CUT&RUN and CUT&Tag datasets to avoid PCR bias and ensure accurate read quantification.
 
-Three peak callers are available for deployment within the pipeline, with different settings deployed for each caller.
+### Peak Callers
 
-1. [MACS2](https://github.com/macs3-project/MACS) is available with two peak calling options: narrowPeak or broadPeak. NOTE: DESeq step generally fails for broadPeak; generally has too many calls.
+CARLISLE supports three major peak callers, configurable via the `peaktype` parameter:
 
-```
-peaktype: "macs2_narrow, macs2_broad,"
-```
+1. **[MACS2](https://github.com/macs3-project/MACS)** – supports `narrowPeak` and `broadPeak` modes.
+2. **[SEACR](https://seacr.fredhutch.org/)** – supports stringent and relaxed thresholds, for both normalized and non-normalized datasets.
+3. **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)** – optimized for CUT&RUN and CUT&Tag data; recommended for most applications.
 
-2. [SEACR](https://github.com/FredHutch/SEACR) is available with four peak calling options: stringent or relaxed parameters, to be paired with "norm" for samples without a spike-in control and "non" for samples with a spikein control
+> ✅ **Recommendation:** Use GoPeaks for its superior signal detection in sparse chromatin accessibility datasets.
 
-```
-peaktype: "seacr_stringent, seacr_relaxed"
-```
+Example configuration:
 
-3. [GOPEAKS](https://github.com/maxsonBraunLab/gopeaks) is available with two peak calling options: narrowpeaks or broadpeaks
-
-```
-peaktype: "gopeaks_narrow, gopeaks_broad"
+```yaml
+peaktype: "macs2_narrow, gopeaks_narrow"
 ```
 
-A complete list of the available peak calling parameters and the recommended list of parameters is provided below:
+### MACS2 Control Option
 
-| Peak Caller | Narrow | Broad | Normalized, Stringent | Normalized, Relaxed | Non-Normalized, Stringent | Non-Normalized, Relaxed |
-| ----------- | ------ | ----- | --------------------- | ------------------- | ------------------------- | ----------------------- |
-| Macs2       | AVAIL  | AVAIL | NA                    | NA                  | NA                        | NA                      |
-| SEACR       | NA     | NA    | AVAIL w/o SPIKEIN     | AVAIL w/o SPIKEIN   | AVAIL w/ SPIKEIN          | AVAIL w/ SPIKEIN        |
-| GoPeaks     | AVAIL  | AVAIL | NA                    | NA                  | NA                        | NA                      |
+Enable control sample usage for MACS2 to improve specificity:
 
-```
-# Recommended list
-### peaktype: "macs2_narrow, macs2_broad, gopeaks_narrow, gopeaks_broad"
-
-# Available list
-### peaktype: "macs2_narrow, macs2_broad, seacr_norm_stringent, seacr_norm_relaxed, seacr_non_stringent, seacr_non_relaxed, gopeaks_narrow, gopeaks_broad"
+```yaml
+macs2_control: "Y"
 ```
 
-##### Macs2 additional option
+### Quality Thresholds
 
-MACS2 can be run with or without the control. adding a control will increase peak specificity
-Selecting "Y" for the `macs2_control` will run the paired control sample provided in the sample manifest
+Set peak-calling quality thresholds using the `quality_thresholds` parameter:
 
-##### Quality Tresholds
-
-Thresholds for quality can be controlled through the `quality_thresholds` parameter. This must be a list of comma separated values. minimum of numeric value required.
-
-- default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
-- default GOPEAKS pvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md
-- default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
-
-```
-#default values
+```yaml
 quality_thresholds: "0.1, 0.05, 0.01"
 ```
 
-#### References
+Refer to tool-specific defaults:
 
-Additional reference files may be added to the pipeline, if other species were to be used.
+* MACS2 q-value: [0.05](https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html)
+* GoPeaks p-value: [0.05](https://github.com/maxsonBraunLab/gopeaks#usage)
+* SEACR FDR threshold: [1.0](https://github.com/FredHutch/SEACR#usage)
 
-The absolute file paths which must be included are:
+---
 
-1. fa: "/path/to/species.fa"
-2. blacklist: "/path/to/blacklistbed/species.bed"
+## Reference Files
 
-The following information must be included:
+Additional reference genomes can be integrated by defining:
 
-1. regions: "list of regions to be included; IE chr1 chr2 chr3"
-2. macs2_g: "macs2 genome shorthand; IE mm IE hs"
+```yaml
+species_name:
+  fa: "/path/to/species.fa"
+  blacklist: "/path/to/blacklistbed/species.bed"
+  regions: "chr1 chr2 chr3"
+  macs2_g: "hs" # genome shorthand for MACS2
+```
+
+> 🧭 **Best Practice:** Store reference paths under a centralized `/fdb` or `/data` location on Biowulf to ensure accessibility and consistency across users.
+
+---
 
 ## Preparing Manifests
 
-There are two manifests, one which required for all pipelines and one that is only required if running a differential analysis. These files describe information on the samples and desired contrasts. The paths of these files are defined in the snakemake_config.yaml file. These files are:
+CARLISLE uses two manifests:
 
-- samplemanifest
-- contrasts
+* `samplemanifest` – required for all analyses.
+* `contrasts` – optional, required only for differential analysis with DESeq2.
 
-### Samples Manifest (REQUIRED)
+### Sample Manifest (Required)
 
-This manifest will include information to sample level information. It includes the following column headers:
+Defines sample-level metadata, including sample names, controls, and FASTQ paths.
 
-- sampleName: the sample name WITHOUT replicate number (IE "SAMPLE")
-- replicateNumber: the sample replicate number (IE "1")
-- isControl: whether the sample should be identified as a control (IE "Y")
-- controlName: the name of the control to use for this sample (IE "CONTROL")
-- controlReplicateNumber: the replicate number of the control to use for this sample (IE "1")
-- path_to_R1: the full path to R1 fastq file (IE "/path/to/sample1.R1.fastq")
-- path_to_R2: the full path to R1 fastq file (IE "/path/to/sample2.R2.fastq")
+| sampleName | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                   | path_to_R2                                   |
+| ---------- | --------------- | --------- | ------------------------------- | ---------------------- | -------------------------------------------- | -------------------------------------------- |
+| 53_H3K4me3 | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz | <path_to>/53_H3K4me3_1.R2.fastq.gz |
+| 54_H3K4me3 | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/54_H3K4me3_1.R1.fastq.gz | <path_to>/54_H3K4me3_1.R2.fastq.gz |
+| HN6_IgG_rabbit_negative_control | 1               | Y         |  |                      | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
 
-An example sampleManifest file is shown below:
 
-| sampleName                      | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                                        | path_to_R2                                                        |
-| ------------------------------- | --------------- | --------- | ------------------------------- | ---------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------- |
-| 53_H3K4me3                      | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | PIPELINE_HOME/.test/53_H3K4me3_1.R1.fastq.gz                      | PIPELINE_HOME/.test/53_H3K4me3_1.R2.fastq.gz                      |
-| 53_H3K4me3                      | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | PIPELINE_HOME/.test/53_H3K4me3_2.R1.fastq.gz                      | PIPELINE_HOME/.test/53_H3K4me3_2.R2.fastq.gz                      |
-| HN6_H3K4me3                     | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | PIPELINE_HOME/.test/HN6_H3K4me3_1.R1.fastq.gz                     | PIPELINE_HOME/.test/HN6_H3K4me3_1.R2.fastq.gz                     |
-| HN6_H3K4me3                     | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | PIPELINE_HOME/.test/HN6_H3K4me3_2.R1.fastq.gz                     | PIPELINE_HOME/.test/HN6_H3K4me3_2.R2.fastq.gz                     |
-| HN6_IgG_rabbit_negative_control | 1               | Y         | -                               | -                      | PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | PIPELINE_HOME/.test/HN6_IgG_rabbit_negative_control_1.R2.fastq.gz |
+### Contrast Manifest (Optional)
 
-### Contrast Manifest (OPTIONAL)
-
-This manifest will include sample information to performed differential comparisons.
-
-An example contrast file:
+Specifies conditions for differential analysis:
 
 | condition1              | condition2           |
 | ----------------------- | -------------------- |
 | MOC1_siSmyd3_2m_25_HCHO | MOC1_siNC_2m_25_HCHO |
 
-**Note**: you must have more than one sample per condition in order to perform differential analysis with DESeq2
+> 📊 **Requirement:** Each condition must have at least two biological replicates to perform DESeq2-based differential analysis.

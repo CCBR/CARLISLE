@@ -2,60 +2,90 @@
 
 ## Pipeline Overview
 
-The Snakemake workflow has a multiple options
+The **CARLISLE** pipeline operates as a modular **[Snakemake](https://snakemake.readthedocs.io/en/stable/)** workflow, designed to support flexible execution on both local and cluster environments. It offers several run modes that control initialization, execution, and management of analysis sessions.
 
-### Required arguments
+### Required Arguments
 
-```
+```bash
 Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 
-1.  RUNMODE: [Type: String] Valid options:
-    *) init : initialize workdir
-    *) run : run with slurm
-    *) reset : DELETE workdir dir and re-init it
-    *) dryrun : dry run snakemake to generate DAG
-    *) unlock : unlock workdir if locked by snakemake
-    *) runlocal : run without submitting to sbatch
-    *) runtest: run on cluster with included test dataset
-2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
+1. RUNMODE [string]:
+   init      – Initialize the working directory
+   run       – Submit jobs to the SLURM cluster (Biowulf)
+   reset     – Delete and reinitialize the working directory
+   dryrun    – Validate and preview the workflow (no jobs executed)
+   unlock    – Unlock the working directory after an aborted run
+   runlocal  – Execute the pipeline interactively on a local node
+   runtest   – Run the included test dataset on the cluster
+
+2. WORKDIR [string]:
+   Absolute or relative path to the desired output directory with write permissions.
 ```
 
-### Optional arguments
+### Optional Arguments
 
---help|-h : print this help.
---version|-v : print the version of carlisle.
---force|-f : use the force flag for snakemake to force all rules to run.
---singcache|-c : singularity cache directory. Default is `/data/${USER}/.singularity` if available, or falls back to `${WORKDIR}/.singularity`. Use this flag to specify a different singularity cache directory.
+| Flag              | Description                                                                                                                             |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `--help, -h`      | Display the command-line help message.                                                                                                  |
+| `--version, -v`   | Print the current version of CARLISLE.                                                                                                  |
+| `--force, -f`     | Force re-execution of all Snakemake rules (overrides cache).                                                                            |
+| `--singcache, -c` | Define a custom **Singularity cache directory**. Defaults to `/data/${USER}/.singularity`, or `${WORKDIR}/.singularity` if unavailable. |
 
-## Commands explained
+---
 
-The following explains each of the command options:
+## Command Descriptions
 
-- Preparation Commands
-  - init (REQUIRED): This must be performed before any Snakemake run (dry, local, cluster) can be performed. This will copy the necessary config, manifest and Snakefiles needed to run the pipeline to the provided output directory.
-    - the -f/--force flag can be used in order to re-initialize a workdir that has already been created
-  - dryrun (OPTIONAL): This is an optional step, to be performed before any Snakemake run (local, cluster). This will check for errors within the pipeline, and ensure that you have read/write access to the files needed to run the full pipeline.
-- Processing Commands
-  - local: This will run the pipeline on a local node. NOTE: This should only be performed on an interactive node.
-  - run: This will submit a master job to the cluster, and subsequent sub-jobs as needed to complete the workflow. An email will be sent when the pipeline begins, if there are any errors, and when it completes.
-- Other Commands (All optional)
-  - unlock: This will unlock the pipeline if an error caused it to stop in the middle of a run.
-  - runtest: This will run a test of the pipeline with test data
+### 🧩 Preparation Commands
 
-To run any of these commands, follow the the syntax:
+* **`init` (required)** – Initializes the working directory by copying configuration, manifest, and Snakefiles into place. This step must be performed before any other pipeline action.
 
+  * Use the `-f` or `--force` flag to reinitialize an existing directory.
+
+* **`dryrun` (optional)** – Performs a non-executing validation of the Snakemake DAG, checking for syntax issues, missing files, or permission problems before a full run.
+
+### ⚙️ Processing Commands
+
+* **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`).
+
+* **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion.
+
+### 🧰 Maintenance Commands
+
+* **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted.
+
+* **`runtest`** – Executes a small, bundled test dataset to verify installation and configuration integrity.
+
+---
+
+## Usage Syntax
+
+All commands follow a consistent syntax:
+
+```bash
+carlisle --runmode=<COMMAND> --workdir=/path/to/output/dir
 ```
-carlisle --runmode=COMMAND --workdir=/path/to/output/dir
+
+For example:
+
+```bash
+carlisle --runmode=init --workdir=/data/$USER/project
 ```
 
-## Typical Workflow
+---
 
-A typical command workflow, running on the cluster, is as follows:
+## Typical Workflow Example
 
-```
+A standard execution sequence on the Biowulf cluster would include the following steps:
+
+```bash
+# Step 1: Initialize working directory
 carlisle --runmode=init --workdir=/path/to/output/dir
 
+# Step 2: Perform a dry run to validate the workflow
 carlisle --runmode=dryrun --workdir=/path/to/output/dir
 
+# Step 3: Submit the full workflow to the cluster
 carlisle --runmode=run --workdir=/path/to/output/dir
 ```
+
+> ✅ **Recommendation:** Always perform a dry run before full execution to verify file paths, environment modules, and configuration correctness.
