@@ -1,112 +1,40 @@
-<!DOCTYPE html><html class=writer-html5 lang=en> <head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width, initial-scale=1.0"><meta name=author content=CCBR><link rel="shortcut icon" href=../../img/favicon.ico><title>4. Expected Output - CARLISLE</title><link rel=stylesheet href=../../css/theme.css><link rel=stylesheet href=../../css/theme_extra.css><link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css><link href=../../css/custom.css rel=stylesheet><link href=../../css/version-select.css rel=stylesheet><script>
+<!DOCTYPE html><html class=writer-html5 lang=en> <head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width, initial-scale=1.0"><meta name=author content=CCBR><link rel="shortcut icon" href=../../img/favicon.ico><title>Expected Output - CARLISLE</title><link rel=stylesheet href=../../css/theme.css><link rel=stylesheet href=../../css/theme_extra.css><link rel=stylesheet href=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css><link href=../../css/custom.css rel=stylesheet><link href=../../css/version-select.css rel=stylesheet><script>
         // Current page data
-        var mkdocs_page_name = "4. Expected Output";
+        var mkdocs_page_name = "Expected Output";
         var mkdocs_page_input_path = "user-guide/output.md";
         var mkdocs_page_url = null;
       </script><!--[if lt IE 9]>
       <script src="../../js/html5shiv.min.js"></script>
-    <![endif]--><script src=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js></script><script>hljs.highlightAll();</script></head> <body class=wy-body-for-nav role=document> <div class=wy-grid-for-nav> <nav data-toggle=wy-nav-shift class="wy-nav-side stickynav"> <div class=wy-side-scroll> <div class=wy-side-nav-search> <a href=../.. class="icon icon-home"> CARLISLE </a><div role=search> <form id=rtd-search-form class=wy-form action=../../search.html method=get> <input type=text name=q placeholder="Search docs" aria-label="Search docs" title="Type search term here"> </form> </div> </div> <div class="wy-menu wy-menu-vertical" data-spy=affix role=navigation aria-label="Navigation menu"> <ul> <li class=toctree-l1><a class="reference internal" href=../..>Home</a> </li> </ul> <p class=caption><span class=caption-text>Usage</span></p> <ul class=current> <li class=toctree-l1><a href=../getting-started/ class="reference internal">1. Getting Started</a> </li> <li class=toctree-l1><a href=../preparing-files/ class="reference internal">2. Preparing Files</a> </li> <li class=toctree-l1><a href=../run/ class="reference internal">3. Running the Pipeline</a> </li> <li class="toctree-l1 current"><a class="reference internal current" href=#>4. Expected Output</a> <ul class=current> </ul> </li> <li class=toctree-l1><a href=../test-info/ class="reference internal">5. Running Test Data</a> </li> </ul> <p class=caption><span class=caption-text>FAQ</span></p> <ul> <li class=toctree-l1><a href=../troubleshooting/ class="reference internal">Troubleshooting</a> </li> <li class=toctree-l1><a href=../contributions/ class="reference internal">Contributions</a> </li> </ul> </div> </div> </nav> <section data-toggle=wy-nav-shift class=wy-nav-content-wrap> <nav class=wy-nav-top role=navigation aria-label="Mobile navigation menu"> <i data-toggle=wy-nav-top class="fa fa-bars"></i> <a href=../..>CARLISLE</a> </nav> <div class=wy-nav-content> <div class=rst-content><div role=navigation aria-label="breadcrumbs navigation"> <ul class=wy-breadcrumbs> <li><a href=../.. class="icon icon-home" aria-label=Docs></a></li> <li class=breadcrumb-item>Usage</li> <li class="breadcrumb-item active">4. Expected Output</li> <li class=wy-breadcrumbs-aside> <a href=https://github.com/CCBR/CARLISLE/edit/main/docs/user-guide/output.md>Edit on CCBR/CARLISLE</a> </li> </ul> <hr> </div> <div role=main class=document itemscope=itemscope itemtype=http://schema.org/Article> <div class=section itemprop=articleBody> <h1 id=expected-outputs>Expected Outputs<a class=headerlink href=#expected-outputs title="Permanent link">&para;</a></h1> <p>The following directories are created under the WORKDIR/results directory:</p> <ul> <li>alignment_stats: this directory include information on the alignment of each sample</li> <li>bam: this directory includes BAM files, statistics on samples, statistics on spike-in controls for each sample</li> <li>bedgraph: this directory includes BEDGRAPH files and statistic summaries for each sample</li> <li>bigwig: this directory includes the bigwig files for each sample</li> <li>peaks: this directory contains a sub-directory that relates to the quality threshold used.</li> <li>quality threshold<ul> <li>contrasts: this directory includes the contrasts for each line listed in the contrast manifest</li> <li>peak_caller: this directory includes all peak calls from each peak_caller (SEACR, MACS2, GOPEAKS) for each sample</li> <li>annotation<ul> <li>go_enrichment: this directory includes gene set enrichment pathway predictions when <code>run_go_enrichment</code> is set to <code>true</code> in the config file.</li> <li>homer: this directory includes the annotation output from HOMER</li> <li>rose: this directory includes the annotation output from ROSE when <code>run_rose</code> is set to <code>true</code> in the config file.</li> </ul> </li> </ul> </li> <li>qc: this directory includes MULTIQC reports and spike-in control reports (when applicable)</li> </ul> <div class=highlight><pre><span></span><code>├── alignment_stats
-├── bam
-├── bedgraph
-├── bigwig
-├── fragments
-├── peaks
-│   ├── 0.05
-│   │   ├── contrasts
-│   │   │   ├── contrast_id1.dedup_status
-│   │   │   └── contrast_id2.dedup_status
-│   │   ├── gopeaks
-│   │   │   ├── annotation
-│   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
-│   │   │   │   ├── homer
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.gopeaks_broad.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.gopeaks_narrow.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.gopeaks_broad.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.gopeaks_narrow.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   └── rose
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.gopeaks_broad.12500
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.gopeaks_narrow.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.dedup.gopeaks_broad.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.dedup.gopeaks_narrow.12500
-│   │   │   └── peak_output
-│   │   ├── macs2
-│   │   │   ├── annotation
-│   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
-│   │   │   │   ├── homer
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.macs2_narrow.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.macs2_broad.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.macs2_narrow.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.macs2_broad.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   └── rose
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.macs2_broad.12500
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.macs2_narrow.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.macs2_broad.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.macs2_narrow.12500
-│   │   │   └── peak_output
-│   │   └── seacr
-│   │   │   ├── annotation
-│   │   │   │   ├── go_enrichment
-│   │   │   │   │   ├── contrast_id1.dedup_status.go_enrichment_tables
-│   │   │   │   │   └── contrast_id2.dedup_status.go_enrichment_html_report
-│   │   │   │   ├── homer
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.seacr_non_relaxed.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.seacr_non_stringent.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.seacr_norm_relaxed.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id1_vs_control_id.dedup_status.seacr_norm_stringent.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.seacr_non_relaxed.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.seacr_non_stringent.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.seacr_norm_relaxed.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   │   ├── replicate_id2_vs_control_id.dedup_status.seacr_norm_stringent.motifs
-│   │   │   │   │   │   ├── homerResults
-│   │   │   │   │   │   └── knownResults
-│   │   │   │   └── rose
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.seacr_non_relaxed.12500
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.seacr_non_stringent.12500
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.seacr_norm_relaxed.12500
-│   │   │   │       ├── replicate_id1_vs_control_id.dedup_status.seacr_norm_stringent.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.seacr_non_relaxed.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.seacr_non_stringent.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.seacr_norm_relaxed.12500
-│   │   │   │       ├── replicate_id2_vs_control_id.dedup_status.seacr_norm_stringent.12500
-│   │       └── peak_output
-└── qc
-    ├── fastqc_raw
-    └── fqscreen_raw
-</code></pre></div> </div> </div><script async src="https://www.googletagmanager.com/gtag/js?id=G-D3SL9V30KL"></script> <script>
+    <![endif]--><script src=https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js></script><script>hljs.highlightAll();</script></head> <body class=wy-body-for-nav role=document> <div class=wy-grid-for-nav> <nav data-toggle=wy-nav-shift class="wy-nav-side stickynav"> <div class=wy-side-scroll> <div class=wy-side-nav-search> <a href=../.. class="icon icon-home"> CARLISLE </a><div role=search> <form id=rtd-search-form class=wy-form action=../../search.html method=get> <input type=text name=q placeholder="Search docs" aria-label="Search docs" title="Type search term here"> </form> </div> </div> <div class="wy-menu wy-menu-vertical" data-spy=affix role=navigation aria-label="Navigation menu"> <ul> <li class=toctree-l1><a class="reference internal" href=../..>Home</a> </li> </ul> <p class=caption><span class=caption-text>Usage</span></p> <ul class=current> <li class=toctree-l1><a href=../getting-started/ class="reference internal">Getting Started</a> </li> <li class=toctree-l1><a href=../preparing-files/ class="reference internal">Preparing Files</a> </li> <li class=toctree-l1><a href=../run/ class="reference internal">Running the Pipeline</a> </li> <li class="toctree-l1 current"><a class="reference internal current" href=#>Expected Output</a> <ul class=current> <li class=toctree-l2><a class="reference internal" href=#directory-overview>Directory Overview</a> </li> <li class=toctree-l2><a class="reference internal" href=#example-directory-layout>Example Directory Layout</a> </li> </ul> </li> <li class=toctree-l1><a href=../test-info/ class="reference internal">Running Test Data</a> </li> </ul> <p class=caption><span class=caption-text>FAQ</span></p> <ul> <li class=toctree-l1><a href=../troubleshooting/ class="reference internal">Troubleshooting</a> </li> <li class=toctree-l1><a href=../contributions/ class="reference internal">Contributions</a> </li> </ul> </div> </div> </nav> <section data-toggle=wy-nav-shift class=wy-nav-content-wrap> <nav class=wy-nav-top role=navigation aria-label="Mobile navigation menu"> <i data-toggle=wy-nav-top class="fa fa-bars"></i> <a href=../..>CARLISLE</a> </nav> <div class=wy-nav-content> <div class=rst-content><div role=navigation aria-label="breadcrumbs navigation"> <ul class=wy-breadcrumbs> <li><a href=../.. class="icon icon-home" aria-label=Docs></a></li> <li class=breadcrumb-item>Usage</li> <li class="breadcrumb-item active">Expected Output</li> <li class=wy-breadcrumbs-aside> <a href=https://github.com/CCBR/CARLISLE/edit/master/docs/user-guide/output.md>Edit on CCBR/CARLISLE</a> </li> </ul> <hr> </div> <div role=main class=document itemscope=itemscope itemtype=http://schema.org/Article> <div class=section itemprop=articleBody> <h1 id=expected-outputs>Expected Outputs<a class=headerlink href=#expected-outputs title="Permanent link">&para;</a></h1> <p>Upon successful completion, CARLISLE generates a comprehensive directory structure under <code>WORKDIR/results</code>. Each subdirectory contains outputs corresponding to specific stages of the workflow — from raw alignment statistics to annotated peak results and quality control summaries.</p> <hr> <h2 id=directory-overview>Directory Overview<a class=headerlink href=#directory-overview title="Permanent link">&para;</a></h2> <ul> <li> <p><strong><code>alignment_stats/</code></strong> – Contains detailed alignment reports for each sample, including mapping efficiency, read depth, and spike-in alignment metrics.</p> </li> <li> <p><strong><code>bam/</code></strong> – Stores sorted and indexed <strong>BAM</strong> files for all samples. This directory also includes per-sample and spike-in alignment statistics useful for downstream normalization and QC.</p> </li> <li> <p><strong><code>bedgraph/</code></strong> – Includes <strong>BEDGRAPH</strong> coverage tracks summarizing read density across the genome. These files serve as intermediates for visualization and peak-calling validation.</p> </li> <li> <p><strong><code>bigwig/</code></strong> – Contains <strong>BigWig</strong> files generated from normalized coverage data, suitable for visualization in genome browsers such as <strong><a href=https://genome.ucsc.edu/ >UCSC Genome Browser</a></strong> or <strong><a href=https://igv.org/ >IGV</a></strong>.</p> </li> <li> <p><strong><code>fragments/</code></strong> – Stores fragment length distributions and deduplicated fragment data (particularly important for <strong>CUT&amp;RUN</strong> and <strong>CUT&amp;Tag</strong> experiments). Useful for assessing fragment size enrichment and MNase digestion efficiency.</p> </li> <li> <p><strong><code>peaks/</code></strong> – The core results directory containing called peaks, differential comparisons, and annotations.</p> </li> <li> <p>Subdirectories are organized by <strong>quality thresholds</strong> (e.g., <code>0.05</code>, <code>0.01</code>), representing the significance cutoffs applied during peak calling.</p> </li> <li> <p>Each quality threshold directory includes:</p> <ul> <li><strong><code>contrasts/</code></strong> – Contains results of differential binding analyses defined in the contrast manifest.</li> <li> <p><strong><code>&lt;peak_caller&gt;/</code></strong> – Subdirectories for each peak caller (e.g., <code>macs2</code>, <code>seacr</code>, <code>gopeaks</code>). Each includes raw peak calls and annotated results.</p> </li> <li> <p><strong><code>annotation/</code></strong> – Contains enriched feature and pathway analyses:</p> <ul> <li><strong><code>go_enrichment/</code></strong> – Results from <strong><a href=https://chipenrich.med.umich.edu/ >ChIP-Enrich</a></strong> gene set enrichment, generated when <code>run_go_enrichment: true</code> is enabled.</li> <li><strong><code>homer/</code></strong> – Output from <strong><a href=http://homer.ucsd.edu/homer/ >HOMER</a></strong> motif discovery and annotation.</li> <li><strong><code>rose/</code></strong> – Output from <strong><a href=https://bitbucket.org/young_computation/rose/src/master/ >ROSE</a></strong> super-enhancer analysis, generated when <code>run_rose: true</code> is specified.</li> </ul> </li> </ul> </li> <li> <p><strong><code>qc/</code></strong> – Centralized quality control directory containing comprehensive <strong><a href=https://multiqc.info/ >MultiQC</a></strong> summaries, <strong>FastQC</strong> metrics, and spike-in normalization reports (when applicable).</p> </li> </ul> <hr> <h2 id=example-directory-layout>Example Directory Layout<a class=headerlink href=#example-directory-layout title="Permanent link">&para;</a></h2> <p>Below is an example of the CARLISLE output structure for a typical CUT&amp;RUN experiment:</p> <div class=highlight><pre><span></span><code>results/
+├── alignment_stats/
+├── bam/
+├── bedgraph/
+├── bigwig/
+├── fragments/
+├── peaks/
+│   ├── 0.05/
+│   │   ├── contrasts/
+│   │   ├── gopeaks/
+│   │   │   ├── annotation/
+│   │   │   │   ├── go_enrichment/
+│   │   │   │   ├── homer/
+│   │   │   │   └── rose/
+│   │   ├── macs2/
+│   │   │   ├── annotation/
+│   │   │   │   ├── go_enrichment/
+│   │   │   │   ├── homer/
+│   │   │   │   └── rose/
+│   │   └── seacr/
+│   │       ├── annotation/
+│   │       │   ├── go_enrichment/
+│   │       │   ├── homer/
+│   │       │   └── rose/
+│   └── 0.01/
+│       └── ...
+└── qc/
+    ├── fastqc_raw/
+    └── fqscreen_raw/
+</code></pre></div> <hr> <blockquote> <p>🧭 <strong>Tip:</strong> The structure is intentionally hierarchical, enabling automated report generation and simplifying downstream integration with visualization tools and statistical frameworks.</p> </blockquote> </div> </div><script async src="https://www.googletagmanager.com/gtag/js?id=G-D3SL9V30KL"></script> <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
