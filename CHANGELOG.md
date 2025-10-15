@@ -5,6 +5,10 @@
 - Fix incorrect jobby version (needs v0.4). (#194, @kelly-sovacool)
 - Fix jobby usage to output stdout/stderr to log file. (#196, @kopardev)
 - Fix numpy error. (#198, @kelly-sovacool)
+- Fix logic error with scaling factor calcutions. (#195, @kopardev)
+- Run MACS2 with control by default. (#195, @kopardev)
+- Make sure `submit_slurm.sbatch` is not overwritten. (#195, @kopardev)
+- Handle case when sample names are subsets of each other. (#195, @kopardev)
 
 ## CARLISLE 2.7.1
 
