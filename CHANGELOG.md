@@ -1,5 +1,17 @@
 ## CARLISLE development version
 
+## CARLISLE 2.7.2
+
+- Fix how singularity bind paths are set. (#187, @kelly-sovacool)
+- Fix the DESeq rule when using the hs1 T2T genome. (#187, @kelly-sovacool, @wong-nw)
+- Fix incorrect jobby version (needs v0.4). (#194, @kelly-sovacool)
+- Fix jobby usage to output stdout/stderr to log file. (#196, @kopardev)
+- Fix numpy error. (#198, @kelly-sovacool)
+- Fix logic error with scaling factor calcutions. (#195, @kopardev)
+- Run MACS2 with control by default. (#195, @kopardev)
+- Make sure `submit_slurm.sbatch` is not overwritten. (#195, @kopardev)
+- Handle case when sample names are subsets of each other. (#195, @kopardev)
+
 ## CARLISLE 2.7.1
 
 - Remove deprecated 'ccr' partition. (#176, @kopardev)

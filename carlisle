@@ -143,10 +143,11 @@ function check_essential_files() {
 }
 
 function set_singularity_binds(){
-  # TODO set based on detected HPC
-  BINDS="/lscratch"
+  # TODO set extra binds based on detected HPC - see CHARLIE for implementation
+  EXTRA_SINGULARITY_BINDS="/lscratch"
 
-  SINGULARITY_BINDS=" -B $BINDS,$WORKDIR "
+  binds=$( $PIPELINE_HOME/workflow/scripts/set_singularity_bind_paths.py ${WORKDIR}/config/config.yaml ${WORKDIR}/config/samples.tsv)
+  SINGULARITY_BINDS="-B $EXTRA_SINGULARITY_BINDS,$binds"
 }
 
 function rescript(){
@@ -294,6 +295,7 @@ function run() {
 
     preruncleanup
 
+    if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name="CARLISLE"
@@ -335,6 +337,8 @@ function run() {
 
     bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
 EOF
+      echo "Created ${WORKDIR}/submit_script.sbatch"
+    fi
 
     sbatch ${WORKDIR}/submit_script.sbatch
 
