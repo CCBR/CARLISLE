@@ -1,26 +1,28 @@
 def get_peak_file(wildcards):
     # MACS2 OPTIONS
     if wildcards.peak_caller_type == "macs2_narrow":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output", wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.summits.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.control_mode, wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
     if wildcards.peak_caller_type == "macs2_broad":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"macs2","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
 
     # SEACR OPTIONS
     if wildcards.peak_caller_type =="seacr_stringent":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".stringent.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".stringent.peaks.bed")
     if wildcards.peak_caller_type =="seacr_relaxed":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".relaxed.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"seacr","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".relaxed.peaks.bed")
 
     #GOPEAKS OPTIONS
     if wildcards.peak_caller_type =="gopeaks_narrow":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".narrow.peaks.bed")
     if wildcards.peak_caller_type =="gopeaks_broad":
-        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
+        bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
 
-localrules: create_contrast_peakcaller_files, homer_enrich, combine_homer
-rule findMotif:
+localrules: create_contrast_peakcaller_files, homer_annotations, combine_homer
+rule homer_motif:
     """
+    HOMER peak annotation and motif discovery
+    
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
 
     Notes on using alternative genomes now in config
@@ -30,55 +32,298 @@ rule findMotif:
     input:
         peak_file=get_peak_file,
     output:
-        annotation=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
-        annotation_summary=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary"),
-        known_html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
-    threads: getthreads("findMotif")
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        annotation_summary=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.summary"),
+        known_html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","background.fa"),
+    threads: getthreads("homer_motif")
     envmodules:
         TOOLS["homer"],
     params:
         genome = config["genome"],
         fa=config["reference"][config["genome"]]["fa"],
         gtf = config["reference"][config["genome"]]["gtf"],
-        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
         motif_size = config["motif_size"],
-        preparsedDir = config["preparsedDir"],
+        hocomoco_motif = config["hocomoco_motifs"]
     shell:
         """
-        # run homer
-        if [[ {params.genome} == "hs1" ]]; then
-            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+        set -euo pipefail
+        
+        echo "=========================================="
+        echo "DEBUG: Starting HOMER motif analysis"
+        echo "DEBUG: Peak file: {input.peak_file}"
+        echo "DEBUG: Genome: {params.genome}"
+        echo "DEBUG: Output directory: {params.outDir}"
+        echo "DEBUG: Threads: {threads}"
+        echo "=========================================="
+        
+        # Check if peak file is empty or has no peaks
+        num_peaks=$(wc -l < {input.peak_file} || echo 0)
+        echo "DEBUG: Number of peaks detected: $num_peaks"
+        
+        if [[ $num_peaks -lt 5 ]]; then
+            echo "WARNING: Only $num_peaks peaks found in {input.peak_file}"
+            echo "INFO: Skipping HOMER analysis and creating empty output files"
+            
+            # Create empty annotation files
+            echo "# No peaks found for HOMER annotation" > {output.annotation}
+            echo -e "Annotation\\tDistance to TSS\\tNumber of Peaks\\t% of Peaks\\tTotal size (bp)\\tLog10 p-value\\tLog2 Ratio (vs. Genome)\\tLogP enrichment (+values depleted)" > {output.annotation_summary}
+            
+            # Create minimal motif output directory and files
+            mkdir -p {params.outDir}
+            echo "<html><body><h1>No peaks available for motif analysis</h1><p>Peak file contained fewer than 5 peaks.</p></body></html>" > {output.known_html}
+            touch {output.target_fasta}
+            touch {output.background_fasta}
+            echo "DEBUG: Empty output files created successfully"
         else
-            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
-        fi
+            echo "INFO: Found $num_peaks peaks, proceeding with HOMER analysis..."
+            
+            # ============================================
+            # STEP 1: HOMER Peak Annotation
+            # ============================================
+            echo "DEBUG: STEP 1 - Running HOMER peak annotation"
+            if [[ {params.genome} == "hs1" ]]; then
+                echo "DEBUG: Using hs1 genome with custom FA and GTF"
+                echo "DEBUG: FA file: {params.fa}"
+                echo "DEBUG: GTF file: {params.gtf}"
+                annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+            else
+                echo "DEBUG: Using standard genome: {params.genome}"
+                annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+            fi
+            echo "DEBUG: HOMER annotation completed"
+            echo "DEBUG: Annotation file: {output.annotation}"
+            echo "DEBUG: Annotation summary: {output.annotation_summary}"
 
-        # hs1 is not part of HOMER's config genome db. Must add it as a separate param
-        if [[ {params.genome} == "hs1" ]]; then
-            findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
-        else
-            findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} -size {params.motif_size} -p {threads} -preparsedDir {params.preparsedDir}
+            # ============================================
+            # STEP 2: HOMER Motif Discovery
+            # ============================================
+            echo "DEBUG: STEP 2 - Running findMotifsGenome.pl"
+            echo "DEBUG: Motif size: {params.motif_size}"
+            echo "DEBUG: HOCOMOCO motif file: {params.hocomoco_motif}"
+            echo "DEBUG: Checking if HOCOMOCO motif file exists..."
+            if [[ -f {params.hocomoco_motif} ]]; then
+                echo "DEBUG: HOCOMOCO motif file found"
+            else
+                echo "ERROR: HOCOMOCO motif file NOT found at {params.hocomoco_motif}"
+            fi
+            
+            if [[ {params.genome} == "hs1" ]]; then
+                echo "DEBUG: Running findMotifsGenome.pl with hs1 genome"
+                findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \\
+                    -nomotif \\
+                    -size {params.motif_size} \\
+                    -mknown {params.hocomoco_motif} \\
+                    -p {threads} \\
+                    -dumpFasta -cpg -maxN 0.1 -len 10 \\
+                    -preparsedDir preparsedDir
+            else
+                echo "DEBUG: Running findMotifsGenome.pl with standard genome"
+                findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \\
+                    -nomotif \\
+                    -size {params.motif_size} \\
+                    -mknown {params.hocomoco_motif} \\
+                    -p {threads} \\
+                    -dumpFasta -cpg -maxN 0.1 -len 10 \\
+                    -preparsedDir preparsedDir
+            fi
+            echo "DEBUG: findMotifsGenome.pl completed"
         fi
+        
+        echo "=========================================="
+        echo "DEBUG: HOMER motif analysis completed successfully"
+        echo "=========================================="
+        """
+
+rule ame_motif_enrichment:
+    """
+    AME (Analysis of Motif Enrichment) using HOCOMOCO v14 CORE database
+    """
+    input:
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","background.fa"),
+    output:
+        ame_results=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),
+    threads: getthreads("ame_motif_enrichment")
+    envmodules:
+        TOOLS["parallel"],
+        TOOLS["meme"],
+    params:
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
+        hocomoco_memes_tar = config["hocomoco_memes_targz"],
+        python_script=join(SCRIPTSDIR,"_parse_ame_output.py")
+    shell:
+        """
+        set -euo pipefail
+        
+        echo "=========================================="
+        echo "DEBUG: Starting AME motif enrichment analysis"
+        echo "DEBUG: Target FASTA: {input.target_fasta}"
+        echo "DEBUG: Background FASTA: {input.background_fasta}"
+        echo "DEBUG: Output directory: {params.outDir}"
+        echo "DEBUG: Threads: {threads}"
+        echo "=========================================="
+        
+        # Check if FASTA files are empty
+        target_lines=$(wc -l < {input.target_fasta} 2>/dev/null || echo 0)
+        background_lines=$(wc -l < {input.background_fasta} 2>/dev/null || echo 0)
+        
+        if [[ $target_lines -eq 0 ]] || [[ $background_lines -eq 0 ]]; then
+            echo "WARNING: Empty FASTA files detected (target: $target_lines, background: $background_lines)"
+            echo "INFO: Skipping AME analysis and creating empty results file"
+            echo "# No sequences for AME analysis" > {output.ame_results}
+        else
+            echo "INFO: FASTA files ready (target: $target_lines lines, background: $background_lines lines)"
+            
+            # ============================================
+            # STEP 1: Prepare FASTA files for AME
+            # ============================================
+            echo "DEBUG: STEP 1 - Preparing FASTA files for AME analysis"
+            cd {params.outDir}
+            echo "DEBUG: Changed directory to {params.outDir}"
+            echo "DEBUG: Current working directory: $(pwd)"
+
+            # Clean and create tmpdir
+            if [[ -d tmpdir ]] ; then
+                echo "DEBUG: Removing existing tmpdir"
+                rm -rf tmpdir
+            fi
+            mkdir -p tmpdir
+            echo "DEBUG: Created tmpdir"
+
+            
+            # Check if HOMER generated fasta files
+            if [[ -f {params.outDir}/target.fa ]]; then
+                echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
+            cp {params.outDir}/target.fa tmpdir/target.fa 
+            else
+                echo "WARNING: target.fa NOT found"
+touch {params.outDir}/target.fa
+            fi
+            
+            if [[ -f {params.outDir}/background.fa ]]; then
+                echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
+            cp {params.outDir}/background.fa tmpdir/background.fa
+            else
+                echo "WARNING: background.fa NOT found"
+touch {params.outDir}/background.fa
+            fi
+
+            # Copy fasta files to tmpdir
+            echo "DEBUG: Copied fasta files to tmpdir"
+
+            # ============================================
+            # STEP 2: AME Motif Enrichment Analysis
+            # ============================================
+            echo "DEBUG: STEP 2 - Running AME motif enrichment analysis"
+            cd tmpdir
+            echo "DEBUG: Changed to tmpdir: $(pwd)"
+            
+            # Initialize AME results file with header
+            printf '%b\n' 'rank\tmotif_DB\tmotif_ID\tmotif_ALT_ID\tconsensus\tp-value\tadjusted-p-value\tE-value\ttests\tFAMP\tn_sequences\tTP\t%TP\tFP\t%FP' > {output.ame_results}
+            echo "DEBUG: Created AME results file with header"
+
+            # Extract and process HOCOMOCO meme files
+            echo "DEBUG: Checking for HOCOMOCO meme tar.gz: {params.hocomoco_memes_tar}"
+            if [[ -f {params.hocomoco_memes_tar} ]]; then
+                echo "DEBUG: HOCOMOCO meme tar.gz found, extracting..."
+                cp {params.hocomoco_memes_tar} .
+                tar xzf $(basename {params.hocomoco_memes_tar})
+                echo "DEBUG: Extraction complete"
+                
+                # Create list of meme files
+                echo "DEBUG: Creating list of meme files..."
+                ls *.meme 2>/dev/null | sort > memes || touch memes
+                num_meme_files=$(wc -l < memes 2>/dev/null || echo 0)
+                echo "DEBUG: Found $num_meme_files meme files"
+                
+                # Check fasta file availability
+                echo "DEBUG: Checking fasta files in tmpdir..."
+                if [[ -f target.fa ]]; then
+                    echo "DEBUG: target.fa found in tmpdir ($(wc -l < target.fa) lines)"
+                else
+                    echo "WARNING: target.fa NOT found in tmpdir"
+                fi
+                
+                if [[ -f background.fa ]]; then
+                    echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
+                else
+                    echo "WARNING: background.fa NOT found in tmpdir"
+                fi
+                
+                if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
+                    echo "DEBUG: All prerequisites met, generating AME commands..."
+                    
+                    # Generate AME commands
+                    while read a; do
+                        echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
+                    done < memes > do_memes
+                    
+                    num_commands=$(wc -l < do_memes)
+                    echo "DEBUG: Generated $num_commands AME commands"
+                    
+                    # Run AME in parallel
+                    echo "DEBUG: Running AME in parallel with {threads} threads..."
+                    parallel -j {threads} < do_memes
+                    echo "DEBUG: AME parallel execution completed"
+                    
+                    # Collect and process AME results
+                    echo "DEBUG: Collecting AME results..."
+                    find . -name 'ame.tsv' -exec cat {{}} \\; | \\
+                    grep -A1 ^rank | \\
+                    grep -v '^--$' | \\
+                    grep -v ^rank | \\
+                    sort | \\
+                    uniq | \\
+                    sort -k7,7g | \\
+                    python {params.python_script} >> {output.ame_results}
+                    
+                    echo "DEBUG: Processed results from AME outputs"
+                    final_lines=$(wc -l < {output.ame_results})
+                    echo "DEBUG: Final AME results file has $final_lines lines"
+                    
+                else
+                    echo "WARNING: Prerequisites not met for AME analysis"
+                    echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
+                    echo "# No meme files or fasta files found for AME analysis" > {output.ame_results}
+                fi
+            else
+                echo "ERROR: HOCOMOCO meme files not found at {params.hocomoco_memes_tar}"
+                echo "# HOCOMOCO meme files not found at {params.hocomoco_memes_tar}" > {output.ame_results}
+            fi
+            
+            cd {params.outDir}
+            echo "DEBUG: Returned to {params.outDir}"
+            rm -rf tmpdir
+            echo "DEBUG: Deleted tmpdir"
+        fi
+        
+        echo "=========================================="
+        echo "DEBUG: AME motif enrichment analysis completed successfully"
+        echo "=========================================="
         """
 
 def get_annotation_files(wildcards):
     """
     treatment_control_list depends on the peak caller
     """
-    return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer",
+    return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer", wildcards.control_mode,
            "{treatment_control_list}" + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".annotation.summary"),
            treatment_control_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG)
 
 
-rule homer_enrich:
+rule homer_annotations:
     """
     Plot enrichment over genic features
     """
     input:
         annotation_summary=get_annotation_files
     output:
-        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png")
+        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","enrichment.{dupstatus}.{peak_caller_type}.png")
     params:
-        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer"),
+        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}"),
         peak_mode="{peak_caller_type}",
         dupstatus="{dupstatus}",
         rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
@@ -93,11 +338,11 @@ rule combine_homer:
     Add MACS2 q-value and FC to HOMER peak annotation
     """
     input:
-        annotation=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
-        peaks_file=join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        peaks_file=join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.peaks.xls")
     output:
-        combined_tsv=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),
-        combined_xlsx=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
+        combined_tsv=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),
+        combined_xlsx=join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.xlsx")
     container: config['containers']['carlisle_r']
     params:
         rscript=join(SCRIPTSDIR,"_combine_macs2_homer.R")
@@ -127,7 +372,6 @@ rule rose:
     <chr>   <start> <end>   <name>  <integer score for display>     <empty> <fold-change> <-log10pvalue>    <-log10qvalue>  <relative summit position to peak start>
     ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff.
     ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100)
-    ### by using the following 1-liner awk: awk -v OFS="\t" '{$5=$5>1000?1000:$5} {print}' NAME_peaks.narrowPeak
     ## broadPeak does not have 10th column
     ### Since in the broad peak calling mode, the peak summit won't be called, the values in the 5th, and 7-9th columns are the mean value across all positions in the peak region
 
@@ -308,15 +552,16 @@ if config["run_contrasts"]:
         Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
         """
         input:
-            contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+            contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         params:
             qthresholds = "{qthresholds}",
             contrast_list = "{contrast_list}",
             dupstatus = "{dupstatus}",
             peak_caller = "{peak_caller}",
-            search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts")
+            control_mode = "{control_mode}",
+            search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}")
         output:
-            peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt")
+            peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt")
         shell:
             """
             cat {input.contrast_files} | sort | uniq > {output.peak_contrast_files}
@@ -334,12 +579,12 @@ if config["run_contrasts"]:
             carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
             rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
             rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment"),
+            output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}"),
             species = config["genome"],
             geneset_id = GENESET_ID,
             dedup_status =  "{dupstatus}"
         output:
-            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),
+            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),
         container: config['containers']['carlisle_r']
         shell:
             """
@@ -360,3 +605,21 @@ if config["run_contrasts"]:
                 --geneset_id {params.geneset_id} \\
                 --dedup_status {params.dedup_status}
             """
+rule motif_enrichment:
+    """
+    Perform motif enrichment analysis if enabled in the configuration.
+    """
+    input:
+        annotation_summary=get_annotation_files
+    output:
+        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","enrichment.{dupstatus}.{peak_caller_type}.png")
+    params:
+        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}"),
+        peak_mode="{peak_caller_type}",
+        dupstatus="{dupstatus}",
+        rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
+    container: config['containers']['carlisle_r']
+    shell:
+        """
+        Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
+        """

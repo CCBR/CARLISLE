@@ -264,7 +264,7 @@ GO_ANALYSIS_MAIN <- function(rowid, peak_enrichment) {
   alpha <- sum(result.out$P.value < 0.05) / nrow(result.out)
   print(paste0("--sig: ", alpha))
 
-  # write out
-  fpath <- paste0(output_dir, "/", sampleid, ".", peakcaller, ".", dedup_status, ".", peaktype, ".", peak_enrichment, "_", geneset_id, ".csv")
-  write.csv(result.out, fpath)
+  # write out (TSV for consistency)
+  fpath <- paste0(output_dir, "/", sampleid, ".", peakcaller, ".", dedup_status, ".", peaktype, ".", peak_enrichment, "_", geneset_id, ".tsv")
+  write.table(result.out, file = fpath, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
 }

@@ -8,6 +8,7 @@ import yaml
 import pprint
 import shutil
 import uuid
+import re
 pp = pprint.PrettyPrinter(indent=4)
 #########################################################
 
@@ -49,6 +50,11 @@ MEMORYG="100G"
 # read in various dirs from config file
 WORKDIR=config['workdir']
 RESULTSDIR=join(WORKDIR,"results")
+
+PIPELINE_HOME=config['pipeline_home']
+check_existence(PIPELINE_HOME)
+RESOURCESDIR=join(PIPELINE_HOME,"resources")
+check_existence(RESOURCESDIR)
 
 RANDOMSTR=uuid.uuid4()
 
@@ -145,6 +151,75 @@ split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
 finalDF = split_keysDF.join(originalDF['val'])
 finalDF.to_csv(fpath, sep='\t', header=False, index=False)
 
+# validate pool_controls setting
+if config.get("pool_controls", False):
+    if not CONTROLS or len(CONTROLS) == 0:
+        print("#"*100)
+        print("# ERROR: pool_controls is set to 'true' but no control samples are present!")
+        print("# When pool_controls is enabled, peaks are called in both 'individual' and 'pooled' modes.")
+        print("# Without controls, 'individual' mode would produce peaks without any control,")
+        print("# which defeats the purpose of having both modes.")
+        print("#")
+        print("# Please either:")
+        print("#   1. Set pool_controls: false in config.yaml, OR")
+        print("#   2. Add control samples to your samples.tsv")
+        print("#"*100)
+        exit(1)
+    # Check if controls have replicates for pooling
+    control_samples = list(set([c.rsplit('_',1)[0] for c in CONTROLS]))
+    if len(control_samples) == len(CONTROLS):
+        print("#"*100)
+        print("# WARNING: pool_controls is set to 'true' but controls have no replicates to pool!")
+        print("# Each control sample has only 1 replicate:")
+        for ctrl in CONTROLS:
+            print(f"#   - {ctrl}")
+        print("# Pooling will have no effect. Consider setting pool_controls: false")
+        print("#"*100)
+
+# Get unique control sample names from samples.tsv where isControl == Y
+# This is the authoritative list of base control names (e.g., PBS_IgG, mSTAR_IgG)
+# Works with any naming convention including multiple underscores
+CONTROL_SAMPLES = list(df[df['isControl']=="Y"]['sampleName'].unique())
+
+# Set control modes based on pool_controls setting
+# When pool_controls is true, we run analysis with both individual and pooled controls
+# When pool_controls is false, we only run with individual controls
+CONTROL_MODES = ["individual", "pooled"] if config.get("pool_controls", False) else ["individual"]
+
+# Create pooled treatment control lists where control replicate numbers are removed
+# For example: mSTAR_H3K27me3_1_vs_mSTAR_IgG_1 becomes mSTAR_H3K27me3_1_vs_mSTAR_IgG
+TREATMENT_CONTROL_LIST_POOLED = []
+for tc in TREATMENT_CONTROL_LIST:
+    parts = tc.split("_vs_")
+    if len(parts) == 2:
+        treatment = parts[0]
+        control = parts[1]
+        # Remove replicate number from control (last _N pattern)
+        import re
+        control_no_rep = re.sub(r'_\d+$', '', control)
+        TREATMENT_CONTROL_LIST_POOLED.append(f"{treatment}_vs_{control_no_rep}")
+    else:
+        TREATMENT_CONTROL_LIST_POOLED.append(tc)
+
+# Create regex patterns for wildcard constraints
+# Individual mode: both treatment and control end with _\d+
+# Pooled mode: control does NOT end with _\d+ (replicate number removed)
+INDIVIDUAL_TREATMENT_CONTROL_PATTERN = "|".join([f"^{re.escape(tc)}$" for tc in TREATMENT_CONTROL_LIST])
+POOLED_TREATMENT_CONTROL_PATTERN = "|".join([f"^{re.escape(tc)}$" for tc in TREATMENT_CONTROL_LIST_POOLED])
+
+# Function to validate control_mode and treatment_control_list combinations
+def is_valid_control_treatment_combo(control_mode, treatment_control_list):
+    """
+    Validates that treatment_control_list matches the appropriate pattern for control_mode.
+    Individual mode: treatment_control_list must be from TREATMENT_CONTROL_LIST (with replicate numbers on both)
+    Pooled mode: treatment_control_list must be from TREATMENT_CONTROL_LIST_POOLED (no replicate on control)
+    """
+    if control_mode == "individual":
+        return treatment_control_list in TREATMENT_CONTROL_LIST
+    elif control_mode == "pooled":
+        return treatment_control_list in TREATMENT_CONTROL_LIST_POOLED
+    return False
+
 # set treatment lists depending on whether controls were used for all peak callers
 # macs2 allows for with or without controls; all other callers require with controls
 if (config["macs2_control"] == "Y"):
@@ -194,6 +269,7 @@ if config["run_contrasts"]:
     # contrasts_df = contrasts_df.reset_index()  # make sure indexes pair with number of rows
     # print(contrasts_df)
     CONTRASTS=dict()
+    CONTRAST_EXCLUDE=dict()
     C1s=[]
     C2s=[]
     DS=[]
@@ -210,6 +286,13 @@ if config["run_contrasts"]:
         if not c2 in SAMPLE2REPLICATES:
             print(" # %s condition2 in %s has no samples/replicates!"%(c2,contrasts_table))
             exit()
+        # Ensure both conditions have at least one replicate listed
+        if len(SAMPLE2REPLICATES[c1]) == 0:
+            print(" # %s has no replicates in samples manifest!" % (c1))
+            exit()
+        if len(SAMPLE2REPLICATES[c2]) == 0:
+            print(" # %s has no replicates in samples manifest!" % (c2))
+            exit()
         for ds in DUPSTATUS:
             for pt in PEAKTYPE:
                 for qt in QTRESHOLDS:
@@ -221,6 +304,31 @@ if config["run_contrasts"]:
                     contrast_name=c1+"_vs_"+c2+"__"+ds+"__"+pt
                     CONTRASTS[contrast_name]=[c1,c2,ds,pt]
                     CONTRAST_LIST.append(c1+"_vs_"+c2)
+        # Optional: outlier/exclude replicates column (comma-separated replicate names)
+        if 'exclude_replicates' in contrasts_df.columns:
+            excl_val = str(row['exclude_replicates']).strip()
+            if (excl_val.lower() != 'nan') and (excl_val != '') and (excl_val.lower() != 'none'):
+                excludes = list(map(lambda x: x.strip(), excl_val.split(",")))
+                # Validate each excluded replicate
+                for ex in excludes:
+                    if ex == "":
+                        continue
+                    m = re.match(r'^(.+?)_(\d+)$', ex)
+                    if not m:
+                        print(" # Invalid replicate format in exclude_replicates: %s. Expected sampleName_N" % (ex))
+                        exit()
+                    base_sample = m.group(1)
+                    if base_sample not in [c1, c2]:
+                        print(" # Excluded replicate %s does not belong to %s or %s" % (ex, c1, c2))
+                        exit()
+                    if ex not in REPLICATES:
+                        print(" # Excluded replicate %s not found in samples manifest replicates" % (ex))
+                        exit()
+                CONTRAST_EXCLUDE[c1+"_vs_"+c2] = excludes
+            else:
+                CONTRAST_EXCLUDE[c1+"_vs_"+c2] = []
+        else:
+            CONTRAST_EXCLUDE[c1+"_vs_"+c2] = []
         SAMPLESINCONTRAST.append(c1)
         SAMPLESINCONTRAST.append(c2)
     SAMPLESINCONTRAST=list(set(SAMPLESINCONTRAST))
@@ -230,6 +338,10 @@ if config["run_contrasts"]:
     for k,v in CONTRASTS.items():
         i+=1
         print("# %d) %s\t%s\t%s\t%s"%(i,v[0],v[1],v[2],v[3]))
+    # Log any replicate exclusions detected per contrast
+    for cl, excl in CONTRAST_EXCLUDE.items():
+        if excl:
+            print("# Excluding replicates for %s: %s" % (cl, ", ".join(excl)))
     rg_file = join(RESULTSDIR,"replicate_sample.tsv")
     replicates_in_file = []
 
@@ -287,6 +399,13 @@ with open(CLUSTERYAML) as json_file:
 getthreads=lambda rname:int(CLUSTER[rname]["threads"]) if rname in CLUSTER and "threads" in CLUSTER[rname] else int(CLUSTER["__default__"]["threads"])
 getmemg=lambda rname:CLUSTER[rname]["mem"] if rname in CLUSTER and "mem" in CLUSTER[rname] else CLUSTER["__default__"]["mem"]
 getmemG=lambda rname:getmemg(rname).replace("g","G")
+
+# Function to get input fastq files for a replicate
+def get_input_fastqs(wildcards):
+    d = dict()
+    d["R1"] = replicateName2R1[wildcards.replicate]
+    d["R2"] = replicateName2R2[wildcards.replicate]
+    return d
 #########################################################
 
 #########################################################

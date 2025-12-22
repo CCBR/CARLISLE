@@ -1,10 +1,4 @@
 
-def get_input_fastqs(wildcards):
-    d = dict()
-    d["R1"] = replicateName2R1[wildcards.replicate]
-    d["R2"] = replicateName2R2[wildcards.replicate]
-    return d
-
 def get_library_input(wildcards):
     if (NORM_METHOD=="LIBRARY"):
         stats_file=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
@@ -27,8 +21,10 @@ rule trim:
     input:
         unpack(get_input_fastqs)
     output:
-        R1 = temp(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz")),
-        R2 = temp(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz")),
+        R1 = join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),
+        R2 = join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         adapters = config["adapters"],
     threads: getthreads("trim")
@@ -71,10 +67,12 @@ rule align:
         R2 = rules.trim.output.R2,
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
     output:
-        bam=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam")),
-        bai=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai")),
-        bamflagstat=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat")),
-        bamidxstats=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats")),
+        bam=join(RESULTSDIR,"bam","raw","{replicate}.bam"),
+        bai=join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),
+        bamflagstat=join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),
+        bamidxstats=join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
@@ -125,6 +123,8 @@ rule filter:
         bai=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
         bamflagstat=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.flagstat"),
         bamidxstats=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",  # can be "dedup" or "no_dedup"
@@ -211,6 +211,8 @@ rule alignstats:
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
     output:
         outyaml = join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml")
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         pyscript = join(SCRIPTSDIR,"_get_nreads_stats.py"),
@@ -300,6 +302,8 @@ rule bam2bg:
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         spikein = NORM_METHOD,
         replicate = "{replicate}",
@@ -372,6 +376,8 @@ rule deeptools_bw:
         clean_bam = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),
         clean_bai = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),
         bw = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     envmodules:
         TOOLS["samtools"],
         TOOLS["deeptools"],
@@ -424,7 +430,7 @@ rule deeptools_mat:
         TSSmat=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.TSS.mat.gz")),
         bed=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.geneinfo.bed")),
     params:
-        prebed="/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/geneinfo.bed",
+        prebed=config["reference"][config["genome"]]["geneinfo_bed"],
         pythonver=TOOLS["python3"],
         deeptoolsver=TOOLS["deeptools"],
     threads:
@@ -437,9 +443,9 @@ rule deeptools_mat:
         bws=listfile[1]
         labels=listfile[2]
         if "prot" in wildcards.group:
-            cmd1="grep --line-buffered 'protein_coding' "+ params.prebed  +" | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' > "+output.bed
+            cmd1="grep --line-buffered 'protein_coding' "+ params.prebed  +" | awk -v OFS='\\t' -F'\\t' '{{print $1, $2, $3, $5, \".\", $4}}' > "+output.bed
         else:
-            cmd1="awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' "+params.prebed+" > "+output.bed
+            cmd1="awk -v OFS='\\t' -F'\\t' '{{print $1, $2, $3, $5, \".\", $4}}' "+params.prebed+" > "+output.bed
         cmd2="computeMatrix scale-regions -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --upstream 1000 --regionBodyLength 2000 --downstream 1000 --skipZeros -o "+output.metamat+" --samplesLabel "+" ".join(labels)
         cmd3="computeMatrix reference-point -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros -o "+output.TSSmat+" --samplesLabel "+" ".join(labels)
         shell(commoncmd+cmd1)
