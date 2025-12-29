@@ -209,6 +209,124 @@ def get_motif_enrichment(wildcards):
             files.extend(ame_s)
     return files
 
+def get_deg_motif_enrichment(wildcards):
+    files = []
+    if config.get("run_contrasts", False):
+        # DEG motif outputs for both methods and groups across contrasts and peak types
+        methods = ["AUCbased", "fragmentsbased"]
+        groups = ["up_group1", "up_group2"]
+        for method in methods:
+            for group in groups:
+                deg_known = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "knownResults.html",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_known)
+                deg_ann = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "annotation.txt",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_ann)
+                deg_sum = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "annotation.summary",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_sum)
+                deg_target = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "target.fa",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_target)
+                deg_bg = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "background.fa",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_bg)
+                deg_ame = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "ame_results.txt",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_ame)
+    return files
+
 def get_homer_annotations_plot(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
@@ -316,9 +434,10 @@ rule all:
         unpack(run_contrasts),
 
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
-        unpack(get_motif_enrichment) if config.get("run_motif_enrichment", True) else [],
-        unpack(get_homer_annotations_plot) if config.get("run_motif_enrichment", True) else [],
-        unpack(get_combined) if config.get("run_motif_enrichment", True) else [],
+        unpack(get_motif_enrichment) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_homer_annotations_plot) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_combined) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_deg_motif_enrichment) if config.get("run_motif_enrichment_deg_peaks", False) else [],
         unpack(get_rose),
         unpack(get_go_enrichment)
 

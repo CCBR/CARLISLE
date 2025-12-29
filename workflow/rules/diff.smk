@@ -88,7 +88,8 @@ rule create_contrast_data_files:
         control_mode="{control_mode}",
         control_flag = config["macs2_control"],
     output:
-        contrast_data=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt")
+        # Constrain peak_caller_type to avoid matching directory separators and causing ambiguity
+        contrast_data=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type,[^/]+}.txt")
     shell:
         """
         # pull conditions

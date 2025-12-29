@@ -17,6 +17,30 @@ def get_peak_file(wildcards):
     if wildcards.peak_caller_type =="gopeaks_broad":
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
+def get_deg_bed(wildcards):
+    # DEG-based peak sets produced by diffbb
+    # method: AUCbased | fragmentsbased
+    # group: up_group1 | up_group2
+    bed = join(
+        RESULTSDIR,
+        "peaks",
+        wildcards.qthresholds,
+        "contrasts",
+        wildcards.control_mode,
+        wildcards.contrast_list + "." + wildcards.dupstatus,
+        wildcards.contrast_list
+        + "."
+        + wildcards.dupstatus
+        + "."
+        + wildcards.peak_caller_type
+        + "."
+        + wildcards.method
+        + "_"
+        + wildcards.group
+        + ".bed",
+    )
+    return bed
+
 
 localrules: create_contrast_peakcaller_files, homer_annotations, combine_homer
 rule homer_motif:
@@ -133,6 +157,101 @@ rule homer_motif:
         
         echo "=========================================="
         echo "DEBUG: HOMER motif analysis completed successfully"
+        echo "=========================================="
+        """
+
+rule homer_motif_deg:
+    """
+    HOMER motif discovery on DEG-based peak sets (AUC/FRAG up in group1/group2)
+    """
+    input:
+        deg_peak_file=get_deg_bed,
+    output:
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","annotation.txt"),
+        annotation_summary=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","annotation.summary"),
+        known_html=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","knownResults.html"),
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","background.fa"),
+    threads: getthreads("homer_motif")
+    envmodules:
+        TOOLS["homer"],
+    params:
+        genome = config["genome"],
+        fa=config["reference"][config["genome"]]["fa"],
+        gtf = config["reference"][config["genome"]]["gtf"],
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method}_{group}.motifs"),
+        hocomoco_motif = config["hocomoco_motifs"]
+    shell:
+        """
+        set -euo pipefail
+
+        echo "=========================================="
+        echo "DEBUG: Starting HOMER motif analysis (DEG)"
+        echo "DEBUG: DEG Peak file: {input.deg_peak_file}"
+        echo "DEBUG: Genome: {params.genome}"
+        echo "DEBUG: Output directory: {params.outDir}"
+        echo "DEBUG: Threads: {threads}"
+        echo "=========================================="
+
+        num_peaks=$(wc -l < {input.deg_peak_file} || echo 0)
+        echo "DEBUG: Number of DEG peaks detected: $num_peaks"
+
+        if [[ $num_peaks -lt 5 ]]; then
+            echo "WARNING: Only $num_peaks peaks found in {input.deg_peak_file}"
+            echo "INFO: Skipping HOMER analysis and creating empty output files"
+
+            echo "# No peaks found for HOMER annotation" > {output.annotation}
+            echo -e "Annotation\tDistance to TSS\tNumber of Peaks\t% of Peaks\tTotal size (bp)\tLog10 p-value\tLog2 Ratio (vs. Genome)\tLogP enrichment (+values depleted)" > {output.annotation_summary}
+
+            mkdir -p {params.outDir}
+            echo "<html><body><h1>No peaks available for motif analysis</h1><p>DEG peak file contained fewer than 5 peaks.</p></body></html>" > {output.known_html}
+            touch {output.target_fasta}
+            touch {output.background_fasta}
+            echo "DEBUG: Empty output files created successfully"
+        else
+            echo "INFO: Found $num_peaks DEG peaks, proceeding with HOMER analysis..."
+
+            echo "DEBUG: STEP 1 - Running HOMER peak annotation (DEG)"
+            if [[ {params.genome} == "hs1" ]]; then
+                echo "DEBUG: Using hs1 genome with custom FA and GTF"
+                echo "DEBUG: FA file: {params.fa}"
+                echo "DEBUG: GTF file: {params.gtf}"
+                annotatePeaks.pl {input.deg_peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+            else
+                echo "DEBUG: Using standard genome: {params.genome}"
+                annotatePeaks.pl {input.deg_peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+            fi
+            echo "DEBUG: HOMER annotation (DEG) completed"
+
+            echo "DEBUG: STEP 2 - Running findMotifsGenome.pl (DEG)"
+            echo "DEBUG: Motif size: given (use peak widths)"
+            echo "DEBUG: HOCOMOCO motif file: {params.hocomoco_motif}"
+            if [[ -f {params.hocomoco_motif} ]]; then
+                echo "DEBUG: HOCOMOCO motif file found"
+            else
+                echo "ERROR: HOCOMOCO motif file NOT found at {params.hocomoco_motif}"
+            fi
+
+            if [[ {params.genome} == "hs1" ]]; then
+                findMotifsGenome.pl {input.deg_peak_file} {params.fa} {params.outDir} \
+                    -nomotif \
+                    -size given \
+                    -mknown {params.hocomoco_motif} \
+                    -p {threads} \
+                    -dumpFasta -cpg -maxN 0.1 -len 10
+            else
+                findMotifsGenome.pl {input.deg_peak_file} {params.genome} {params.outDir} \
+                    -nomotif \
+                    -size given \
+                    -mknown {params.hocomoco_motif} \
+                    -p {threads} \
+                    -dumpFasta -cpg -maxN 0.1 -len 10
+            fi
+            echo "DEBUG: findMotifsGenome.pl (DEG) completed"
+        fi
+
+        echo "=========================================="
+        echo "DEBUG: HOMER motif analysis (DEG) completed successfully"
         echo "=========================================="
         """
 
@@ -301,6 +420,176 @@ touch {params.outDir}/background.fa
         
         echo "=========================================="
         echo "DEBUG: AME motif enrichment analysis completed successfully"
+        echo "=========================================="
+        """
+
+rule ame_motif_enrichment_deg:
+    """
+    AME (Analysis of Motif Enrichment) on DEG-based motif FASTAs using HOCOMOCO v14 CORE
+    """
+    input:
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method}_{group}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method}_{group}.motifs","background.fa"),
+    output:
+        ame_results=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","ame_results.txt"),
+    threads: getthreads("ame_motif_enrichment")
+    wildcard_constraints:
+        method="AUCbased|fragmentsbased",
+        group="up_group1|up_group2"
+    envmodules:
+        TOOLS["parallel"],
+        TOOLS["meme"],
+    params:
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method}_{group}.motifs"),
+        hocomoco_memes_tar = config["hocomoco_memes_targz"],
+        python_script=join(SCRIPTSDIR,"_parse_ame_output.py")
+    shell:
+        """
+        set -euo pipefail
+
+        echo "=========================================="
+        echo "DEBUG: Starting AME motif enrichment analysis (DEG)"
+        echo "DEBUG: Target FASTA: {input.target_fasta}"
+        echo "DEBUG: Background FASTA: {input.background_fasta}"
+        echo "DEBUG: Output directory: {params.outDir}"
+        echo "DEBUG: Threads: {threads}"
+        echo "=========================================="
+
+        # Check if FASTA files are empty
+        target_lines=$(wc -l < {input.target_fasta} 2>/dev/null || echo 0)
+        background_lines=$(wc -l < {input.background_fasta} 2>/dev/null || echo 0)
+
+        if [[ $target_lines -eq 0 ]] || [[ $background_lines -eq 0 ]]; then
+            echo "WARNING: Empty FASTA files detected (target: $target_lines, background: $background_lines)"
+            echo "INFO: Skipping AME analysis and creating empty results file"
+            echo "# No sequences for AME analysis" > {output.ame_results}
+        else
+            echo "INFO: FASTA files ready (target: $target_lines lines, background: $background_lines lines)"
+
+            # ============================================
+            # STEP 1: Prepare FASTA files for AME
+            # ============================================
+            echo "DEBUG: STEP 1 - Preparing FASTA files for AME analysis (DEG)"
+            cd {params.outDir}
+            echo "DEBUG: Changed directory to {params.outDir}"
+            echo "DEBUG: Current working directory: $(pwd)"
+
+            # Clean and create tmpdir
+            if [[ -d tmpdir ]] ; then
+                echo "DEBUG: Removing existing tmpdir"
+                rm -rf tmpdir
+            fi
+            mkdir -p tmpdir
+            echo "DEBUG: Created tmpdir"
+
+            # Check if HOMER generated fasta files
+            if [[ -f {params.outDir}/target.fa ]]; then
+                echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
+                cp {params.outDir}/target.fa tmpdir/target.fa 
+            else
+                echo "WARNING: target.fa NOT found"
+                touch {params.outDir}/target.fa
+            fi
+            
+            if [[ -f {params.outDir}/background.fa ]]; then
+                echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
+                cp {params.outDir}/background.fa tmpdir/background.fa
+            else
+                echo "WARNING: background.fa NOT found"
+                touch {params.outDir}/background.fa
+            fi
+
+            # Copy fasta files to tmpdir
+            echo "DEBUG: Copied fasta files to tmpdir"
+
+            # ============================================
+            # STEP 2: AME Motif Enrichment Analysis
+            # ============================================
+            echo "DEBUG: STEP 2 - Running AME motif enrichment analysis (DEG)"
+            cd tmpdir
+            echo "DEBUG: Changed to tmpdir: $(pwd)"
+
+            # Initialize AME results file with header
+            printf '%b\n' 'rank\tmotif_DB\tmotif_ID\tmotif_ALT_ID\tconsensus\tp-value\tadjusted-p-value\tE-value\ttests\tFAMP\tn_sequences\tTP\t%TP\tFP\t%FP' > {output.ame_results}
+            echo "DEBUG: Created AME results file with header"
+
+            # Extract and process HOCOMOCO meme files
+            echo "DEBUG: Checking for HOCOMOCO meme tar.gz: {params.hocomoco_memes_tar}"
+            if [[ -f {params.hocomoco_memes_tar} ]]; then
+                echo "DEBUG: HOCOMOCO meme tar.gz found, extracting..."
+                cp {params.hocomoco_memes_tar} .
+                tar xzf $(basename {params.hocomoco_memes_tar})
+                echo "DEBUG: Extraction complete"
+
+                # Create list of meme files
+                echo "DEBUG: Creating list of meme files..."
+                ls *.meme 2>/dev/null | sort > memes || touch memes
+                num_meme_files=$(wc -l < memes 2>/dev/null || echo 0)
+                echo "DEBUG: Found $num_meme_files meme files"
+
+                # Check fasta file availability
+                echo "DEBUG: Checking fasta files in tmpdir..."
+                if [[ -f target.fa ]]; then
+                    echo "DEBUG: target.fa found in tmpdir ($(wc -l < target.fa) lines)"
+                else
+                    echo "WARNING: target.fa NOT found in tmpdir"
+                fi
+                
+                if [[ -f background.fa ]]; then
+                    echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
+                else
+                    echo "WARNING: background.fa NOT found in tmpdir"
+                fi
+
+                if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
+                    echo "DEBUG: All prerequisites met, generating AME commands..."
+                    
+                    # Generate AME commands
+                    while read a; do
+                        echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
+                    done < memes > do_memes
+                    
+                    num_commands=$(wc -l < do_memes)
+                    echo "DEBUG: Generated $num_commands AME commands"
+                    
+                    # Run AME in parallel
+                    echo "DEBUG: Running AME in parallel with {threads} threads..."
+                    parallel -j {threads} < do_memes
+                    echo "DEBUG: AME parallel execution completed"
+                    
+                    # Collect and process AME results
+                    echo "DEBUG: Collecting AME results..."
+                    find . -name 'ame.tsv' -exec cat {{}} \; | \
+                    grep -A1 ^rank | \
+                    grep -v '^--$' | \
+                    grep -v ^rank | \
+                    sort | \
+                    uniq | \
+                    sort -k7,7g | \
+                    python {params.python_script} >> {output.ame_results}
+                    
+                    echo "DEBUG: Processed results from AME outputs"
+                    final_lines=$(wc -l < {output.ame_results})
+                    echo "DEBUG: Final AME results file has $final_lines lines"
+                    
+                else
+                    echo "WARNING: Prerequisites not met for AME analysis (DEG)"
+                    echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
+                    echo "# No meme files or fasta files found for AME analysis" > {output.ame_results}
+                fi
+            else
+                echo "ERROR: HOCOMOCO meme files not found at {params.hocomoco_memes_tar}"
+                echo "# HOCOMOCO meme files not found at {params.hocomoco_memes_tar}" > {output.ame_results}
+            fi
+
+            cd {params.outDir}
+            echo "DEBUG: Returned to {params.outDir}"
+            rm -rf tmpdir
+            echo "DEBUG: Deleted tmpdir"
+        fi
+        
+        echo "=========================================="
+        echo "DEBUG: AME motif enrichment analysis (DEG) completed successfully"
         echo "=========================================="
         """
 
