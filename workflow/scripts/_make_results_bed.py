@@ -1,4 +1,54 @@
 #!/usr/bin/env python3
+"""
+Create a colored BED file from differential analysis results.
+
+This script processes differential analysis results and generates a BED file with
+color-coded peaks based on log2 fold change and adjusted p-value thresholds. The
+colors indicate the significance and direction of differential binding/expression.
+
+The script applies the following color scheme:
+- Gray (160,160,160): Non-significant peaks
+- Light green (229,255,204): Significantly downregulated (between elbow and log2FC cutoff)
+- Bright green (128,255,0): Highly downregulated (below log2FC cutoff)
+- Orange (255,153,51): Significantly upregulated (between elbow and log2FC cutoff)
+- Red (255,51,51): Highly upregulated (above log2FC cutoff)
+
+The strand field is set based on the direction of fold change:
+- '+' for upregulated (log2FoldChange >= 0)
+- '-' for downregulated (log2FoldChange < 0)
+
+Command-line Arguments:
+    --results (str): Path to the input results file (TSV format) containing
+                    differential analysis results with columns: seqnames, start,
+                    end, log2FoldChange, and padj.
+    --fdr_cutoff (float): False Discovery Rate (FDR) threshold for significance.
+                         Peaks with padj < fdr_cutoff are considered significant.
+    --log2FC_cutoff (float): Log2 fold change threshold for high significance.
+                            Peaks exceeding this threshold are considered highly
+                            differentially expressed.
+    --elbowyaml (str): Path to YAML file containing elbow point limits with
+                      'low_limit' (downregulation elbow) and 'up_limit'
+                      (upregulation elbow) keys.
+    --bed (str): Path to the output BED file with color annotations.
+
+Output:
+    A sorted BED file with 9 columns:
+    1. seqnames (chromosome)
+    2. start (start position)
+    3. end (end position)
+    4. name (always '.')
+    5. score (always 0)
+    6. strand ('+' or '-' based on fold change direction)
+    7. seven (always 0)
+    8. eight (always 0)
+    9. color (RGB color based on significance and fold change)
+
+Note:
+    - The script uses a temporary file with a UUID-based name to avoid conflicts
+    - The final output is sorted by chromosome and start position
+    - Sorting uses 40GB of memory and /dev/shm for temporary storage
+    - The temporary file is automatically cleaned up after processing
+"""
 
 import argparse, pandas, os, yaml, subprocess, uuid
 from operator import index

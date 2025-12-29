@@ -311,9 +311,9 @@ rule DESeq:
 rule diffbb:
     input:
         results=rules.DESeq.output.results_auc,
-        elbowlimits=rules.DESeq.output.elbowlimits_auc,
+        elbowlimits=rules.DESeq.output.elbowlimits_auc,         # only used for color coding in the bed file
         fresults=rules.DESeq.output.results_frag,
-        felbowlimits=rules.DESeq.output.elbowlimits_frag,
+        felbowlimits=rules.DESeq.output.elbowlimits_frag,       # only used for color coding in the bed file
         genome_len=join(BOWTIE2_INDEX,"genome.len"),
     output:
         bed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),
@@ -329,6 +329,13 @@ rule diffbb:
         TOOLS["python3"]
     shell:
         """
+# color code in BED file:
+# - Gray (160,160,160): Non-significant peaks
+# - Light green (229,255,204): Significantly downregulated (between elbow and log2FC cutoff)
+# - Bright green (128,255,0): Highly downregulated (below log2FC cutoff)
+# - Orange (255,153,51): Significantly upregulated (between elbow and log2FC cutoff)
+# - Red (255,51,51): Highly upregulated (above log2FC cutoff)
+
         set -exo pipefail
         if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
             TMPDIR="/lscratch/$SLURM_JOB_ID"
