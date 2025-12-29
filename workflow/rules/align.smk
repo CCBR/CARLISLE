@@ -150,7 +150,6 @@ rule filter:
         fi
         if [[ "{params.dupstatus}" == "dedup" ]];then
 
-            # deduplicate only the spikeins
             genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $genome_regions | \\
                 samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -
@@ -371,29 +370,27 @@ rule bam2bg:
 rule deeptools_bw:
     input:
         bam = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),
+        bai = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
         genome_len = join(BOWTIE2_INDEX,"genome.len")
     output:
-        clean_bam = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),
-        clean_bai = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),
         bw = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),
     wildcard_constraints:
         replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     envmodules:
         TOOLS["samtools"],
         TOOLS["deeptools"],
+    threads: getthreads("deeptools_bw")
     shell:
         """
         genome_size=`cat {input.genome_len} | awk '{{ sum+=$2 }} END{{ print sum }}'`
-        samtools view -b -@4 {input.bam} chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY | samtools sort -@4 -o {output.clean_bam}
-        samtools index {output.clean_bam}
-        bamCoverage --bam {output.clean_bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors 32 --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
+        bamCoverage --bam {input.bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors {threads} --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
         """
 
 rule deeptools_prep:
     input:
         bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
-        deeptools_prep = temp(expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS)),
+        deeptools_prep = expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
     run:
         for dupstatus in DUPSTATUS:
             for i in ["","prot."]:
@@ -426,9 +423,9 @@ rule deeptools_mat:
         deeptools_prep = join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),
         bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
-        metamat=temp(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz")),
-        TSSmat=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.TSS.mat.gz")),
-        bed=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.geneinfo.bed")),
+        metamat=join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz"),
+        TSSmat=join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.TSS.mat.gz"),
+        bed=join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.geneinfo.bed"),
     params:
         prebed=config["reference"][config["genome"]]["geneinfo_bed"],
         pythonver=TOOLS["python3"],
@@ -446,8 +443,8 @@ rule deeptools_mat:
             cmd1="grep --line-buffered 'protein_coding' "+ params.prebed  +" | awk -v OFS='\\t' -F'\\t' '{{print $1, $2, $3, $5, \".\", $4}}' > "+output.bed
         else:
             cmd1="awk -v OFS='\\t' -F'\\t' '{{print $1, $2, $3, $5, \".\", $4}}' "+params.prebed+" > "+output.bed
-        cmd2="computeMatrix scale-regions -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --upstream 1000 --regionBodyLength 2000 --downstream 1000 --skipZeros -o "+output.metamat+" --samplesLabel "+" ".join(labels)
-        cmd3="computeMatrix reference-point -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros -o "+output.TSSmat+" --samplesLabel "+" ".join(labels)
+        cmd2="computeMatrix scale-regions -S "+" ".join(bws)+" -R "+output.bed+" -p {threads} --upstream 1000 --regionBodyLength 2000 --downstream 1000 --skipZeros -o "+output.metamat+" --samplesLabel "+" ".join(labels)
+        cmd3="computeMatrix reference-point -S "+" ".join(bws)+" -R "+output.bed+" -p {threads} --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros -o "+output.TSSmat+" --samplesLabel "+" ".join(labels)
         shell(commoncmd+cmd1)
         shell(commoncmd+cmd2)
         shell(commoncmd+cmd3)
