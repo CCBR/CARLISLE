@@ -318,8 +318,12 @@ rule diffbb:
     output:
         bed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),
         bigbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bigbed"),
+        up1_3col=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group1.bed"),
+        up2_3col=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group2.bed"),
         fbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),
         fbigbed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bigbed"),
+        fup1_3col=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group1.bed"),
+        fup2_3col=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group2.bed"),
     params:
         script = join(SCRIPTSDIR,"_make_results_bed.py"),
         fdr=FDRCUTOFF,
@@ -353,15 +357,21 @@ rule diffbb:
             echo "There is only 1 sample per group - this is not allowed in DESEQ2 and leads to incomplete DIFFBB results"
             touch {output.bed}
             touch {output.bigbed}
+            touch {output.up1_3col}
+            touch {output.up2_3col}
             touch {output.fbed}
             touch {output.fbigbed}
+            touch {output.fup1_3col}
+            touch {output.fup2_3col}
         else
             python {params.script} \\
                 --results {input.results} \\
                 --fdr_cutoff {params.fdr} \\
                 --log2FC_cutoff {params.lfc} \\
                 --elbowyaml {input.elbowlimits} \\
-                --bed {output.bed}
+                --bed {output.bed} \
+                --up1_bed {output.up1_3col} \
+                --up2_bed {output.up2_3col}
 
             bedToBigBed -type=bed9 {output.bed} {input.genome_len} {output.bigbed}
 
@@ -370,7 +380,9 @@ rule diffbb:
                 --fdr_cutoff {params.fdr} \\
                 --log2FC_cutoff {params.lfc} \\
                 --elbowyaml {input.felbowlimits} \\
-                --bed {output.fbed}
+                --bed {output.fbed} \
+                --up1_bed {output.fup1_3col} \
+                --up2_bed {output.fup2_3col}
 
             bedToBigBed -type=bed9 {output.fbed} {input.genome_len} {output.fbigbed}
         fi

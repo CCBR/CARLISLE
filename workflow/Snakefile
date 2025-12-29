@@ -163,6 +163,16 @@ def run_contrasts(wildcards):
         files.extend(abed)
         fbed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(fbed)
+
+        # 3-col BEDs (up-regulated per group)
+        aup1=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group1.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(aup1)
+        aup2=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group2.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(aup2)
+        fup1=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group1.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(fup1)
+        fup2=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group2.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(fup2)
     return files
 
 def get_motif_enrichment(wildcards):

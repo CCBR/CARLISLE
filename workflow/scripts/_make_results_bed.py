@@ -62,6 +62,8 @@ parser.add_argument("--fdr_cutoff", required=True, type=float, help="FDR cutoff"
 parser.add_argument("--log2FC_cutoff", required=True, type=float, help="log2FC cutoff")
 parser.add_argument("--elbowyaml", required=True, type=str, help="elbow limits")
 parser.add_argument("--bed", required=True, type=str, help="output bed with colors")
+parser.add_argument("--up1_bed", required=False, type=str, help="optional 3-col BED: up in group1 (padj < fdr && log2FC > cutoff)")
+parser.add_argument("--up2_bed", required=False, type=str, help="optional 3-col BED: up in group2 (padj < fdr && log2FC < -cutoff)")
 args = parser.parse_args()
 
 df = pandas.read_csv(
@@ -70,6 +72,7 @@ df = pandas.read_csv(
     header=0,
     usecols=["seqnames", "start", "end", "log2FoldChange", "padj"],
 )
+df_full = df.copy()
 df["color"] = ["160,160,160"] * len(df.index)
 df["name"] = ["."] * len(df.index)
 df["strand"] = ["+"] * len(df.index)
@@ -118,3 +121,21 @@ cmd = "sort -S 40G -T /dev/shm -k1,1 -k2,2n " + randbed + " > " + args.bed
 s = subprocess.run(cmd, shell=True, check=True, text=True, capture_output=True)
 
 os.remove(randbed)
+
+# Optional: write simple 3-column BEDs for up in group1 and group2
+try:
+    if args.up1_bed:
+        up1 = (df_full["padj"] < args.fdr_cutoff) & (df_full["log2FoldChange"] > args.log2FC_cutoff)
+        up1_df = df_full.loc[up1, ["seqnames", "start", "end"]].copy()
+        if len(up1_df.index) > 0:
+            up1_df = up1_df.sort_values(by=["seqnames", "start", "end"])  # lightweight sort
+        up1_df.to_csv(args.up1_bed, sep="\t", header=False, index=False)
+    if args.up2_bed:
+        up2 = (df_full["padj"] < args.fdr_cutoff) & (df_full["log2FoldChange"] < -abs(args.log2FC_cutoff))
+        up2_df = df_full.loc[up2, ["seqnames", "start", "end"]].copy()
+        if len(up2_df.index) > 0:
+            up2_df = up2_df.sort_values(by=["seqnames", "start", "end"])  # lightweight sort
+        up2_df.to_csv(args.up2_bed, sep="\t", header=False, index=False)
+except Exception as e:
+    # Fail fast with explicit error to surface in Snakemake logs
+    raise e
