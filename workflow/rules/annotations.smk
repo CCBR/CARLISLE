@@ -45,7 +45,6 @@ rule homer_motif:
         fa=config["reference"][config["genome"]]["fa"],
         gtf = config["reference"][config["genome"]]["gtf"],
         outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs"),
-        motif_size = config["motif_size"],
         hocomoco_motif = config["hocomoco_motifs"]
     shell:
         """
@@ -101,7 +100,7 @@ rule homer_motif:
             # STEP 2: HOMER Motif Discovery
             # ============================================
             echo "DEBUG: STEP 2 - Running findMotifsGenome.pl"
-            echo "DEBUG: Motif size: {params.motif_size}"
+            echo "DEBUG: Motif size: given (use peak widths)"
             echo "DEBUG: HOCOMOCO motif file: {params.hocomoco_motif}"
             echo "DEBUG: Checking if HOCOMOCO motif file exists..."
             if [[ -f {params.hocomoco_motif} ]]; then
@@ -112,22 +111,22 @@ rule homer_motif:
             
             if [[ {params.genome} == "hs1" ]]; then
                 echo "DEBUG: Running findMotifsGenome.pl with hs1 genome"
-                findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \\
-                    -nomotif \\
-                    -size {params.motif_size} \\
+                findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \
+                    -nomotif \
+                    -size given \
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir preparsedDir
+                    
             else
                 echo "DEBUG: Running findMotifsGenome.pl with standard genome"
-                findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \\
-                    -nomotif \\
-                    -size {params.motif_size} \\
+                findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \
+                    -nomotif \
+                    -size given \
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir preparsedDir
+                    
             fi
             echo "DEBUG: findMotifsGenome.pl completed"
         fi
