@@ -22,3 +22,4 @@ dryrun.log
 POOL_CONTROLS_FEATURE.md
 .snakemake
 .vscode
+dryrun_workdir
