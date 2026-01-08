@@ -73,7 +73,15 @@ rule homer_motif:
     shell:
         """
         set -euo pipefail
-        
+        # set tmp - create directory directly in target location
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
+            TMPDIR=$(mktemp -d "/lscratch/$SLURM_JOB_ID/tmp.XXXXXX")
+        else
+            TMPDIR=$(mktemp -d "/dev/shm/tmp.XXXXXX")
+        fi
+
+        preparsedDir="$TMPDIR/preparsedDir"
+        mkdir -p $preparsedDir        
         echo "=========================================="
         echo "DEBUG: Starting HOMER motif analysis"
         echo "DEBUG: Peak file: {input.peak_file}"
@@ -135,22 +143,22 @@ rule homer_motif:
             
             if [[ {params.genome} == "hs1" ]]; then
                 echo "DEBUG: Running findMotifsGenome.pl with hs1 genome"
-                findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \
-                    -nomotif \
-                    -size given \
+                findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \\
+                    -nomotif \\
+                    -size given \\
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    
+                    -preparsedDir $preparsedDir 
             else
                 echo "DEBUG: Running findMotifsGenome.pl with standard genome"
-                findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \
-                    -nomotif \
-                    -size given \
+                findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \\
+                    -nomotif \\
+                    -size given \\
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    
+                    -preparsedDir $preparsedDir 
             fi
             echo "DEBUG: findMotifsGenome.pl completed"
         fi
@@ -172,7 +180,7 @@ rule homer_motif_deg:
         known_html=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","knownResults.html"),
         target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","target.fa"),
         background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","background.fa"),
-    threads: getthreads("homer_motif")
+    threads: getthreads("homer_motif_deg")
     envmodules:
         TOOLS["homer"],
     params:
@@ -184,6 +192,16 @@ rule homer_motif_deg:
     shell:
         """
         set -euo pipefail
+
+        # set tmp - create directory directly in target location
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
+            TMPDIR=$(mktemp -d "/lscratch/$SLURM_JOB_ID/tmp.XXXXXX")
+        else
+            TMPDIR=$(mktemp -d "/dev/shm/tmp.XXXXXX")
+        fi
+
+        preparsedDir="$TMPDIR/preparsedDir"
+        mkdir -p $preparsedDir
 
         echo "=========================================="
         echo "DEBUG: Starting HOMER motif analysis (DEG)"
@@ -233,19 +251,21 @@ rule homer_motif_deg:
             fi
 
             if [[ {params.genome} == "hs1" ]]; then
-                findMotifsGenome.pl {input.deg_peak_file} {params.fa} {params.outDir} \
-                    -nomotif \
-                    -size given \
-                    -mknown {params.hocomoco_motif} \
-                    -p {threads} \
-                    -dumpFasta -cpg -maxN 0.1 -len 10
+                findMotifsGenome.pl {input.deg_peak_file} {params.fa} {params.outDir} \\
+                    -nomotif \\
+                    -size given \\
+                    -mknown {params.hocomoco_motif} \\\
+                    -p {threads} \\
+                    -dumpFasta -cpg -maxN 0.1 -len 10 \\
+                    -preparsedDir $preparsedDir 
             else
-                findMotifsGenome.pl {input.deg_peak_file} {params.genome} {params.outDir} \
-                    -nomotif \
-                    -size given \
-                    -mknown {params.hocomoco_motif} \
-                    -p {threads} \
-                    -dumpFasta -cpg -maxN 0.1 -len 10
+                findMotifsGenome.pl {input.deg_peak_file} {params.genome} {params.outDir} \\
+                    -nomotif \\
+                    -size given \\
+                    -mknown {params.hocomoco_motif} \\
+                    -p {threads} \\
+                    -dumpFasta -cpg -maxN 0.1 -len 10 \\
+                    -preparsedDir $preparsedDir
             fi
             echo "DEBUG: findMotifsGenome.pl (DEG) completed"
         fi
@@ -275,6 +295,16 @@ rule ame_motif_enrichment:
     shell:
         """
         set -euo pipefail
+
+        # set tmp
+            dirname=$(basename $(mktemp))
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
+            TMPDIR="/lscratch/$SLURM_JOB_ID/$dirname"
+        else
+
+            TMPDIR="/dev/shm/$dirname"
+        fi
+        mkdir -p $TMPDIR
         
         echo "=========================================="
         echo "DEBUG: Starting AME motif enrichment analysis"
@@ -432,7 +462,7 @@ rule ame_motif_enrichment_deg:
         background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method}_{group}.motifs","background.fa"),
     output:
         ame_results=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{method,(AUCbased|fragmentsbased)}_{group,(up_group1|up_group2)}.motifs","ame_results.txt"),
-    threads: getthreads("ame_motif_enrichment")
+    threads: getthreads("ame_motif_enrichment_deg")
     wildcard_constraints:
         method="AUCbased|fragmentsbased",
         group="up_group1|up_group2"
@@ -763,9 +793,18 @@ rule rose:
             paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
         fi
 
+        # handle compressed tss_bed file
+        if [[ {params.tss_bed} == *.gz ]]; then
+            echo "## Decompressing tss_bed to tmpdir"
+            zcat {params.tss_bed} > $TMPDIR/tss.bed
+            TSS_BED=$TMPDIR/tss.bed
+        else
+            TSS_BED={params.tss_bed}
+        fi
+
         # bedtools
         echo "## Intersecting"
-        bedtools intersect -a $TMPDIR/subset.bed -b {params.tss_bed} -v > $TMPDIR/tmp.bed
+        bedtools intersect -a $TMPDIR/subset.bed -b $TSS_BED -v > $TMPDIR/tmp.bed
         bedtools merge -i $TMPDIR/tmp.bed -d {params.stitch_distance} -c 4,5,6 -o distinct,sum,distinct > {output.no_tss_bed}
 
         # if there are less than 5 peaks, annotation will fail
@@ -840,7 +879,24 @@ if config["run_contrasts"]:
         Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
         """
         input:
-            contrast_files=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+            contrast_files=lambda wildcards: expand(
+                join(
+                    RESULTSDIR,
+                    "peaks",
+                    "{qthresholds}",
+                    "contrasts",
+                    "{control_mode}",
+                    "{contrast_list}.{dupstatus}",
+                    "{contrast_list}.{dupstatus}.{peak_caller_type}.txt",
+                ),
+                qthresholds=wildcards.qthresholds,
+                contrast_list=wildcards.contrast_list,
+                dupstatus=wildcards.dupstatus,
+                peak_caller_type=[
+                    pt for pt in PEAKTYPE if pt.startswith(wildcards.peak_caller + "_")
+                ],
+                control_mode=wildcards.control_mode,
+            )
         params:
             qthresholds = "{qthresholds}",
             contrast_list = "{contrast_list}",
@@ -873,25 +929,24 @@ if config["run_contrasts"]:
             dedup_status =  "{dupstatus}"
         output:
             html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),
+        threads: getthreads("go_enrichment")
         container: config['containers']['carlisle_r']
         shell:
             """
             set -exo pipefail
 
-            # get sample list
-            sample_list=`awk '{{print $3}}' {input.contrast_file}`
-            clean_sample_list=`echo $sample_list | sed "s/\s/xxx/g"`
-
-            # rum script
+            # run script
             Rscript {params.rscript_wrapper} \\
                 --rmd {params.rmd} \\
                 --carlisle_functions {params.carlisle_functions} \\
                 --output_dir {params.output_dir} \\
                 --report {output.html} \\
-                --peak_list "$clean_sample_list" \\
+                --contrast_file {input.contrast_file} \\
                 --species {params.species} \\
                 --geneset_id {params.geneset_id} \\
-                --dedup_status {params.dedup_status}
+                --dedup_status {params.dedup_status} \\
+                --n_cores {threads} \\
+                --skip_hybrid
             """
 rule motif_enrichment:
     """

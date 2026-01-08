@@ -87,6 +87,7 @@ df['replicateName']=df.apply(lambda row:row['sampleName']+"_"+str(row['replicate
 REPLICATES = list(df.replicateName.unique())
 replicateName2R1 = dict()
 replicateName2R2 = dict()
+SKIP_FASTQ_CHECKS = bool(config.get("skip_fastq_checks", False)) or bool(getattr(workflow, "dryrun", False))
 for r in REPLICATES:
     sn=df[df['replicateName']==r].iloc[0].sampleName
     if not sn in SAMPLE2REPLICATES:
@@ -94,16 +95,26 @@ for r in REPLICATES:
     SAMPLE2REPLICATES[sn].append(r)
     REPLICATE2SAMPLE[r]=sn
     r1=df[df['replicateName']==r].iloc[0].path_to_R1
-    check_readaccess(r1)
     r1new=join(WORKDIR,"fastqs",r+".R1.fastq.gz")
-    if not os.path.exists(r1new):
-        os.symlink(r1,r1new)
+    if SKIP_FASTQ_CHECKS:
+        os.makedirs(os.path.dirname(r1new), exist_ok=True)
+        if not os.path.exists(r1new):
+            open(r1new, 'a').close()
+    else:
+        check_readaccess(r1)
+        if not os.path.exists(r1new):
+            os.symlink(r1,r1new)
     replicateName2R1[r]=r1new
     r2=df[df['replicateName']==r].iloc[0].path_to_R2
-    check_readaccess(r2)
     r2new=join(WORKDIR,"fastqs",r+".R2.fastq.gz")
-    if not os.path.exists(r2new):
-        os.symlink(r2,r2new)
+    if SKIP_FASTQ_CHECKS:
+        os.makedirs(os.path.dirname(r2new), exist_ok=True)
+        if not os.path.exists(r2new):
+            open(r2new, 'a').close()
+    else:
+        check_readaccess(r2)
+        if not os.path.exists(r2new):
+            os.symlink(r2,r2new)
     replicateName2R2[r]=r2new
 
 print("# Samples and their replicates")

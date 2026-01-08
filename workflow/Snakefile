@@ -17,24 +17,30 @@ def run_library_norm(wildcards):
 
 def run_deeptools_bw(wildcards):
     files=[]
-    b1=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS)
-    files.extend(b1)
-    b2=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),replicate=REPLICATES,dupstatus=DUPSTATUS)
-    files.extend(b2)
-    b3=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    b3=expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     files.extend(b3)
     return files
 
 def run_deeptools_heatmap(wildcards):
     files=[]
-    GROUP = [a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]]
-    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    GROUP = TREATMENTS + ["all_samples"]
+    BEDTYPES = [
+        "geneinfo",
+        "protein_coding",
+        "ca_ctcf",
+        "ca_h3k4me3",
+        "ca_tf",
+        "pls",
+        "dels",
+        "pels",
+    ]
+    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p1)
-    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p2)
-    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p3)
-    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p4)
     return files
 
@@ -366,7 +372,7 @@ def get_rose(wildcards):
 def get_go_enrichment(wildcards):
     files=[]
     if config["run_contrasts"] and config['run_go_enrichment']:
-        if (GENOME == "hg19") or (GENOME == "hg38"):
+        if (GENOME == "hg19") or (GENOME == "hg38") or (GENOME == "mm10"):
             if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
                 t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(t)
@@ -452,7 +458,8 @@ for cmd in spooker jobby; do
     fi
 done
 cd {WORKDIR}
-jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+# jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
 spooker \\
     --outdir "{WORKDIR}" \\
     --name "{config[pipeline]}" \\
@@ -491,7 +498,8 @@ for cmd in spooker jobby; do
     fi
 done
 cd {WORKDIR}
-jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+# jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
 spooker \\
     --outdir "{WORKDIR}" \\
     --name "{config[pipeline]}" \\
@@ -559,10 +567,10 @@ fi
 #         expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
 
 #         # ALIGN / deeptools_heatmap
-#         expand(join(RESULTSDIR,"deeptools","clean", "{sample}.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "{sample}.prot.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "all_samples.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "all_samples.prot.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.TSS.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
-#         expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.geneinfo.bed"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{sample}.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{sample}.prot.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "all_samples.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "all_samples.prot.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.metagene.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.TSS.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.geneinfo.bed"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
