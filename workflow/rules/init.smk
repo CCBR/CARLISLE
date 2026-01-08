@@ -534,7 +534,8 @@ rule create_reference:
         if [[ -d {params.bowtie2_dir} ]]; then rm -r {params.bowtie2_dir}; fi
         mkdir -p {params.bowtie2_dir}/ref
         ln -s {input.genomefa_source} {output.genomefa}
-        ln -s {input.blacklist_source} {output.blacklist}
+        cp {input.blacklist_source} {output.blacklist}.gz
+        gunzip -f {output.blacklist}.gz
         if [[ {params.use_spikein} == "SPIKEIN" ]]; then ln -s {params.spiked_source} {params.spiked_output}; fi
 
         # create json file and store in "tmp" until the reference is built
