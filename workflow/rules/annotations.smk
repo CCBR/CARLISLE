@@ -723,19 +723,19 @@ rule rose:
         dupstatus = "{dupstatus}",
         bam_path=join(RESULTSDIR,"bam"),
         workdir=join(WORKDIR),
-        file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}"),
+        file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}"),
         control_flag = config["macs2_control"],
-        mapped_gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","mappedGFF"),
-        gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","gff"),
+        mapped_gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","mappedGFF"),
+        gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","gff"),
     output:
-        no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
-        all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
-        regular=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
-        super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
-        regular_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
-        super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
-        regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
-        super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
+        no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
+        all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
+        regular=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
+        super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
+        regular_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
+        super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
+        regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
+        super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
     shell:
         """
         # set tmp
@@ -752,21 +752,34 @@ rule rose:
         PATHTO=/usr/local/apps/ROSE/1.3.1
         PYTHONPATH=/usr/local/apps/ROSE/1.3.1/src/lib
         export PYTHONPATH
-        export PATH=$PATH:$PATHTO/bin
+        export PATH=$PATHTO/bin:$PATH
+        
+        # Explicitly use the system Python that ROSE expects
+        unset CONDA_PREFIX
+        unset CONDA_DEFAULT_ENV
 
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # set bam file
+        # set bam file - for pooled mode, use merged control BAMs
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
-        cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
 
-        # remove NC from bams and beds
-        echo "## Cleaning"
-        samtools view -b ${{treat_bam}} {params.regions} > $TMPDIR/subset.bam
-        samtools index $TMPDIR/subset.bam
-        grep -v "NC_" {input.peak_file} > $TMPDIR/subset.bed
+        if [[ "{wildcards.control_mode}" == "pooled" ]]; then
+            cntrl_bam={params.bam_path}/pooled_controls/${{control}}.{params.dupstatus}.merged.bam
+        else
+            cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
+        fi
+        
+        # Set control bam for ROSE based on control flag and peak caller type
+        if [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
+            # No control used with MACS2
+            rose_files="${{treat_bam}}"
+        else
+            rose_files="${{treat_bam}} ${{cntrl_bam}}" 
+        fi
+
+        cp {input.peak_file} $TMPDIR/subset.bed
 
         # prep for ROSE
         # macs2 output is prepared for ROSE formatting
@@ -776,7 +789,7 @@ rule rose:
         ### original: <chr>   <start> <end>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <0> <.>
         echo "## Prep Rose"
-        if [[ {params.peak_caller_type} == "gopeaks_narrow" ]] || [[ {params.peak_caller_type} == "gopeaks_broad" ]]; then
+        if [[ "{params.peak_caller_type}" == "gopeaks_narrow" ]] || [[ "{params.peak_caller_type}" == "gopeaks_broad" ]]; then
             echo "#### Fixing GoPeaks"
             cp $TMPDIR/subset.bed $TMPDIR/save.bed
             nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="${{treatment}}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
@@ -786,7 +799,7 @@ rule rose:
         ## correct SEACR
         ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
         ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
-        if [[ {params.peak_caller_type} == "seacr_stringent" ]] || [[ {params.peak_caller_type} == "seacr_relaxed" ]]; then
+        if [[ "{params.peak_caller_type}" == "seacr_stringent" ]] || [[ "{params.peak_caller_type}" == "seacr_relaxed" ]]; then
             echo "#### Fixing SECAR"
             cp $TMPDIR/subset.bed $TMPDIR/save.bed
             awk -v sample_id="${{treatment}}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
@@ -814,32 +827,13 @@ rule rose:
             echo "## More than 5 usable peaks detected ${{num_of_peaks}} - Running rose"
             cd {params.workdir}
 
-            # if macs2 control is off, there will be no macs2 control to annotate
-            if [[ {params.control_flag} == "N" ]] & [[ {params.peak_caller_type} == "macs2_narrow" ]] || [[ {params.peak_caller_type} == "macs2_broad" ]]; then
-                echo "#### No control was used"
-                rose_files="$TMPDIR/subset.bam"
-            else
-                echo "#### A control used ${{cntrl_bam}}"
-                rose_files="$TMPDIR/subset.bam ${{cntrl_bam}}"
-            fi
-
-            if [[ {params.genome} == "hs1" ]]; then
-                ROSE_main.py \
-                    -i {output.no_tss_bed} \
-                    --custom={params.refseq} \
-                    -r ${{rose_files}} \
-                    -t {params.tss_distance} \
-                    -s {params.stitch_distance} \
-                    -o {params.file_base}
-            else
-                ROSE_main.py \
-                    -i {output.no_tss_bed} \
-                    -g {params.genome} \
-                    -r ${{rose_files}} \
-                    -t {params.tss_distance} \
-                    -s {params.stitch_distance} \
-                    -o {params.file_base}
-            fi
+            ROSE_main.py \
+                -i {output.no_tss_bed} \
+                --custom={params.refseq} \
+                -r ${{rose_files}} \
+                -t {params.tss_distance} \
+                -s {params.stitch_distance} \
+                -o {params.file_base}
 
             # rose to bed file
             echo "## Convert bed"
