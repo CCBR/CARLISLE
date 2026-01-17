@@ -4,13 +4,34 @@
 
 ### New Features
 
-- Add support for pooled control mode in ROSE enhancer analysis. ROSE now runs separately for both individual and pooled control modes, enabling comparison of replicate-specific vs merged high-depth controls for super-enhancer identification. (@kopardev)
-- Compress all reference BED files to `.bed.gz` format with automatic decompression during analysis, reducing storage requirements. (@kopardev)
+- **Pooled control mode support**: Complete pipeline implementation for pooled control analysis across MACS2, SEACR, GoPeaks, ROSE, HOMER, and differential analysis workflows. Enables comparison of replicate-specific vs merged high-depth controls. (@kopardev)
+- **ROSE dual control mode**: ROSE enhancer analysis now runs separately for both individual and pooled control modes, generating separate super-enhancer calls for each approach. (@kopardev)
+- **Reference file compression**: All reference BED files (blacklists, TSS, gene annotations, cCREs) now stored as `.bed.gz` with automatic decompression during analysis, significantly reducing storage requirements. (@kopardev)
+- **cCRE annotations**: Added comprehensive candidate cis-Regulatory Element (cCRE) annotations from ENCODE SCREEN database for all supported genomes (hg38, hg19, mm10, hs1), including:
+  - Promoter-like signatures (PLS)
+  - Proximal enhancer-like signatures (pELS)
+  - Distal enhancer-like signatures (dELS)
+  - Chromatin accessibility regions (CA-CTCF, CA-H3K4me3, CA-TF)
+- **Motif enrichment for DEG peaks**: Added HOMER motif discovery and AME motif enrichment analysis specifically for differentially enriched peaks (both AUC-based and fragments-based, for up-regulated peaks in each group). (@kopardev)
+- **Enhanced differential analysis outputs**: Added 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`) for downstream enrichment analyses. (@kopardev)
+- **HOCOMOCO v14 CORE motifs**: Added complete HOCOMOCO v14 CORE motif database in both HOMER and MEME formats for comprehensive motif enrichment analysis. (@kopardev)
+
+### Improvements
+
+- **Increased resource allocations**: Enhanced memory and thread allocation for computationally intensive rules:
+  - ROSE: 96GB memory, 16 threads
+  - DESeq2: 96GB memory
+  - GO enrichment: 32GB memory, 8 threads
+  - deepTools tasks: Increased memory allocations
+- **Enhanced GO enrichment**: Improved GO enrichment workflow with contrast file support and parallel processing options for better performance. (@kopardev)
+- **deepTools optimization**: Added temporary directory handling and expanded bedtype support for improved coverage analysis. (@kopardev)
+- **Improved logging and reruns**: Better handling of rerun scenarios and enhanced logging throughout the pipeline. (@kopardev)
 
 ### Bug Fixes
 
-- Fix ROSE execution environment to prevent Python library conflicts between Snakemake and ROSE environments. (@kopardev)
-- Improve ROSE chromosome handling to properly filter NC_ chromosomes (alternative scaffolds) from both treatment and control BAM files before enhancer stitching. (@kopardev)
+- **ROSE environment isolation**: Fixed Python library conflicts between Snakemake and ROSE environments by explicitly managing `PYTHONPATH` and unsetting conda variables. (@kopardev)
+- **ROSE chromosome filtering**: Properly filter NC_ chromosomes (alternative scaffolds, unplaced contigs) from both treatment and control BAM files before enhancer stitching to prevent analysis failures. (@kopardev)
+- **BED file decompression**: Implemented consistent decompression handling for all compressed BED files across init, alignment, and annotation rules. (@kopardev)
 
 ## CARLISLE 2.7.2
 
