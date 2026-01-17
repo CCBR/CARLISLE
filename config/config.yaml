@@ -23,7 +23,6 @@ contrasts_fdr_cutoff: 0.05
 contrasts_lfc_cutoff: 0.59 # FC of 1.5
 
 # these steps are long-running. use `true` if you would like to run them
-run_go_enrichment: false
 run_rose: false
 
 # reference
@@ -79,6 +78,15 @@ peaktype: "macs2_narrow, macs2_broad, seacr_stringent, seacr_relaxed, gopeaks_na
 ### options: "Y" or "N"
 macs2_control: "Y"
 
+# pool controls
+## pool all control replicates for each control sample before peak calling
+## when false: only individual replicate controls are used for peak calling
+## when true: generates BOTH individual AND pooled control peak calls in separate folders:
+##   - results/peaks/.../individual/ for per-replicate control peaks
+##   - results/peaks/.../pooled/ for merged control peaks
+## options: true or false
+pool_controls: true
+
 # qvalues
 ## thresholds to be used for peak callers
 ## must be a list of comma separated values. minimum of numeric value required.
@@ -98,12 +106,13 @@ stitch_distance: 12500
 tss_distance: 2500
 
 ## homer
-motif_size: 1000
-preparsedDir: "/data/CCBR_Pipeliner/db/PipeDB/homer/preparsedDir"
+run_motif_enrichment_called_peaks: false
+run_motif_enrichment_deg_peaks: false
 
 ## GO Enrichment
 ## enrichment analysis can be performed on hg19 or hg38 samples
 ## one option may be chosen for each project
+run_go_enrichment: false
 geneset_id: "GOBP" # ["GOBP" "GOCC" "GOMF" "KEGG"]
 
 #####################################################################################
@@ -116,32 +125,64 @@ reference:
   hg38:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/hg38.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/genes.gtf"
-    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg38.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg38.bed.gz"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
-    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg38.tss.bed"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg38.tss.bed.gz"
+    geneinfo_bed: "$PIPELINE_HOME/resources/genes/hg38.geneinfo.all.bed.gz"
+    protein_coding_bed: "$PIPELINE_HOME/resources/genes/hg38.geneinfo.protein_coding.bed.gz"
+    ca_ctcf_bed: "$PIPELINE_HOME/resources/cCREs/hg38.CA-CTCF.bed.gz"
+    ca_h3k4me3_bed: "$PIPELINE_HOME/resources/cCREs/hg38.CA-H3K4me3.bed.gz"
+    ca_tf_bed: "$PIPELINE_HOME/resources/cCREs/hg38.CA-TF.bed.gz"
+    pls_bed: "$PIPELINE_HOME/resources/cCREs/hg38.PLS.bed.gz"
+    dels_bed: "$PIPELINE_HOME/resources/cCREs/hg38.dELS.bed.gz"
+    pels_bed: "$PIPELINE_HOME/resources/cCREs/hg38.pELS.bed.gz"
     rose: "$WORKDIR/annotation/hg38_refseq.ucsc"
   hg19:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/hg19.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/genes.gtf"
-    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg19.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hg19.bed.gz"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "hs"
-    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg19.tss.bed"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hg19.tss.bed.gz"
+    geneinfo_bed: "$PIPELINE_HOME/resources/genes/hg19.geneinfo.all.bed.gz"
+    protein_coding_bed: "$PIPELINE_HOME/resources/genes/hg19.geneinfo.protein_coding.bed.gz"
+    ca_ctcf_bed: "$PIPELINE_HOME/resources/cCREs/hg19.CA-CTCF.bed.gz"
+    ca_h3k4me3_bed: "$PIPELINE_HOME/resources/cCREs/hg19.CA-H3K4me3.bed.gz"
+    ca_tf_bed: "$PIPELINE_HOME/resources/cCREs/hg19.CA-TF.bed.gz"
+    pls_bed: "$PIPELINE_HOME/resources/cCREs/hg19.PLS.bed.gz"
+    dels_bed: "$PIPELINE_HOME/resources/cCREs/hg19.dELS.bed.gz"
+    pels_bed: "$PIPELINE_HOME/resources/cCREs/hg19.pELS.bed.gz"
     rose: "$WORKDIR/annotation/hg19_refseq.ucsc"
   mm10:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/mm10.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/mm10_basic/genes.gtf"
-    blacklist: "$PIPELINE_HOME/resources/blacklistbed/mm10.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/mm10.bed.gz"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chrX chrY"
     macs2_g: "mm"
-    tss_bed: "$PIPELINE_HOME/resources/tss_bed/mm10.tss.bed"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/mm10.tss.bed.gz"
+    geneinfo_bed: "$PIPELINE_HOME/resources/genes/mm10.geneinfo.all.bed.gz"
+    protein_coding_bed: "$PIPELINE_HOME/resources/genes/mm10.geneinfo.protein_coding.bed.gz"
+    ca_ctcf_bed: "$PIPELINE_HOME/resources/cCREs/mm10.CA-CTCF.bed.gz"
+    ca_h3k4me3_bed: "$PIPELINE_HOME/resources/cCREs/mm10.CA-H3K4me3.bed.gz"
+    ca_tf_bed: "$PIPELINE_HOME/resources/cCREs/mm10.CA-TF.bed.gz"
+    pls_bed: "$PIPELINE_HOME/resources/cCREs/mm10.PLS.bed.gz"
+    dels_bed: "$PIPELINE_HOME/resources/cCREs/mm10.dELS.bed.gz"
+    pels_bed: "$PIPELINE_HOME/resources/cCREs/mm10.pELS.bed.gz"
     rose: "$WORKDIR/annotation/mm10_refseq.ucsc"
   hs1:
     fa: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/hs1.fa"
     gtf: "/data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf"
-    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hs1.bed"
-    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hs1.tss.bed"
+    blacklist: "$PIPELINE_HOME/resources/blacklistbed/hs1.bed.gz"
+    tss_bed: "$PIPELINE_HOME/resources/tss_bed/hs1.tss.bed.gz"
+    geneinfo_bed: "$PIPELINE_HOME/resources/genes/hs1.geneinfo.all.bed.gz"
+    protein_coding_bed: "$PIPELINE_HOME/resources/genes/hs1.geneinfo.protein_coding.bed.gz"
+    ca_ctcf_bed: "$PIPELINE_HOME/resources/cCREs/hs1.CA-CTCF.bed.gz"
+    ca_h3k4me3_bed: "$PIPELINE_HOME/resources/cCREs/hs1.CA-H3K4me3.bed.gz"
+    ca_tf_bed: "$PIPELINE_HOME/resources/cCREs/hs1.CA-TF.bed.gz"
+    pls_bed: "$PIPELINE_HOME/resources/cCREs/hs1.PLS.bed.gz"
+    dels_bed: "$PIPELINE_HOME/resources/cCREs/hs1.dELS.bed.gz"
+    pels_bed: "$PIPELINE_HOME/resources/cCREs/hs1.pELS.bed.gz"
     regions: "chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY"
     macs2_g: "3.1e+8"
     rose: "$WORKDIR/annotation/hs1_refseq.ucsc"
@@ -159,6 +200,9 @@ spikein_reference:
 adapters: "$PIPELINE_HOME/resources/other/adapters.fa"
 
 ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.4/bin/"
+
+hocomoco_motifs: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_homer_format_0.001.motif"
+hocomoco_memes_targz: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_memes.tar.gz"
 
 #####################################################################################
 # CONTAINERS
