@@ -20,7 +20,18 @@ homer.files <- list.files(
   path = peaks.dir, pattern = "annotation.summary",
   recursive = TRUE, full.names = TRUE
 )
-homer <- lapply(homer.files, function(x) read.table(x, sep = "\t", header = TRUE, check.names = FALSE, nrows = 14))
+
+# Read annotation files, handling empty files
+homer <- lapply(homer.files, function(x) {
+  df <- read.table(x, sep = "\t", header = TRUE, check.names = FALSE, nrows = 14)
+  # Return NULL if no data rows (only header)
+  if (nrow(df) == 0) {
+    return(NULL)
+  }
+  return(df)
+})
+
+# Remove NULL entries (files with no peaks)
 names(homer) <- gsub(
   "gopeaks/|macs2/|seacr/", "",
   gsub(
@@ -31,6 +42,18 @@ names(homer) <- gsub(
     )
   )
 )
+homer <- homer[!sapply(homer, is.null)]
+
+# Check if we have any valid data
+if (length(homer) == 0) {
+  warning("No valid annotation data found. Creating empty plot.")
+  png(fig, width = 700, height = 400)
+  plot.new()
+  text(0.5, 0.5, "No peaks with HOMER annotation available", cex = 1.5)
+  dev.off()
+  quit(save = "no", status = 0)
+}
+
 homer <- lapply(homer, function(x) x[1:rownames(x[which(x$Annotation == "Annotation"), ]) - 1, ])
 homer <- ldply(homer, .id = "File")
 

@@ -3,7 +3,7 @@
 ```bash
 ./gtf2tssBed.py --gtf /data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/genes.gtf --bed hg38.tss.bed
 ./gtf2tssBed.py --gtf /data/CCBR_Pipeliner/db/PipeDB/Indices/hg19_basic/genes.gtf --bed hg19.tss.bed
-./gtf2tssBed.py --gtf /data/CCBR_Pipeliner/db/PipeDB/Indices/T2T/genes.gtf --bed T2T.tss.bed
+./gtf2tssBed.py --gtf /data/CCBR_Pipeliner/db/PipeDB/Indices/hs1/genes.gtf --bed T2T.tss.bed
 ./gtf2tssBed.py --gtf /data/CCBR_Pipeliner/db/PipeDB/Indices/GTFs/mm10/gencode.vM25.annotation.gtf --bed mm10.tss.bed
 
 ```

@@ -88,6 +88,10 @@ parser$add_argument("--gtf",
   type = "character", required = FALSE,
   help = "gtf path - needed for HS1"
 )
+parser$add_argument("--exclude",
+  type = "character", required = FALSE, default = NULL,
+  help = "comma-separated samplename(s) to exclude from DESeq2"
+)
 args <- parser$parse_args()
 
 gtf <- args$gtf
@@ -145,6 +149,37 @@ if (debug) {
   gtf <- args$gtf
   if (!file.exists(gtf)) {
     stop(paste("GTF file does not exist:", gtf))
+  }
+
+  # Handle optional exclusions by filtering sampleinfo and counts matrix
+  if (!is.null(args$exclude) && nchar(args$exclude) > 0) {
+    excl <- trimws(unlist(strsplit(args$exclude, ",")))
+    # Build filtered file paths under tmpdir
+    filtered_cm <- file.path(args$tmpdir, "filtered.countsmatrix.tsv")
+    filtered_si <- file.path(args$tmpdir, "filtered.sampleinfo.tsv")
+
+    # Read sampleinfo and filter out excluded samplenames
+    sidf <- tryCatch({
+      read.table(coldata, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+    }, error = function(e) {
+      stop(paste("Failed to read sampleinfo:", coldata, e))
+    })
+    sidf <- sidf[!(sidf$samplename %in% excl), , drop = FALSE]
+    write.table(sidf, file = filtered_si, sep = "\t", quote = FALSE, row.names = FALSE)
+
+    # Read counts matrix and drop excluded columns
+    cmdf <- tryCatch({
+      read.table(rawcountsmatrix, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+    }, error = function(e) {
+      stop(paste("Failed to read countsmatrix:", rawcountsmatrix, e))
+    })
+    keep_cols <- setdiff(colnames(cmdf), excl)
+    cmdf <- cmdf[, keep_cols, drop = FALSE]
+    write.table(cmdf, file = filtered_cm, sep = "\t", quote = FALSE, row.names = FALSE)
+
+    # Override paths to filtered versions
+    rawcountsmatrix <- filtered_cm
+    coldata <- filtered_si
   }
 }
 

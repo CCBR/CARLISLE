@@ -244,8 +244,8 @@ function preruncleanup() {
     modtime=$(stat ${WORKDIR}/logs/snakemake.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/logs/snakemake.log ${WORKDIR}/stats/snakemake.${modtime}.log
 
-    if [ -f ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ];then
-      mv ${WORKDIR}/logs/snakemake.log.HPC_summary.txt ${WORKDIR}/stats/snakemake.${modtime}.log.HPC_summary.txt
+    if [ -f ${WORKDIR}/logs/snakemake.log.jobby ];then
+      mv ${WORKDIR}/logs/snakemake.log.jobby ${WORKDIR}/stats/snakemake.${modtime}.log.jobby
     fi
     if [ -f ${WORKDIR}/logs/snakemake.stats ];then
       mv ${WORKDIR}/logs/snakemake.stats ${WORKDIR}/stats/snakemake.${modtime}.stats
@@ -278,6 +278,7 @@ function run() {
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
+    --rerun-triggers mtime code \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cores all \
@@ -317,6 +318,7 @@ function run() {
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
     --printshellcmds \
+    --rerun-triggers mtime code \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \
@@ -335,7 +337,6 @@ function run() {
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
-    bash <(curl https://raw.githubusercontent.com/CCBR/Tools/master/Biowulf/gather_cluster_stats.sh 2>/dev/null) ${WORKDIR}/logs/snakemake.log > ${WORKDIR}/logs/snakemake.log.HPC_summary.txt
 EOF
       echo "Created ${WORKDIR}/submit_script.sbatch"
     fi
@@ -347,6 +348,7 @@ EOF
     --directory $WORKDIR \
     --use-envmodules \
     --printshellcmds \
+    --rerun-triggers mtime code \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \

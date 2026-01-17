@@ -15,3 +15,11 @@ site/
 
 # ignore resources for deeptools
 resources/*gencode*
+tmp
+x.sh
+WIP
+dryrun.log
+POOL_CONTROLS_FEATURE.md
+.snakemake
+.vscode
+dryrun_workdir

@@ -107,6 +107,36 @@ Enable control sample usage for MACS2 to improve specificity:
 macs2_control: "Y"
 ```
 
+### Optional Analysis Steps
+
+Control execution of computationally intensive annotation steps:
+
+```yaml
+run_rose: false              # ROSE super-enhancer analysis (set to true to enable)
+run_go_enrichment: false     # ChIP-Enrich GO enrichment (set to true to enable)
+```
+
+> ⏱️ **Performance Note:** ROSE and GO enrichment are disabled by default due to their computational requirements. Enable them when you need super-enhancer identification or pathway enrichment analysis.
+
+### Pooled Controls
+
+Control whether the pipeline pools control replicates for peak calling:
+
+```yaml
+pool_controls: true
+```
+
+When enabled (`true`), CARLISLE runs peak calling in **both modes**:
+
+* **Individual mode** – Each treatment replicate is paired with its individual control replicate
+* **Pooled mode** – Each treatment replicate is compared against merged high-depth controls from all control replicates
+
+This dual-mode analysis enables comparison of replicate-specific vs merged control strategies. Results are organized in separate `individual/` and `pooled/` subdirectories within peak calling outputs.
+
+> 💡 **Use Case:** Pooled controls provide increased depth and reduced noise but may miss replicate-specific artifacts. Running both modes allows downstream selection of the most appropriate strategy.
+
+> ⚠️ **Note:** If controls have no replicates to pool (each control has only 1 replicate), pooling will have no effect. Consider setting `pool_controls: false` in such cases.
+
 ### Quality Thresholds
 
 Set peak-calling quality thresholds using the `quality_thresholds` parameter:
@@ -125,14 +155,41 @@ Refer to tool-specific defaults:
 
 ## Reference Files
 
+CARLISLE includes comprehensive reference annotations for supported genomes:
+
+### Built-in Annotations
+
+For each genome (hg38, hg19, hs1/T2T, mm10), the pipeline provides:
+
+* **Gene annotations**: TSS, gene bodies, promoters, intergenic regions (protein-coding and all genes)
+* **Blacklisted regions**: ENCODE DAC blacklists for artifact exclusion
+* **cCREs (candidate cis-Regulatory Elements)**: From ENCODE SCREEN database
+  * **PLS** – Promoter-like signatures
+  * **pELS** – Proximal enhancer-like signatures  
+  * **dELS** – Distal enhancer-like signatures
+  * **CA-CTCF** – CTCF-bound chromatin accessibility regions
+  * **CA-H3K4me3** – H3K4me3-marked chromatin accessibility (active promoters)
+  * **CA-TF** – Transcription factor-bound chromatin accessibility
+  * **CA** – General chromatin accessibility
+  * **TF** – Transcription factor binding sites
+
+These annotations are automatically used by HOMER, GO enrichment, and other annotation tools.
+
+### Custom Genomes
+
 Additional reference genomes can be integrated by defining:
 
 ```yaml
 species_name:
   fa: "/path/to/species.fa"
-  blacklist: "/path/to/blacklistbed/species.bed"
+  blacklist: "/path/to/blacklistbed/species.bed.gz"
   regions: "chr1 chr2 chr3"
   macs2_g: "hs" # genome shorthand for MACS2
+  tss_bed: "/path/to/tss.bed.gz"
+  # Add cCRE annotations if available
+  ca_pls_bed: "/path/to/cCREs.PLS.bed.gz"
+  ca_pels_bed: "/path/to/cCREs.pELS.bed.gz"
+  ca_dels_bed: "/path/to/cCREs.dELS.bed.gz"
 ```
 
 > 🧭 **Best Practice:** Store reference paths under a centralized `/fdb` or `/data` location on Biowulf to ensure accessibility and consistency across users.
