@@ -4,13 +4,13 @@
 
 ### New Features
 
-- Add support for pooled control mode in ROSE enhancer analysis. ROSE now runs separately for both individual and pooled control modes, enabling comparison of replicate-specific vs merged high-depth controls for super-enhancer identification. (#XXX, @kopardev)
-- Compress all reference BED files to `.bed.gz` format with automatic decompression during analysis, reducing storage requirements. (#XXX, @kopardev)
+- Add support for pooled control mode in ROSE enhancer analysis. ROSE now runs separately for both individual and pooled control modes, enabling comparison of replicate-specific vs merged high-depth controls for super-enhancer identification. (@kopardev)
+- Compress all reference BED files to `.bed.gz` format with automatic decompression during analysis, reducing storage requirements. (@kopardev)
 
 ### Bug Fixes
 
-- Fix ROSE execution environment to prevent Python library conflicts between Snakemake and ROSE environments. (#XXX, @kopardev)
-- Improve ROSE chromosome handling to properly filter NC_ chromosomes (alternative scaffolds) from both treatment and control BAM files before enhancer stitching. (#XXX, @kopardev)
+- Fix ROSE execution environment to prevent Python library conflicts between Snakemake and ROSE environments. (@kopardev)
+- Improve ROSE chromosome handling to properly filter NC_ chromosomes (alternative scaffolds) from both treatment and control BAM files before enhancer stitching. (@kopardev)
 
 ## CARLISLE 2.7.2
 
