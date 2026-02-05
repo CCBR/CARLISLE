@@ -1,10 +1,4 @@
 
-def get_input_fastqs(wildcards):
-    d = dict()
-    d["R1"] = replicateName2R1[wildcards.replicate]
-    d["R2"] = replicateName2R2[wildcards.replicate]
-    return d
-
 def get_library_input(wildcards):
     if (NORM_METHOD=="LIBRARY"):
         stats_file=join(RESULTSDIR,"alignment_stats","library_scale.tsv")
@@ -27,8 +21,10 @@ rule trim:
     input:
         unpack(get_input_fastqs)
     output:
-        R1 = temp(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz")),
-        R2 = temp(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz")),
+        R1 = join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),
+        R2 = join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         adapters = config["adapters"],
     threads: getthreads("trim")
@@ -71,10 +67,12 @@ rule align:
         R2 = rules.trim.output.R2,
         bt2 = join(BOWTIE2_INDEX,"ref.1.bt2")
     output:
-        bam=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam")),
-        bai=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai")),
-        bamflagstat=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat")),
-        bamidxstats=temp(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats")),
+        bam=join(RESULTSDIR,"bam","raw","{replicate}.bam"),
+        bai=join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),
+        bamflagstat=join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),
+        bamidxstats=join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         bowtie2_parameters = config["bowtie2_parameters"],
@@ -125,6 +123,8 @@ rule filter:
         bai=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
         bamflagstat=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.flagstat"),
         bamidxstats=join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         dupstatus = "{dupstatus}",  # can be "dedup" or "no_dedup"
@@ -150,7 +150,6 @@ rule filter:
         fi
         if [[ "{params.dupstatus}" == "dedup" ]];then
 
-            # deduplicate only the spikeins
             genome_regions=$(cut -f1 {input.genome_len} | tr '\\n' ' ')
             samtools view -@{threads} -b {input.bam} $genome_regions | \\
                 samtools sort -@{threads} -T $TMPDIR -o ${{TMPDIR}}/{params.replicate}.{params.dupstatus}.genome.bam -
@@ -211,6 +210,8 @@ rule alignstats:
         spikein_len = join(BOWTIE2_INDEX,"spikein.len"),
     output:
         outyaml = join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml")
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         replicate = "{replicate}",
         pyscript = join(SCRIPTSDIR,"_get_nreads_stats.py"),
@@ -300,6 +301,8 @@ rule bam2bg:
         bg=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),
         bw=join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),
         sf_yaml=join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.sf.yaml")
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     params:
         spikein = NORM_METHOD,
         replicate = "{replicate}",
@@ -365,96 +368,181 @@ rule bam2bg:
         """
 
 rule deeptools_bw:
+    """
+    Generate bigwig coverage files from filtered BAM files using deeptools bamCoverage.
+    
+    This rule converts filtered alignment BAM files into bigwig format with RPGC normalization
+    (Reads Per Genome Coverage). The bigwig files are normalized by effective genome size and
+    centered on reads, enabling visualization and quantitative analysis of chromatin accessibility
+    or ChIP-seq signal across the genome.
+    
+    Inputs:
+        bam: Filtered BAM file (after deduplication and quality filtering)
+        bai: BAM index file for efficient random access
+        genome_len: File containing chromosome names and sizes (from bowtie2 index)
+    
+    Outputs:
+        bw: Bigwig file with RPGC-normalized coverage values stored in temp directory
+    
+    Parameters:
+        binSize: 25 bp bins for coverage calculation
+        smoothLength: 75 bp smoothing window
+        normalizeUsing: RPGC (Reads Per Genome Coverage) normalization method
+        effectiveGenomeSize: Total effective genome size used for normalization
+        centerReads: Center each read at its 5' end before coverage calculation
+    
+    Tool: deeptools bamCoverage (https://deeptools.readthedocs.io/)
+    """
     input:
         bam = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),
+        bai = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
         genome_len = join(BOWTIE2_INDEX,"genome.len")
     output:
-        clean_bam = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),
-        clean_bai = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),
-        bw = join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),
+        bw = join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"),
+    wildcard_constraints:
+        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
     envmodules:
         TOOLS["samtools"],
         TOOLS["deeptools"],
+    threads: getthreads("deeptools_bw")
     shell:
         """
         genome_size=`cat {input.genome_len} | awk '{{ sum+=$2 }} END{{ print sum }}'`
-        samtools view -b -@4 {input.bam} chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 chr21 chr22 chrX chrY | samtools sort -@4 -o {output.clean_bam}
-        samtools index {output.clean_bam}
-        bamCoverage --bam {output.clean_bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors 32 --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
+        bamCoverage --bam {input.bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors {threads} --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
         """
 
 rule deeptools_prep:
+    """
+    Prepare configuration files for deeptools matrix computation.
+    
+        This rule generates text files (.deeptools_prep) that contain metadata required for computing
+        coverage matrices in the deeptools_mat rule. Each prep file stores:
+            - Deduplication status (dedup/no_dedup)
+            - List of bigwig file paths for samples/groups being compared
+            - List of corresponding sample labels for output visualization
+
+        The rule creates one prep file per treatment control pair (and one for all_samples) for each
+        duplication status.
+    
+    Inputs:
+        bw: All normalized bigwig files generated by deeptools_bw rule
+    
+    Outputs:
+        deeptools_prep: Configuration files for each group (treatment pair or all_samples)
+
+    Processing:
+        - Iterates through all dedup statuses (dedup/no_dedup)
+        - For each treatment_control_list, generates prep files for full genome analysis
+        - Also generates combined prep files for all samples
+
+    Output file naming: {treatment}.{dupstatus}.deeptools_prep
+                       all_samples.{dupstatus}.deeptools_prep
+    """
     input:
-        bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+        bw = expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
-        deeptools_prep = temp(expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS)),
+        deeptools_prep = expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.deeptools_prep"),group=TREATMENTS+["all_samples"],dupstatus=DUPSTATUS),
     run:
         for dupstatus in DUPSTATUS:
-            for i in ["","prot."]:
-                for item in TREATMENT_CONTROL_LIST:
-                    labels = item.split('_vs_')
-                    treatment, control = labels
-                    bws = [join(RESULTSDIR,"deeptools","clean","{}.{}.clean.bigwig".format(item, dupstatus)) for item in labels]
-                    f=open(join(RESULTSDIR,"deeptools","clean","{}.{}{}.deeptools_prep".format(treatment, i, dupstatus) ),'w')
-                    f.write("{}\n".format(dupstatus))
-                    f.write("{}\n".format(" ".join(bws)))
-                    f.write("{}\n".format(" ".join(labels)))
-                    f.close()
+            for item in TREATMENT_CONTROL_LIST:
+                labels = item.split('_vs_')
+                treatment, control = labels
+                bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                f=open(join(RESULTSDIR,"deeptools","temp","{}.{}.deeptools_prep".format(treatment, dupstatus) ),'w')
+                f.write("{}\n".format(dupstatus))
+                f.write("{}\n".format(" ".join(bws)))
+                f.write("{}\n".format(" ".join(labels)))
+                f.close()
 
         for dupstatus in DUPSTATUS:
             labels = []
             for c in CONTROL_to_TREAT_DICT:
                 labels += CONTROL_to_TREAT_DICT[c]
                 labels.append(c)
-            bws = [join(RESULTSDIR,"deeptools","clean","{}.{}.clean.bigwig".format(item, dupstatus)) for item in labels]
+            bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
 
-            for i in ["","prot."]:
-                f_all=open(join(RESULTSDIR,"deeptools","clean","all_samples.{}{}.deeptools_prep".format(i, dupstatus)),'w')
-                f_all.write("all_samples\n")
-                f_all.write("{}\n".format(" ".join(bws)))
-                f_all.write("{}\n".format(" ".join(labels)))
-                f_all.close()
+            f_all=open(join(RESULTSDIR,"deeptools","temp","all_samples.{}.deeptools_prep".format(dupstatus)),'w')
+            f_all.write("all_samples\n")
+            f_all.write("{}\n".format(" ".join(bws)))
+            f_all.write("{}\n".format(" ".join(labels)))
+            f_all.close()
 
 rule deeptools_mat:
+    """Compute deeptools matrices using one prep file across multiple region BEDs."""
     input:
-        deeptools_prep = join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.deeptools_prep"),
-        bw = expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+        deeptools_prep = join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.deeptools_prep"),
+        bw = expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
-        metamat=temp(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz")),
-        TSSmat=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.TSS.mat.gz")),
-        bed=temp(join(RESULTSDIR,"deeptools","clean","{group}.{dupstatus}.geneinfo.bed")),
+        metamat=join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.{bedtype}.metagene.mat.gz"),
+        TSSmat=join(RESULTSDIR,"deeptools","temp","{group}.{dupstatus}.{bedtype}.TSS.mat.gz"),
+    wildcard_constraints:
+        bedtype="geneinfo|protein_coding|ca_ctcf|ca_h3k4me3|ca_tf|pls|dels|pels",
     params:
-        prebed="/data/CCBR_Pipeliner/db/PipeDB/Indices/hg38_basic/geneinfo.bed",
+        bedfiles={
+            "geneinfo": config["reference"][config["genome"]]["geneinfo_bed"],
+            "protein_coding": config["reference"][config["genome"]]["protein_coding_bed"],
+            "ca_ctcf": config["reference"][config["genome"]]["ca_ctcf_bed"],
+            "ca_h3k4me3": config["reference"][config["genome"]]["ca_h3k4me3_bed"],
+            "ca_tf": config["reference"][config["genome"]]["ca_tf_bed"],
+            "pls": config["reference"][config["genome"]]["pls_bed"],
+            "dels": config["reference"][config["genome"]]["dels_bed"],
+            "pels": config["reference"][config["genome"]]["pels_bed"],
+        },
         pythonver=TOOLS["python3"],
         deeptoolsver=TOOLS["deeptools"],
     threads:
         getthreads("deeptools_mat"),
     run:
-        import re
         commoncmd="module load {params.deeptoolsver}; module load {params.pythonver};"
         listfile=list(map(lambda z:z.strip().split(),open(input.deeptools_prep,'r').readlines()))
-        ext=listfile[0][0]
         bws=listfile[1]
         labels=listfile[2]
-        if "prot" in wildcards.group:
-            cmd1="grep --line-buffered 'protein_coding' "+ params.prebed  +" | awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' > "+output.bed
-        else:
-            cmd1="awk -v OFS='\t' -F'\t' '{{print $1, $2, $3, $5, \".\", $4}}' "+params.prebed+" > "+output.bed
-        cmd2="computeMatrix scale-regions -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --upstream 1000 --regionBodyLength 2000 --downstream 1000 --skipZeros -o "+output.metamat+" --samplesLabel "+" ".join(labels)
-        cmd3="computeMatrix reference-point -S "+" ".join(bws)+" -R "+output.bed+" -p 16 --referencePoint TSS --upstream 3000 --downstream 3000 --skipZeros -o "+output.TSSmat+" --samplesLabel "+" ".join(labels)
-        shell(commoncmd+cmd1)
-        shell(commoncmd+cmd2)
-        shell(commoncmd+cmd3)
+
+        bed_source = params.bedfiles[wildcards.bedtype]
+        
+        # handle compressed BED file: decompress to tmpdir
+        import subprocess
+        import os
+        if bed_source.endswith('.gz'):
+            if os.path.exists('/lscratch') and 'SLURM_JOB_ID' in os.environ:
+                tmpdir = f"/lscratch/{os.environ['SLURM_JOB_ID']}"
+            else:
+                tmpdir = "/dev/shm"
+                os.makedirs(tmpdir, exist_ok=True)
+            
+            bed_unzipped = os.path.join(tmpdir, f"{wildcards.bedtype}.bed")
+            subprocess.run(f"zcat {bed_source} > {bed_unzipped}", shell=True, check=True)
+            bed_source = bed_unzipped
+        
+        cmd2=(
+            "computeMatrix scale-regions -S " + " ".join(bws) +
+            " -R " + bed_source +
+            " -p {threads} --upstream 1000 --regionBodyLength 2000 --downstream 1000"
+            " --skipZeros -o " + output.metamat +
+            " --samplesLabel " + " ".join(labels)
+        )
+        cmd3=(
+            "computeMatrix reference-point -S " + " ".join(bws) +
+            " -R " + bed_source +
+            " -p {threads} --referencePoint TSS --upstream 3000 --downstream 3000"
+            " --skipZeros -o " + output.TSSmat +
+            " --samplesLabel " + " ".join(labels)
+        )
+        shell(commoncmd + cmd2)
+        shell(commoncmd + cmd3)
 
 rule deeptools_heatmap:
+    """Generate heatmaps and profiles per bedtype from deeptools matrices."""
     input:
         metamat=rules.deeptools_mat.output.metamat,
         TSSmat=rules.deeptools_mat.output.TSSmat,
     output:
-        metaheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_heatmap.pdf"),
-        TSSheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_heatmap.pdf"),
-        metaline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_profile.pdf"),
-        TSSline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_profile.pdf"),
+        metaheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_heatmap.pdf"),
+        TSSheat=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_heatmap.pdf"),
+        metaline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),
+        TSSline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),
+    wildcard_constraints:
+        bedtype="geneinfo|protein_coding|ca_ctcf|ca_h3k4me3|ca_tf|pls|dels|pels",
     envmodules:
         TOOLS["deeptools"],
     shell:

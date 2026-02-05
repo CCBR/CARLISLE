@@ -7,10 +7,13 @@ output:
 params:
   carlisle_functions: "/data/CCBR_Pipeliner/Pipelines/CARLISLE/latest/workflow/scripts/_carlisle_functions.R"
   output_dir: "~/../../Volumes/data/tmp/go"
+  contrast_file: ""
   peak_list: "~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/53_H4K20m3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_1_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.relaxed.peaks.bedxxx~/../../Volumes/data/carlisle/v2.0.2/results/peaks/0.1/seacr/peak_output/HN6_H4K20me3_2_vs_HN6_IgG_rabbit_negative_control_1.dedup.stringent.peaks.bed"
   species: "hg38"
   geneset_id: "GOBP"
   dedup_status: "dedup"
+  n_cores: 1
+  skip_hybrid: false
 editor_options:
   chunk_output_type: console
 ---
@@ -30,62 +33,78 @@ load_packages()
 # set params
 speciesID <- params$species
 output_dir <- params$output_dir
-peak_dir <- params$peak_dir
+contrast_file <- params$contrast_file
 peak_list <- params$peak_list
 debug <- "N"
 geneset_id <- params$geneset_id
 dedup_status <- params$dedup_status
+carlisle_n_cores <- 1
+if (!is.null(params$n_cores)) {
+  carlisle_n_cores <- as.integer(params$n_cores)
+}
+
+skip_hybrid <- FALSE
+if (!is.null(params$skip_hybrid)) {
+  skip_hybrid <- isTRUE(params$skip_hybrid)
+}
+
+# Hint parallel backends used by some Bioconductor packages
+options(mc.cores = carlisle_n_cores)
+if (requireNamespace("BiocParallel", quietly = TRUE)) {
+  if (isTRUE(carlisle_n_cores > 1)) {
+    BiocParallel::register(BiocParallel::MulticoreParam(workers = carlisle_n_cores), default = TRUE)
+  } else {
+    BiocParallel::register(BiocParallel::SerialParam(), default = TRUE)
+  }
+}
 
 if (debug == "Y") {
   speciesID <- "hg19"
   functionFile <- "~/../../Volumes/Pipelines-1/CARLISLE_dev/workflow/scripts/_carlisle_functions.R"
   output_dir <- "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/go_enrichment"
-  peak_dir <- "~/../../Volumes/data/carlisle/v2.0/results/peaks/0.05/"
   peak_list <- "macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_1_vs_nocontrol.dedup.narrow.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.broad.peaks.bed macs2/peak_output/53_H3K4me3_2_vs_nocontrol.dedup.narrow.peaks.bed"
   geneset_id <- "GOBP" # supported_genesets() c("GOBP", "GOCC", "GOMF")
 }
 
-# set up peak list
-peak_list <- as.list(strsplit(peak_list, "xxx"))[[1]]
+# prefer contrast_file (replicate IDs + absolute peak paths). fall back to legacy peak_list.
+if (!is.null(contrast_file) && nzchar(contrast_file) && file.exists(contrast_file)) {
+  contrast_df <- readr::read_tsv(
+    contrast_file,
+    col_names = c("condition", "repid", "peak_bed", "bedgraph", "scaling_factor", "fragment_bed"),
+    show_col_types = FALSE
+  )
 
-for (i in 1:length(peak_list[[1]])) {
-  peak_list[[1]][i] <- paste0(peak_dir, peak_list[[1]][i])
+  peak_df <- contrast_df %>%
+    dplyr::select(condition, repid, peak_bed) %>%
+    dplyr::distinct()
+} else {
+  # legacy: xxx-delimited string of paths
+  peak_list <- as.list(strsplit(peak_list, "xxx"))[[1]]
+  peak_df <- data.frame(peak_bed = peak_list, stringsAsFactors = FALSE)
+  peak_df$condition <- NA
+  peak_df$repid <- NA
 }
 ```
 
 ## Sample Information
 
 ```{r peakdf, echo=FALSE}
-# create df for peak info
-peak_df <- data.frame(peak_list)
-colnames(peak_df) <- "peak_bed"
+# extract metadata from absolute path + filename
+peak_df <- peak_df %>% dplyr::mutate(
+  threshold = stringr::str_match(peak_bed, "/peaks/([^/]+)/")[, 2],
+  peak_caller = stringr::str_match(peak_bed, "/peaks/[^/]+/([^/]+)/")[, 2],
+  filename = basename(peak_bed)
+)
 
-# pull sampleID's
-for (rowid in rownames(peak_df)) {
-  total_string_length <- length(strsplit(peak_df[rowid, "peak_bed"], "/")[[1]])
-  strsplit(peak_df[rowid, "peak_bed"], "/")[[1]][total_string_length]
+tokens <- stringr::str_split_fixed(peak_df$filename, "\\.", 5)
+peak_df$sampleid_file <- tokens[, 1]
+peak_df$dedup_status <- tokens[, 2]
+peak_df$peak_type <- tokens[, 3]
 
-  peak_df[rowid, "threshold"] <- strsplit(
-    peak_df[rowid, "peak_bed"],
-    "/"
-  )[[1]][total_string_length - 3]
-  peak_df[rowid, "peak_caller"] <- strsplit(
-    peak_df[rowid, "peak_bed"],
-    "/"
-  )[[1]][total_string_length - 2]
-  peak_df[rowid, "sampleid"] <- strsplit(strsplit(
-    peak_df[rowid, "peak_bed"],
-    "/"
-  )[[1]][total_string_length], "[.]")[[1]][1]
-  peak_df[rowid, "peak_type"] <- strsplit(strsplit(
-    peak_df[rowid, "peak_bed"],
-    "/"
-  )[[1]][total_string_length], "[.]")[[1]][3]
-  peak_df[rowid, "dedup_status"] <- strsplit(strsplit(
-    peak_df[rowid, "peak_bed"],
-    "/"
-  )[[1]][total_string_length], "[.]")[[1]][2]
-}
+# prefer replicate id from contrast file when available
+peak_df$sampleid <- dplyr::if_else(!is.na(peak_df$repid) & nzchar(peak_df$repid), peak_df$repid, peak_df$sampleid_file)
+
+peak_df <- peak_df %>% dplyr::select(-filename)
 
 if (debug == "Y") {
   max_samples <- 2
@@ -102,16 +121,16 @@ print(peak_df)
 This plot gives a distribution of the distance of the peak midpoints to the TSSs. It can help in selecting a locus definition. For example, if genes are primarily within 5kb of TSSs, then the 5kb locus definition may be a good choice. In contrast, if most genes fall far from TSSs, the nearest_tss locus definition may be a good choice.
 
 ```{r qc1, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
+for (rowid in seq_len(max_samples)) {
   print(paste0(
-    "** ", peak_df[rowid, "sampleid"], " | ",
-    peak_df[rowid, "peak_caller"], " | ",
-    peak_df[rowid, "peak_type"], " **"
+    "** ", peak_df[["sampleid"]][rowid], " | ",
+    peak_df[["peak_caller"]][rowid], " | ",
+    peak_df[["peak_type"]][rowid], " **"
   ))
 
   print("--QC Step 1")
   tss_obj <- plot_dist_to_tss(
-    peaks = READ_PEAK_FILE(peak_file_in = peak_df[rowid, "peak_bed"]),
+    peaks = READ_PEAK_FILE(peak_file_in = peak_df[["peak_bed"]][rowid]),
     genome = speciesID
   )
   print(tss_obj)
@@ -121,9 +140,9 @@ for (rowid in rownames(peak_df[c(1:max_samples), ])) {
   ts_max <- max(ts_df$y)
   locus_loc <- subset(ts_df, y == ts_max)$x
 
-  peak_df[rowid, "locus_loc_def"] <- SET_LOCUST_DEF(locus_loc)
-  peak_df[rowid, "locusdf_list"] <- paste(SET_LOCUST_LIST(locus_loc), collapse = ",")
-  peak_df[rowid, "locus_loc_short"] <- SET_LOCUST_LIST(locus_loc)[[1]]
+  peak_df[["locus_loc_def"]][rowid] <- SET_LOCUST_DEF(locus_loc)
+  peak_df[["locusdf_list"]][rowid] <- paste(SET_LOCUST_LIST(locus_loc), collapse = ",")
+  peak_df[["locus_loc_short"]][rowid] <- SET_LOCUST_LIST(locus_loc)[[1]]
 }
 ```
 
@@ -142,11 +161,11 @@ If the defined locus is within 1, 5, or 10kb, then the following three plots are
 - Nkb_outside:The locus is the region more than Nkb upstream or downstream from a TSS to the midpoint between the adjacent TSS.
 
 ```{r qc2, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
+for (rowid in seq_len(max_samples)) {
   print(paste0(
-    "** ", peak_df[rowid, "sampleid"], " | ",
-    peak_df[rowid, "peak_caller"], " | ",
-    peak_df[rowid, "peak_type"], " **"
+    "** ", peak_df[["sampleid"]][rowid], " | ",
+    peak_df[["peak_caller"]][rowid], " | ",
+    peak_df[["peak_type"]][rowid], " **"
   ))
 
   print("--QC Step 2")
@@ -160,11 +179,11 @@ This plot visualizes the relationship between the number of peaks assigned to a 
 If many gene loci have multiple peaks assigned to them, polyenrich is likely an appropriate method. If there are a low number of peaks per gene, then chipenrich() may be the appropriate method.
 
 ```{r qc3, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
+for (rowid in seq_len(max_samples)) {
   print(paste0(
-    "** ", peak_df[rowid, "sampleid"], " | ",
-    peak_df[rowid, "peak_caller"], " | ",
-    peak_df[rowid, "peak_type"], " **"
+    "** ", peak_df[["sampleid"]][rowid], " | ",
+    peak_df[["peak_caller"]][rowid], " | ",
+    peak_df[["peak_type"]][rowid], " **"
   ))
 
   print("--QC Step 3")
@@ -176,11 +195,11 @@ for (rowid in rownames(peak_df[c(1:max_samples), ])) {
 This plot visualizes the relationship between proportion of the gene locus covered by peaks and the locus length (on the log10 scale). For clarity of visualization, each point represents 25 gene loci binned after sorting by locus length.
 
 ```{r qc4, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
+for (rowid in seq_len(max_samples)) {
   print(paste0(
-    "** ", peak_df[rowid, "sampleid"], " | ",
-    peak_df[rowid, "peak_caller"], " | ",
-    peak_df[rowid, "peak_type"], " **"
+    "** ", peak_df[["sampleid"]][rowid], " | ",
+    peak_df[["peak_caller"]][rowid], " | ",
+    peak_df[["peak_type"]][rowid], " **"
   ))
 
   print("--QC Step 4")
@@ -194,11 +213,15 @@ The hybrid method is used when one is unsure of which method, between ChIP-Enric
 The hybrid p-value is given as 2*min(chipenrich_pvalue, polyenrich_pvalue). This test will retain the same Type 1 level and will be a consistent test if one of chipenrich or polyenrich is consistent. This can be extended to any number of tests, but currently we only allow a hybrid test for chipenrich and polyenrich. Currently this method is only employed for SEACR analysis.
 
 ```{r peak_h, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
-  peak_caller <- peak_df[rowid, "peak_caller"]
+if (isTRUE(skip_hybrid)) {
+  print("--Skipping peak_h (hybrid) by user option")
+} else {
+for (rowid in seq_len(max_samples)) {
+  peak_caller <- peak_df[["peak_caller"]][rowid]
   if (peak_caller == "seacr") {
     GO_ANALYSIS_MAIN(rowid, "hybrid")
   }
+}
 }
 ```
 
@@ -209,8 +232,8 @@ The Broad-Enrich method uses the cumulative peak coverage of genes in its logist
 ```{r peak_b, echo=FALSE}
 # set flag to run broad
 # run BROAD
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
-  peaktype <- peak_df[rowid, "peak_type"]
+for (rowid in seq_len(max_samples)) {
+  peaktype <- peak_df[["peak_type"]][rowid]
   if (peaktype == "broad") {
     GO_ANALYSIS_MAIN(rowid, "broad")
   }
@@ -223,8 +246,8 @@ ChIP-Enrich is designed for use with 1,000s or 10,000s of narrow genomic regions
 
 The ChIP-Enrich method uses the presence of a peak in its logistic regression model for enrichment: peak ~ GO + s(log10_length). Here, GO is a binary vector indicating whether a gene is in the gene set being tested, peak is a binary vector indicating the presence of a peak in a gene, and s(log10_length) is a binomial cubic smoothing spline which adjusts for the relationship between the presence of a peak and locus length. Currently, only MACS2 and GOPEAKS utilize this method.
 ```{r narrow1, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
-  peaktype <- peak_df[rowid, "peak_type"]
+for (rowid in seq_len(max_samples)) {
+  peaktype <- peak_df[["peak_type"]][rowid]
   if (peaktype == "narrow") {
     GO_ANALYSIS_MAIN(rowid, "enrich")
   }
@@ -237,8 +260,8 @@ Poly-Enrich is also designed for narrow peaks, for experiments with 100,000s of 
 
 The Poly-Enrich method uses the number of peaks in genes in its negative binomial regression model for enrichment: num_peaks ~ GO + s(log10_length). Here, GO is a binary vector indicating whether a gene is in the gene set being tested, num_peaks is a numeric vector indicating the number of peaks in each gene, and s(log10_length) is a negative binomial cubic smoothing spline which adjusts for the relationship between the number of peaks in a gene and locus length. Currently, only MACS2 and GOPEAKS utilize this method.
 ```{r narrow2a, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
-  peaktype <- peak_df[rowid, "peak_type"]
+for (rowid in seq_len(max_samples)) {
+  peaktype <- peak_df[["peak_type"]][rowid]
   if (peaktype == "narrow") {
     GO_ANALYSIS_MAIN(rowid, "poly")
   }
@@ -250,9 +273,9 @@ Poly-Enrich can also be used for linking human distal enhancer regions to their 
 
 Poly-Enrich also allows weighting of individual genomic regions based on a score, which can be useful for differential methylation enrichment analysis and ChIP-seq. Currently the options are: signalValue and logsignalValue. signalValue weighs each genomic region or peak based on the Signal Value given in the narrowPeak format or a user-supplied column (column name should be signalValue), while logsignalValue takes the log of these values. Currently, only MACS2 and GOPEAKS utilize this method.
 ```{r narrow2b, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
-  peaktype <- peak_df[rowid, "peak_type"]
-  peakcaller <- peak_df[rowid, "peak_caller"]
+for (rowid in seq_len(max_samples)) {
+  peaktype <- peak_df[["peak_type"]][rowid]
+  peakcaller <- peak_df[["peak_caller"]][rowid]
   if (peaktype == "narrow" & peakcaller != "gopeaks") {
     GO_ANALYSIS_MAIN(rowid, "poly_weighted")
   }
@@ -265,7 +288,7 @@ The proximity to regulatory regions (proxReg) test is a complementary test to an
 ProxReg first calculates the distance between the midpoints of peaks and the nearest transcription start site or the nearest enhancer region midpoint for each genomic region. Each genomic region is then assigned to the gene with the nearest transcription start site. The distances are then classified according to whether the gene is in the gene set or not, and a signed Wilcoxon rank-sum test is used to calculate if the regions are closer or farther in the gene set than average.
 
 ```{r reg, echo=FALSE}
-for (rowid in rownames(peak_df[c(1:max_samples), ])) {
+for (rowid in seq_len(max_samples)) {
   GO_ANALYSIS_MAIN(rowid, "reglocation")
 }
 ```

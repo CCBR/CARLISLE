@@ -17,69 +17,114 @@ def run_library_norm(wildcards):
 
 def run_deeptools_bw(wildcards):
     files=[]
-    b1=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS)
-    files.extend(b1)
-    b2=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bam.bai"),replicate=REPLICATES,dupstatus=DUPSTATUS)
-    files.extend(b2)
-    b3=expand(join(RESULTSDIR,"deeptools","clean","{replicate}.{dupstatus}.clean.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    b3=expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     files.extend(b3)
     return files
 
 def run_deeptools_heatmap(wildcards):
     files=[]
-    GROUP = [a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]]
-    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    GROUP = TREATMENTS + ["all_samples"]
+    BEDTYPES = [
+        "geneinfo",
+        "protein_coding",
+        "ca_ctcf",
+        "ca_h3k4me3",
+        "ca_tf",
+        "pls",
+        "dels",
+        "pels",
+    ]
+    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p1)
-    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p2)
-    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p3)
-    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS)
+    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
     files.extend(p4)
     return files
+
+import re
+
+def _control_has_replicate(pair: str) -> bool:
+    parts = pair.split("_vs_")
+    if len(parts) != 2:
+        return False
+    ctrl = parts[1]
+    return re.search(r"_[0-9]+$", ctrl) is not None
+
+def _filter_tc_list(base_list, control_mode):
+    if control_mode == "pooled":
+        return [p for p in base_list if not _control_has_replicate(p)]
+    else:
+        return [p for p in base_list if _control_has_replicate(p)]
 
 def run_macs2(wildcards):
     files=[]
     if "macs2_narrow" in PEAKTYPE:
-        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
-        files.extend(n)
-        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
-        files.extend(n2)
-        n3=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.narrow.summits.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
-        files.extend(n3)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+            tc_list = _filter_tc_list(base_list, control_mode)
+            n=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(n)
+            n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(n2)
+            n3=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.narrow.summits.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(n3)
     if "macs2_broad" in PEAKTYPE:
-        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
-        files.extend(b)
-        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS),
-        files.extend(b2)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+            tc_list = _filter_tc_list(base_list, control_mode)
+            b=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(b)
+            b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(b2)
     return files
 
 def run_seacr(wildcards):
     files=[]
     if "seacr_stringent" in PEAKTYPE:
-        s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(s)
-        s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(s2)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            s=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.stringent.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(s)
+            s2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.stringent.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(s2)
     if "seacr_relaxed" in PEAKTYPE:
-        r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(r)
-        r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{treatment_control_list}.{dupstatus}.relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(r2)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            r=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.relaxed.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(r)
+            r2=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.relaxed.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(r2)
     return files
 
 def run_gopeaks(wildcards):
     files=[]
     if "gopeaks_narrow" in PEAKTYPE:
-        n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(n)
-        n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(n2)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            n=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.narrow.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(n)
+            n2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.narrow.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(n2)
     if "gopeaks_broad" in PEAKTYPE:
-        b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(b)
-        b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS),
-        files.extend(b2)
+        # Generate files for each control mode with appropriate treatment list
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            b=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.broad.peaks.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(b)
+            b2=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.broad.peaks.bigbed.gz"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,control_mode=[control_mode])
+            files.extend(b2)
     return files
 
 def run_qc(wildcards):
@@ -102,50 +147,193 @@ def run_contrasts(wildcards):
         files.append(join(RESULTSDIR,"replicate_sample.tsv"))
 
         # inputs for matrix
-        inputs=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        inputs=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.txt"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(inputs)
 
         # counts matrix outputs
-        cms=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        cms=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.countsmatrix.tsv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(cms)
-        fcm=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        fcm=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentscountsmatrix.tsv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(fcm)
-        si=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        si=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.sampleinfo.tsv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(si)
 
         # DESEQ outputs
-        resultsa=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        resultsa=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.tsv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(resultsa)
-        resultsf=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.csv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        resultsf=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.tsv"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(resultsf)
 
         # diffbb outputs
-        abed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        abed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(abed)
-        fbed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE)
+        fbed=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_diffresults.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
         files.extend(fbed)
+
+        # 3-col BEDs (up-regulated per group)
+        aup1=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group1.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(aup1)
+        aup2=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.AUCbased_up_group2.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(aup2)
+        fup1=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group1.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(fup1)
+        fup2=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.fragmentsbased_up_group2.bed"),qthresholds=QTRESHOLDS, contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,control_mode=CONTROL_MODES)
+        files.extend(fup2)
     return files
 
-def get_motifs(wildcards):
+def get_motif_enrichment(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
-        files.extend(anno_m)
-        anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
-        files.extend(anno_m)
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+            tc_list = _filter_tc_list(base_list, control_mode)
+            anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,control_mode=[control_mode])
+            files.extend(anno_m)
+            anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,control_mode=[control_mode])
+            files.extend(anno_m)
+            ame_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,control_mode=[control_mode])
+            files.extend(ame_m)
     if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
-        files.extend(anno_g)
-        anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G),
-        files.extend(anno_g)
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,control_mode=[control_mode])
+            files.extend(anno_g)
+            anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,control_mode=[control_mode])
+            files.extend(anno_g)
+            ame_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,control_mode=[control_mode])
+            files.extend(ame_g)
     if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
-        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
-        files.extend(anno_s)
-        anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S),
-        files.extend(anno_s)
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list = _filter_tc_list(base_list, control_mode)
+            anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,control_mode=[control_mode])
+            files.extend(anno_s)
+            anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,control_mode=[control_mode])
+            files.extend(anno_s)
+            ame_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,control_mode=[control_mode])
+            files.extend(ame_s)
     return files
 
-def get_enrich(wildcards):
+def get_deg_motif_enrichment(wildcards):
+    files = []
+    if config.get("run_contrasts", False):
+        # DEG motif outputs for both methods and groups across contrasts and peak types
+        methods = ["AUCbased", "fragmentsbased"]
+        groups = ["up_group1", "up_group2"]
+        for method in methods:
+            for group in groups:
+                deg_known = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "knownResults.html",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_known)
+                deg_ann = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "annotation.txt",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_ann)
+                deg_sum = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "annotation.summary",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_sum)
+                deg_target = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "target.fa",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_target)
+                deg_bg = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "background.fa",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_bg)
+                deg_ame = expand(
+                    join(
+                        RESULTSDIR,
+                        "peaks",
+                        "{qthresholds}",
+                        "contrasts",
+                        "{control_mode}",
+                        "{contrast_list}.{dupstatus}",
+                        "{contrast_list}.{dupstatus}.{peak_caller_type}." + method + "_" + group + ".motifs",
+                        "ame_results.txt",
+                    ),
+                    qthresholds=QTRESHOLDS,
+                    control_mode=CONTROL_MODES,
+                    contrast_list=CONTRAST_LIST,
+                    dupstatus=DUPSTATUS,
+                    peak_caller_type=PEAKTYPE,
+                )
+                files.extend(deg_ame)
+    return files
+
+def get_homer_annotations_plot(wildcards):
     files=[]
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
         anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","enrichment.{dupstatus}.{peak_caller_type}.png"),peak_caller="macs2",qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M),
@@ -161,6 +349,7 @@ def get_enrich(wildcards):
 def get_combined(wildcards):
     files = []
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        # Note: combined annotation doesn't have control_mode subdirectory, uses all treatment_control pairs
         combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M)
         files.extend(combined_m)
     return files
@@ -168,35 +357,44 @@ def get_combined(wildcards):
 def get_rose(wildcards):
     files=[]
     if config['run_rose']:
-        if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-            anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_M,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE),
-            files.extend(anno_m)
-        if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-            anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE),
-            files.extend(anno_g)
-        if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
-            anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE),
-            files.extend(anno_s)
+        # ROSE runs separately for each control_mode
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+            tc_list = _filter_tc_list(base_list, control_mode)
+            
+            if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+                anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_m)
+            
+            base_list_sg = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+            tc_list_sg = _filter_tc_list(base_list_sg, control_mode)
+            
+            if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+                anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_g)
+            if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+                anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_s)
     return files
 
-def get_enrichment(wildcards):
+def get_go_enrichment(wildcards):
     files=[]
     if config["run_contrasts"] and config['run_go_enrichment']:
-        if (GENOME == "hg19") or (GENOME == "hg38"):
+        if (GENOME == "hg19") or (GENOME == "hg38") or (GENOME == "mm10"):
             if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(h)
             if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(h)
             if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS)
+                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
                 files.extend(h)
     return files
 
@@ -250,29 +448,31 @@ rule all:
         unpack(run_contrasts),
 
         # ANNOTATION / findMotif, rose, create_contrast_peakcaller_files, go_enrichment
-        unpack(get_motifs),
-        unpack(get_enrich),
-        unpack(get_combined),
+        unpack(get_motif_enrichment) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_homer_annotations_plot) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_combined) if config.get("run_motif_enrichment_called_peaks", False) else [],
+        unpack(get_deg_motif_enrichment) if config.get("run_motif_enrichment_deg_peaks", False) else [],
         unpack(get_rose),
-        unpack(get_enrichment)
+        unpack(get_go_enrichment)
 
-on_complete = f"""
-################################################################################################
-# OnComplete: Generate jobby table and run spooker
-################################################################################################
+onsuccess:
+    print("OnSuccess")
+    shell("""
 set -exo pipefail
+module load ccbrpipeliner
 for cmd in spooker jobby; do
     if ! command -v $cmd 2>&1 >/dev/null; then
-        export PATH="$PATH:{config['ccbr_tools_path']}"
+        export PATH="$PATH:{config[ccbr_tools_path]}"
     fi
 done
 cd {WORKDIR}
-jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
-spooker \
-    --outdir {WORKDIR} \
-    --name {config['pipeline']} \
-    --version {config['version']} \
-    --path {config['pipeline_home']} \
+# jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
+spooker \\
+    --outdir "{WORKDIR}" \\
+    --name "{config[pipeline]}" \\
+    --version "{config[version]}" \\
+    --path "{config[pipeline_home]}" \\
     > logs/spooker.log 2>&1
 
 # Check if files were created
@@ -293,64 +493,92 @@ if [ -f logs/spooker.log ]; then
 else
     echo "❌ logs/spooker.log NOT created."
 fi
-################################################################################################   
-"""
-
-onsuccess:
-    print("OnSuccess")
-    print(on_complete)
-    shell(on_complete)
+""")
 
 onerror:
     print("OnError")
-    print(on_complete)
-    shell(on_complete)
+    shell("""
+set -exo pipefail
+module load ccbrpipeliner
+for cmd in spooker jobby; do
+    if ! command -v $cmd 2>&1 >/dev/null; then
+        export PATH="$PATH:{config[ccbr_tools_path]}"
+    fi
+done
+cd {WORKDIR}
+# jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
+spooker \\
+    --outdir "{WORKDIR}" \\
+    --name "{config[pipeline]}" \\
+    --version "{config[version]}" \\
+    --path "{config[pipeline_home]}" \\
+    > logs/spooker.log 2>&1
 
-"""
-        ##########################################
-        ### intermediate files
-        ##########################################
-        # INIT / create_reference
-        join(BOWTIE2_INDEX,"ref.1.bt2"),
-        join(BOWTIE2_INDEX,"ref.len"),
-        join(BOWTIE2_INDEX,"spikein.len"),
+# Check if files were created
+if [ -f logs/snakemake.log.jobby ]; then
+    echo "✅ logs/snakemake.log.jobby created."
+else
+    echo "❌ logs/snakemake.log.jobby NOT created."
+fi
 
-        # ALIGN / trim
-        expand(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
+if [ -f logs/snakemake.log.jobby.short ]; then
+    echo "✅ logs/snakemake.log.jobby.short created."
+else
+    echo "❌ logs/snakemake.log.jobby.short NOT created."
+fi
 
-        # ALIGN / align
-        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),replicate=REPLICATES),
-        expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),replicate=REPLICATES),
+if [ -f logs/spooker.log ]; then
+    echo "✅ logs/spooker.log created."
+else
+    echo "❌ logs/spooker.log NOT created."
+fi
+""")
 
-        # ALIGN / filter
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.flagstat"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+# """
+#         ##########################################
+#         ### intermediate files
+#         ##########################################
+#         # INIT / create_reference
+#         join(BOWTIE2_INDEX,"ref.1.bt2"),
+#         join(BOWTIE2_INDEX,"ref.len"),
+#         join(BOWTIE2_INDEX,"spikein.len"),
 
-        # ALIGN / alignstats
-        join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),
+#         # ALIGN / trim
+#         expand(join(RESULTSDIR,"trim","{replicate}.R1.trim.fastq.gz"),replicate=REPLICATES),
+#         expand(join(RESULTSDIR,"trim","{replicate}.R2.trim.fastq.gz"),replicate=REPLICATES),
 
-        # ALIGN / gather_alignstats
-        join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
+#         # ALIGN / align
+#         expand(join(RESULTSDIR,"bam","raw","{replicate}.bam"),replicate=REPLICATES),
+#         expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.bai"),replicate=REPLICATES),
+#         expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.flagstat"),replicate=REPLICATES),
+#         expand(join(RESULTSDIR,"bam","raw","{replicate}.bam.idxstats"),replicate=REPLICATES),
 
-        # ALIGN / create_library_norm_scales
-        join(RESULTSDIR,"alignment_stats","library_scale.tsv"),
+#         # ALIGN / filter
+#         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.flagstat"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.idxstats"),replicate=REPLICATES,dupstatus=DUPSTATUS),
 
-        # ALIGN / bam2bg
-        expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         # ALIGN / alignstats
+#         join(RESULTSDIR,"alignment_stats","{replicate}.alignment_stats.yaml"),
 
-        # ALIGN / deeptools_heatmap
-        expand(join(RESULTSDIR,"deeptools","clean", "{sample}.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "{sample}.prot.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "all_samples.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "all_samples.prot.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.metagene.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.TSS.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
-        expand(join(RESULTSDIR,"deeptools","clean", "{group}.{dupstatus}.geneinfo.bed"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
-"""
+#         # ALIGN / gather_alignstats
+#         join(RESULTSDIR,"alignment_stats","alignment_stats.tsv"),
+
+#         # ALIGN / create_library_norm_scales
+#         join(RESULTSDIR,"alignment_stats","library_scale.tsv"),
+
+#         # ALIGN / bam2bg
+#         expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS),
+
+#         # ALIGN / deeptools_heatmap
+#         expand(join(RESULTSDIR,"deeptools","temp", "{sample}.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{sample}.prot.{dupstatus}.deeptools_prep"), sample=TREATMENTS, dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "all_samples.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "all_samples.prot.{dupstatus}.deeptools_prep"), dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.metagene.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.TSS.mat.gz"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
+#         expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.geneinfo.bed"),group=[a+b for a in TREATMENTS+["all_samples"] for b in ["", ".prot"]],dupstatus=DUPSTATUS),
