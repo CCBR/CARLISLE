@@ -16,6 +16,17 @@ wrap_text <- function(x, width = 38) {
   vapply(strwrap(x, width = width, simplify = FALSE), paste, collapse = "\n", FUN.VALUE = character(1))
 }
 
+save_empty_plot <- function(outfile, title = "No GO Enrichment Results", subtitle = "Input TSV is empty.") {
+  p_empty <- ggplot() +
+    theme_void(base_size = 14) +
+    annotate("text", x = 0.5, y = 0.58, label = title, size = 6, fontface = "bold") +
+    annotate("text", x = 0.5, y = 0.45, label = subtitle, size = 4.5) +
+    coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE)
+
+  ggsave(outfile, plot = p_empty, width = 10, height = 7, dpi = 300, bg = "white")
+  cat("Empty plot saved to", outfile, "\n")
+}
+
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   stop("Usage: Rscript plot_enrichment_ggplot.R --input in.tsv --output out.png [--top_n 20] [--y_fontsize 8] [--wrap_width 38]")
@@ -38,10 +49,30 @@ if (is.null(infile) || is.null(outfile)) {
   stop("Required: --input and --output")
 }
 
+if (!file.exists(infile)) {
+  stop(paste("Input TSV does not exist:", infile))
+}
+
+infile_size <- file.info(infile)$size
+if (is.na(infile_size) || infile_size == 0) {
+  save_empty_plot(outfile, subtitle = "Input TSV is empty.")
+  quit(save = "no", status = 0)
+}
+
 df <- tryCatch(
   read.delim(infile, sep = "\t", header = TRUE, check.names = FALSE, stringsAsFactors = FALSE),
-  error = function(e) stop(paste("Failed to read input:", e$message))
+  error = function(e) {
+    if (grepl("no lines available in input", e$message, fixed = TRUE)) {
+      return(data.frame())
+    }
+    stop(paste("Failed to read input:", e$message))
+  }
 )
+
+if (nrow(df) == 0) {
+  save_empty_plot(outfile, subtitle = "No rows available in enrichment TSV.")
+  quit(save = "no", status = 0)
+}
 
 status_col <- pick_col(df, c("Status.x", "Status", "Status.Hybrid", "status"))
 pvalue_col <- pick_col(df, c("P.value.x", "P.value", "P.value.Hybrid", "pvalue"))

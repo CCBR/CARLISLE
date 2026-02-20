@@ -59,8 +59,53 @@ if (!is.null(args$n_cores)) {
   }
 }
 
+empty_peak_df <- function() {
+  data.frame(
+    chrom = character(),
+    start = numeric(),
+    end = numeric(),
+    stringsAsFactors = FALSE
+  )
+}
+
 read_peak_file <- function(peak_file_in) {
-  peak_df <- read.csv(peak_file_in, sep = "\t", header = FALSE)[, c("V1", "V2", "V3")]
+  if (is.null(peak_file_in) || !nzchar(trimws(peak_file_in))) {
+    stop("--peaks_bed cannot be empty")
+  }
+  if (!file.exists(peak_file_in)) {
+    stop(paste0("Peak BED file does not exist: ", peak_file_in))
+  }
+
+  peak_info <- file.info(peak_file_in)
+  if (is.na(peak_info$size) || peak_info$size == 0) {
+    return(empty_peak_df())
+  }
+
+  peak_raw <- tryCatch(
+    read.table(
+      peak_file_in,
+      sep = "\t",
+      header = FALSE,
+      stringsAsFactors = FALSE,
+      quote = "",
+      comment.char = ""
+    ),
+    error = function(e) {
+      if (grepl("no lines available in input", e$message, fixed = TRUE)) {
+        return(empty_peak_df())
+      }
+      stop(paste0("Failed to read peak BED file: ", peak_file_in, " (", e$message, ")"))
+    }
+  )
+
+  if (nrow(peak_raw) == 0) {
+    return(empty_peak_df())
+  }
+  if (ncol(peak_raw) < 3) {
+    stop(paste0("Peak BED file must have at least 3 columns: ", peak_file_in))
+  }
+
+  peak_df <- peak_raw[, 1:3, drop = FALSE]
   colnames(peak_df) <- c("chrom", "start", "end")
   peak_df
 }
