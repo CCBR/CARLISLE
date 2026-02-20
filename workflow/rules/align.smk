@@ -476,7 +476,7 @@ rule deeptools_mat:
         metamat=join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.{bedtype}.metagene.mat.gz"),
         TSSmat=join(RESULTSDIR,"deeptools","temp","{group}.{dupstatus}.{bedtype}.TSS.mat.gz"),
     wildcard_constraints:
-        bedtype="geneinfo|protein_coding|ca_ctcf|ca_h3k4me3|ca_tf|pls|dels|pels",
+        bedtype=DEEPTOOLS_BEDTYPE_PATTERN,
     params:
         bedfiles={
             "geneinfo": config["reference"][config["genome"]]["geneinfo_bed"],
@@ -542,7 +542,7 @@ rule deeptools_heatmap:
         metaline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),
         TSSline=join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),
     wildcard_constraints:
-        bedtype="geneinfo|protein_coding|ca_ctcf|ca_h3k4me3|ca_tf|pls|dels|pels",
+        bedtype=DEEPTOOLS_BEDTYPE_PATTERN,
     envmodules:
         TOOLS["deeptools"],
     shell:

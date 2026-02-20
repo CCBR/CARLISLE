@@ -329,6 +329,7 @@ rule diffbb:
         script = join(SCRIPTSDIR,"_make_results_bed.py"),
         fdr=FDRCUTOFF,
         lfc=LFCCUTOFF,
+    threads: getthreads("diffbb")
     envmodules:
         TOOLS["ucsc"],
         TOOLS["python3"]

@@ -11,6 +11,8 @@
 
 SNAKEMAKE_VERSION="snakemake/7"
 SINGULARITY_VERSION="singularity"
+# Snakemake --rerun-triggers options: mtime, params, input, software-env, code
+RERUN_TRIGGERS="mtime"
 
 set -eo pipefail
 
@@ -278,7 +280,7 @@ function run() {
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cores all \
@@ -318,7 +320,7 @@ function run() {
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
     --printshellcmds \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \
@@ -348,7 +350,7 @@ EOF
     --directory $WORKDIR \
     --use-envmodules \
     --printshellcmds \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \

@@ -270,6 +270,30 @@ LFCCUTOFF = config["contrasts_lfc_cutoff"]
 QTRESHOLDS=config["quality_thresholds"]
 QTRESHOLDS=list(map(lambda x:x.strip(),QTRESHOLDS.split(",")))
 
+# deeptools bedtypes to generate matrices/plots for
+ALLOWED_DEEPTOOLS_BEDTYPES = [
+    "geneinfo",
+    "protein_coding",
+    "ca_ctcf",
+    "ca_h3k4me3",
+    "ca_tf",
+    "pls",
+    "pels",
+    "dels",
+]
+DEEPTOOLS_BEDTYPES = list(
+    filter(None, [x.strip() for x in config.get("deeptools_bedtypes", "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels").split(",")])
+)
+if len(DEEPTOOLS_BEDTYPES) == 0:
+    print("# ERROR: deeptools_bedtypes is empty. Please provide at least one bedtype.")
+    exit(1)
+invalid_bedtypes = [x for x in DEEPTOOLS_BEDTYPES if x not in ALLOWED_DEEPTOOLS_BEDTYPES]
+if invalid_bedtypes:
+    print("# ERROR: Invalid deeptools_bedtypes in config:", ",".join(invalid_bedtypes))
+    print("# Allowed options are:", ",".join(ALLOWED_DEEPTOOLS_BEDTYPES))
+    exit(1)
+DEEPTOOLS_BEDTYPE_PATTERN = "|".join([re.escape(x) for x in DEEPTOOLS_BEDTYPES])
+
 # set contrast settings
 if config["run_contrasts"]:
     print("#"*100)
@@ -466,6 +490,8 @@ refdata["spikein_genome"] = SPIKED_GENOMEFA
 # set annotation params
 S_DISTANCE=config["stitch_distance"]
 GENESET_ID=config["geneset_id"]
+GO_ENRICHMENT_GENESETS=list(filter(None, [x.strip() for x in config["geneset_id"].split(",")]))
+GO_ENRICHMENT_METHODS=list(filter(None, [x.strip() for x in config["go_enrichment_methods"].split(",")]))
 
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES

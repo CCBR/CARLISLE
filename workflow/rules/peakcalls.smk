@@ -25,7 +25,7 @@ rule merge_control_bams:
         merged_bai = join(RESULTSDIR,"bam","pooled_controls","{control_sample}.{dupstatus}.merged.bam.bai")
     params:
         bam_list = lambda w, input: " ".join(input.bams)
-    threads: getthreads("samtools")
+    threads: getthreads("merge_control_bams")
     envmodules:
         TOOLS["samtools"]
     shell:
@@ -206,8 +206,8 @@ rule macs2_narrow:
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
         macs2_genome = config["reference"][GENOME]["macs2_g"],
-        memG = getmemG("macs2"),
-    threads: getthreads("macs2")
+        memG = getmemG("macs2_narrow"),
+    threads: getthreads("macs2_narrow")
     envmodules:
         TOOLS["macs2"],
         TOOLS["ucsc"],
@@ -336,8 +336,8 @@ rule macs2_broad:
         pool_controls = config.get("pool_controls", False),
         broadtreshold = config["macs2_broad_peak_threshold"],
         macs2_genome = config["reference"][GENOME]["macs2_g"],
-        memG = getmemG("macs2"),
-    threads: getthreads("macs2")
+        memG = getmemG("macs2_broad"),
+    threads: getthreads("macs2_broad")
     envmodules:
         TOOLS["macs2"],
         TOOLS["ucsc"],

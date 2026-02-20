@@ -109,11 +109,21 @@ tss_distance: 2500
 run_motif_enrichment_called_peaks: false
 run_motif_enrichment_deg_peaks: false
 
+## deeptools annotation bedtypes (comma-separated)
+## options: geneinfo, protein_coding, ca_ctcf, ca_h3k4me3, ca_tf, pls, pels, dels
+## cCRE options (ca_ctcf, ca_h3k4me3, ca_tf, pls, pels, dels) come from ENCODE SCREEN:
+## https://screen.wenglab.org/downloads
+## NOTE: if "dels" is included, set deeptools memory to >=240g (e.g., in cluster.yaml for deeptools_mat/deeptools_heatmap)
+deeptools_bedtypes: "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels"
+
 ## GO Enrichment
 ## enrichment analysis can be performed on hg19 or hg38 samples
 ## one option may be chosen for each project
 run_go_enrichment: false
-geneset_id: "GOBP" # ["GOBP" "GOCC" "GOMF" "KEGG"]
+# comma-separated list of chipenrich geneset IDs:
+# ["biocarta_pathway","ctd","cytoband","drug_bank","GOBP","GOCC","GOMF","hallmark","immunologic","kegg_pathway","mesh","metabolite","microrna","oncogenic","panther_pathway","pfam","protein_interaction_biogrid","reactome","transcription_factors"]
+geneset_id: "GOBP,GOCC,GOMF,kegg_pathway,reactome"
+go_enrichment_methods: "chipenrich" # options are "chipenrich,polyenrich,hybridenrich" .. only include others when needed .. especially hybridenrich takes a long time
 
 #####################################################################################
 # References
@@ -210,6 +220,7 @@ hocomoco_memes_targz: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_memes.tar.gz"
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v7"
   carlisle_r: "docker://nciccbr/carlisle_r:v5"
+  go_enrichment: "docker://nciccbr/ccbr_chipenrich:latest"
 
 # Pipeline information
 pipeline: "CARLISLE"

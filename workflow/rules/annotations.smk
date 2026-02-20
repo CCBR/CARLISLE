@@ -1,3 +1,5 @@
+import re
+
 def get_peak_file(wildcards):
     # MACS2 OPTIONS
     if wildcards.peak_caller_type == "macs2_narrow":
@@ -42,7 +44,7 @@ def get_deg_bed(wildcards):
     return bed
 
 
-localrules: create_contrast_peakcaller_files, homer_annotations, combine_homer
+localrules: homer_annotations, combine_homer
 rule homer_motif:
     """
     HOMER peak annotation and motif discovery
@@ -627,9 +629,21 @@ def get_annotation_files(wildcards):
     """
     treatment_control_list depends on the peak caller
     """
+    def control_has_replicate(pair):
+        parts = pair.split("_vs_")
+        if len(parts) != 2:
+            return False
+        return re.search(r"_[0-9]+$", parts[1]) is not None
+
+    base_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG
+    if wildcards.control_mode == "pooled":
+        tc_list = [p for p in base_list if not control_has_replicate(p)]
+    else:
+        tc_list = [p for p in base_list if control_has_replicate(p)]
+
     return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer", wildcards.control_mode,
            "{treatment_control_list}" + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".annotation.summary"),
-           treatment_control_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG)
+           treatment_control_list = tc_list)
 
 
 rule homer_annotations:
@@ -867,96 +881,112 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
         fi
     """
-if config["run_contrasts"]:
-    rule create_contrast_peakcaller_files:
+if config["run_go_enrichment"]:
+    rule go_enrichment_peaks:
         """
-        Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
+        Run GO enrichment on all peak BED files.
         """
+        wildcard_constraints:
+            peak_type="narrow|broad|stringent|relaxed",
+            geneset_id="[^/]+",
+            method="[^/]+",
         input:
-            contrast_files=lambda wildcards: expand(
-                join(
-                    RESULTSDIR,
-                    "peaks",
-                    "{qthresholds}",
-                    "contrasts",
-                    "{control_mode}",
-                    "{contrast_list}.{dupstatus}",
-                    "{contrast_list}.{dupstatus}.{peak_caller_type}.txt",
-                ),
-                qthresholds=wildcards.qthresholds,
-                contrast_list=wildcards.contrast_list,
-                dupstatus=wildcards.dupstatus,
-                peak_caller_type=[
-                    pt for pt in PEAKTYPE if pt.startswith(wildcards.peak_caller + "_")
-                ],
-                control_mode=wildcards.control_mode,
-            )
+            peaks_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.peaks.bed")
         params:
-            qthresholds = "{qthresholds}",
-            contrast_list = "{contrast_list}",
-            dupstatus = "{dupstatus}",
-            peak_caller = "{peak_caller}",
-            control_mode = "{control_mode}",
-            search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}")
+            rscript=join(SCRIPTSDIR,"_get_enrichment.R"),
+            genome=config["genome"],
+            output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.tsv")
         output:
-            peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt")
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        threads: getthreads("go_enrichment_peaks")
+        container: config['containers']['go_enrichment']
         shell:
             """
-            cat {input.contrast_files} | sort | uniq > {output.peak_contrast_files}
+            set -euo pipefail
+            Rscript {params.rscript} \\
+                --peaks_bed {input.peaks_bed} \\
+                --geneset_id {wildcards.geneset_id} \\
+                --genome {params.genome} \\
+                --output_tsv {params.output_tsv_base} \\
+                --methods {wildcards.method} \\
+                --n_cores {threads}
             """
 
-    rule go_enrichment:
+if config["run_contrasts"] and config["run_go_enrichment"]:
+    rule go_enrichment_diffbed:
         """
-        https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html#peak-distance-to-tss-distribution
+        Run GO enrichment on differential peak BED files.
         """
+        wildcard_constraints:
+            diff_type="AUCbased_up_group1|AUCbased_up_group2|fragmentsbased_up_group1|fragmentsbased_up_group2",
+            peak_caller_type="[^/]+",
+            geneset_id="[^/]+",
+            method="[^/]+",
         input:
-            contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
+            peaks_bed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.bed")
         params:
-            rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
-            rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
-            carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
-            rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}"),
-            species = config["genome"],
-            geneset_id = GENESET_ID,
-            dedup_status =  "{dupstatus}"
+            rscript=join(SCRIPTSDIR,"_get_enrichment.R"),
+            genome=config["genome"],
+            output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.tsv")
         output:
-            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),
-        threads: getthreads("go_enrichment")
-        container: config['containers']['carlisle_r']
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        threads: getthreads("go_enrichment_diffbed")
+        container: config['containers']['go_enrichment']
         shell:
             """
-            set -exo pipefail
-
-            # run script
-            Rscript {params.rscript_wrapper} \\
-                --rmd {params.rmd} \\
-                --carlisle_functions {params.carlisle_functions} \\
-                --output_dir {params.output_dir} \\
-                --report {output.html} \\
-                --contrast_file {input.contrast_file} \\
-                --species {params.species} \\
-                --geneset_id {params.geneset_id} \\
-                --dedup_status {params.dedup_status} \\
-                --n_cores {threads} \\
-                --skip_hybrid
+            set -euo pipefail
+            Rscript {params.rscript} \\
+                --peaks_bed {input.peaks_bed} \\
+                --geneset_id {wildcards.geneset_id} \\
+                --genome {params.genome} \\
+                --output_tsv {params.output_tsv_base} \\
+                --methods {wildcards.method} \\
+                --n_cores {threads}
             """
-rule motif_enrichment:
-    """
-    Perform motif enrichment analysis if enabled in the configuration.
-    """
-    input:
-        annotation_summary=get_annotation_files
-    output:
-        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","enrichment.{dupstatus}.{peak_caller_type}.png")
-    params:
-        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}"),
-        peak_mode="{peak_caller_type}",
-        dupstatus="{dupstatus}",
-        rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
-    container: config['containers']['carlisle_r']
-    shell:
+
+if config["run_go_enrichment"]:
+    rule go_enrichment_dotplot_peaks:
         """
-        Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
+        Generate one GO enrichment dot plot PNG from one GO enrichment TSV (peak-call outputs).
         """
+        wildcard_constraints:
+            peak_type="narrow|broad|stringent|relaxed",
+            geneset_id="[^/]+",
+            method="[^/]+",
+        input:
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        output:
+            png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png")
+        params:
+            rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
+        localrule: True
+        container: config['containers']['go_enrichment']
+        shell:
+            """
+            set -euo pipefail
+            Rscript {params.rscript} --input {input.tsv} --output {output.png}
+            """
+
+if config["run_contrasts"] and config["run_go_enrichment"]:
+    rule go_enrichment_dotplot_diffbed:
+        """
+        Generate one GO enrichment dot plot PNG from one GO enrichment TSV (differential peak outputs).
+        """
+        wildcard_constraints:
+            diff_type="AUCbased_up_group1|AUCbased_up_group2|fragmentsbased_up_group1|fragmentsbased_up_group2",
+            peak_caller_type="[^/]+",
+            geneset_id="[^/]+",
+            method="[^/]+",
+        input:
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        output:
+            png=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.png")
+        params:
+            rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
+        localrule: True
+        container: config['containers']['go_enrichment']
+        shell:
+            """
+            set -euo pipefail
+            Rscript {params.rscript} --input {input.tsv} --output {output.png}
+            """

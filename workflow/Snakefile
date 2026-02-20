@@ -24,23 +24,13 @@ def run_deeptools_bw(wildcards):
 def run_deeptools_heatmap(wildcards):
     files=[]
     GROUP = TREATMENTS + ["all_samples"]
-    BEDTYPES = [
-        "geneinfo",
-        "protein_coding",
-        "ca_ctcf",
-        "ca_h3k4me3",
-        "ca_tf",
-        "pls",
-        "dels",
-        "pels",
-    ]
-    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
+    p1=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=DEEPTOOLS_BEDTYPES)
     files.extend(p1)
-    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
+    p2=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_heatmap.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=DEEPTOOLS_BEDTYPES)
     files.extend(p2)
-    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
+    p3=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.metagene_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=DEEPTOOLS_BEDTYPES)
     files.extend(p3)
-    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=BEDTYPES)
+    p4=expand(join(RESULTSDIR,"deeptools","{group}.{dupstatus}.{bedtype}.TSS_profile.pdf"),group=GROUP,dupstatus=DUPSTATUS,bedtype=DEEPTOOLS_BEDTYPES)
     files.extend(p4)
     return files
 
@@ -58,6 +48,17 @@ def _filter_tc_list(base_list, control_mode):
         return [p for p in base_list if not _control_has_replicate(p)]
     else:
         return [p for p in base_list if _control_has_replicate(p)]
+
+def _peak_type_suffix(pt: str) -> str:
+    mapping = {
+        "macs2_narrow": "narrow",
+        "macs2_broad": "broad",
+        "gopeaks_narrow": "narrow",
+        "gopeaks_broad": "broad",
+        "seacr_stringent": "stringent",
+        "seacr_relaxed": "relaxed",
+    }
+    return mapping.get(pt, pt)
 
 def run_macs2(wildcards):
     files=[]
@@ -349,9 +350,28 @@ def get_homer_annotations_plot(wildcards):
 def get_combined(wildcards):
     files = []
     if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-        # Combined annotation uses all treatment_control pairs and is generated per control_mode.
-        combined_m = expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv"),qthresholds=QTRESHOLDS,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,treatment_control_list=TREATMENT_LIST_M,control_mode=CONTROL_MODES)
-        files.extend(combined_m)
+        # Combined annotation uses treatment/control pairs filtered for each control mode.
+        for control_mode in CONTROL_MODES:
+            base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+            tc_list = _filter_tc_list(base_list, control_mode)
+            combined_m = expand(
+                join(
+                    RESULTSDIR,
+                    "peaks",
+                    "{qthresholds}",
+                    "macs2",
+                    "annotation",
+                    "homer",
+                    "{control_mode}",
+                    "{treatment_control_list}.{dupstatus}.{peak_caller_type}.annotation_qvalue.tsv",
+                ),
+                qthresholds=QTRESHOLDS,
+                dupstatus=DUPSTATUS,
+                peak_caller_type=PEAKTYPE_M,
+                treatment_control_list=tc_list,
+                control_mode=[control_mode],
+            )
+            files.extend(combined_m)
     return files
 
 def get_rose(wildcards):
@@ -379,23 +399,45 @@ def get_rose(wildcards):
 
 def get_go_enrichment(wildcards):
     files=[]
-    if config["run_contrasts"] and config['run_go_enrichment']:
+    if config["run_go_enrichment"]:
         if (GENOME == "hg19") or (GENOME == "hg38") or (GENOME == "mm10"):
-            if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
+            genesets = GO_ENRICHMENT_GENESETS
+            methods = GO_ENRICHMENT_METHODS
+
+            # Peak calls
+            for control_mode in CONTROL_MODES:
+                if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+                    base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
+                    tc_list = _filter_tc_list(base_list, control_mode)
+                    peak_types = [_peak_type_suffix(pt) for pt in PEAKTYPE_M]
+                    t=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(t)
+                    p=expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(p)
+                if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+                    base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+                    tc_list = _filter_tc_list(base_list, control_mode)
+                    peak_types = [_peak_type_suffix(pt) for pt in PEAKTYPE_G]
+                    t=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(t)
+                    p=expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(p)
+                if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+                    base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
+                    tc_list = _filter_tc_list(base_list, control_mode)
+                    peak_types = [_peak_type_suffix(pt) for pt in PEAKTYPE_S]
+                    t=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(t)
+                    p=expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_type=peak_types,geneset_id=genesets,method=methods,control_mode=[control_mode])
+                    files.extend(p)
+
+            # Differential peak sets
+            if config["run_contrasts"]:
+                diff_types = ["AUCbased_up_group1", "AUCbased_up_group2", "fragmentsbased_up_group1", "fragmentsbased_up_group2"]
+                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv"),qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,diff_type=diff_types,geneset_id=genesets,method=methods,control_mode=CONTROL_MODES)
                 files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="macs2",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
-                files.extend(h)
-            if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
-                files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
-                files.extend(h)
-            if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
-                t=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
-                files.extend(t)
-                h=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),peak_caller="seacr",qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,control_mode=CONTROL_MODES)
-                files.extend(h)
+                p=expand(join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.png"),qthresholds=QTRESHOLDS,contrast_list=CONTRAST_LIST,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE,diff_type=diff_types,geneset_id=genesets,method=methods,control_mode=CONTROL_MODES)
+                files.extend(p)
     return files
 
 include: "rules/init.smk"
