@@ -7,8 +7,8 @@ __default__:
   time: 00-02:00:00
   threads: 2
   name: "{rule}.{wildcards}"
-  output: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.command.out"
-  error: "logs/{rule}.${{SLURM_JOBID}}.%j.{wildcards}.command.err"
+  output: "logs/${{SLURM_JOBID}}/{rule}.%j.out"
+  error:  "logs/${{SLURM_JOBID}}/{rule}.%j.err"
 ###################################################################
 align:
   mem: 240g
@@ -112,6 +112,18 @@ go_enrichment_diffbed:
   time: 02-00:00:00
   threads: 8
   mem: 32g
+###################################################################
+go_enrichment_dotplot_peaks:
+  partition: quick
+  threads: 1
+  mem: 32g
+  time: 00:20:00
+###################################################################
+go_enrichment_dotplot_diffbed:
+  partition: quick
+  threads: 1
+  mem: 32g
+  time: 00:20:00
 ###################################################################
 deeptools_bw:
   mem: 120g

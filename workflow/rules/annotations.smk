@@ -898,18 +898,45 @@ if config["run_go_enrichment"]:
             output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.tsv")
         output:
             tsv=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","logs","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.log")
         threads: getthreads("go_enrichment_peaks")
         container: config['containers']['go_enrichment']
         shell:
             """
             set -euo pipefail
-            Rscript {params.rscript} \\
-                --peaks_bed {input.peaks_bed} \\
-                --geneset_id {wildcards.geneset_id} \\
-                --genome {params.genome} \\
-                --output_tsv {params.output_tsv_base} \\
-                --methods {wildcards.method} \\
-                --n_cores {threads}
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_peaks"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_peaks={input.peaks_bed}"
+                echo "output_expected={output.tsv}"
+                echo "output_base={params.output_tsv_base}"
+                echo "geneset_id={wildcards.geneset_id} method={wildcards.method} n_cores={threads}"
+
+                if ! Rscript {params.rscript} \\
+                    --peaks_bed {input.peaks_bed} \\
+                    --geneset_id {wildcards.geneset_id} \\
+                    --genome {params.genome} \\
+                    --output_tsv {params.output_tsv_base} \\
+                    --methods {wildcards.method} \\
+                    --n_cores {threads}; then
+                    echo "[$(date -Is)] ERROR: Rscript failed"
+                    exit 1
+                fi
+
+                outdir="$(dirname "{params.output_tsv_base}")"
+                outprefix="$(basename "{params.output_tsv_base}" .tsv)"
+                echo "Generated TSV candidates:"
+                ls -lh "$outdir"/"$outprefix".*.tsv 2>/dev/null || echo "(none found)"
+
+                if [[ ! -f "{output.tsv}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.tsv}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_peaks"
+            }} > >(tee -a {log.runlog}) 2>&1
             """
 
 if config["run_contrasts"] and config["run_go_enrichment"]:
@@ -930,18 +957,45 @@ if config["run_contrasts"] and config["run_go_enrichment"]:
             output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.tsv")
         output:
             tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","logs","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.log")
         threads: getthreads("go_enrichment_diffbed")
         container: config['containers']['go_enrichment']
         shell:
             """
             set -euo pipefail
-            Rscript {params.rscript} \\
-                --peaks_bed {input.peaks_bed} \\
-                --geneset_id {wildcards.geneset_id} \\
-                --genome {params.genome} \\
-                --output_tsv {params.output_tsv_base} \\
-                --methods {wildcards.method} \\
-                --n_cores {threads}
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_diffbed"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_peaks={input.peaks_bed}"
+                echo "output_expected={output.tsv}"
+                echo "output_base={params.output_tsv_base}"
+                echo "geneset_id={wildcards.geneset_id} method={wildcards.method} n_cores={threads}"
+
+                if ! Rscript {params.rscript} \\
+                    --peaks_bed {input.peaks_bed} \\
+                    --geneset_id {wildcards.geneset_id} \\
+                    --genome {params.genome} \\
+                    --output_tsv {params.output_tsv_base} \\
+                    --methods {wildcards.method} \\
+                    --n_cores {threads}; then
+                    echo "[$(date -Is)] ERROR: Rscript failed"
+                    exit 1
+                fi
+
+                outdir="$(dirname "{params.output_tsv_base}")"
+                outprefix="$(basename "{params.output_tsv_base}" .tsv)"
+                echo "Generated TSV candidates:"
+                ls -lh "$outdir"/"$outprefix".*.tsv 2>/dev/null || echo "(none found)"
+
+                if [[ ! -f "{output.tsv}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.tsv}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_diffbed"
+            }} > >(tee -a {log.runlog}) 2>&1
             """
 
 if config["run_go_enrichment"]:
@@ -959,7 +1013,6 @@ if config["run_go_enrichment"]:
             png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png")
         params:
             rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
-        localrule: True
         container: config['containers']['go_enrichment']
         shell:
             """
@@ -981,12 +1034,40 @@ if config["run_contrasts"] and config["run_go_enrichment"]:
             tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
         output:
             png=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.png")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","logs","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.dotplot.log")
         params:
             rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
-        localrule: True
         container: config['containers']['go_enrichment']
         shell:
             """
             set -euo pipefail
-            Rscript {params.rscript} --input {input.tsv} --output {output.png}
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_dotplot_diffbed"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_tsv={input.tsv}"
+                echo "output_png={output.png}"
+
+                tmp_err="$(mktemp)"
+                if ! Rscript {params.rscript} --input {input.tsv} --output {output.png} 2>"$tmp_err"; then
+                    cat "$tmp_err"
+                    if rg -q "No plottable rows after filtering|No enriched pathways found|No enriched pathways with valid p-values|No rows with positive geneset size|No rows available in enrichment TSV|Input TSV is empty" "$tmp_err"; then
+                        echo "[$(date -Is)] WARN: Non-plottable enrichment table; creating placeholder PNG."
+                        Rscript -e "png(filename='{output.png}', width=3000, height=2100, res=300, bg='white'); plot.new(); title('No GO Enrichment Results'); text(0.5, 0.45, 'No plottable rows after filtering', cex=1.2); dev.off()"
+                    else
+                        echo "[$(date -Is)] ERROR: dotplot Rscript failed with unexpected error"
+                        rm -f "$tmp_err"
+                        exit 1
+                    fi
+                fi
+                rm -f "$tmp_err"
+
+                if [[ ! -f "{output.png}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.png}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_dotplot_diffbed"
+            }} > >(tee -a {log.runlog}) 2>&1
             """
