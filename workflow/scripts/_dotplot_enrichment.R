@@ -27,6 +27,11 @@ save_empty_plot <- function(outfile, title = "No GO Enrichment Results", subtitl
   cat("Empty plot saved to", outfile, "\n")
 }
 
+save_no_data_and_quit <- function(outfile, subtitle) {
+  save_empty_plot(outfile, subtitle = subtitle)
+  quit(save = "no", status = 0)
+}
+
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   stop("Usage: Rscript plot_enrichment_ggplot.R --input in.tsv --output out.png [--top_n 20] [--y_fontsize 8] [--wrap_width 38]")
@@ -55,8 +60,7 @@ if (!file.exists(infile)) {
 
 infile_size <- file.info(infile)$size
 if (is.na(infile_size) || infile_size == 0) {
-  save_empty_plot(outfile, subtitle = "Input TSV is empty.")
-  quit(save = "no", status = 0)
+  save_no_data_and_quit(outfile, "Input TSV is empty.")
 }
 
 df <- tryCatch(
@@ -70,8 +74,7 @@ df <- tryCatch(
 )
 
 if (nrow(df) == 0) {
-  save_empty_plot(outfile, subtitle = "No rows available in enrichment TSV.")
-  quit(save = "no", status = 0)
+  save_no_data_and_quit(outfile, "No rows available in enrichment TSV.")
 }
 
 status_col <- pick_col(df, c("Status.x", "Status", "Status.Hybrid", "status"))
@@ -91,11 +94,11 @@ if (is.null(desc_col)) missing <- c(missing, "description column")
 if (length(missing) > 0) stop(paste("Missing required columns:", paste(missing, collapse = ", ")))
 
 df <- df[tolower(trimws(as.character(df[[status_col]]))) == "enriched", , drop = FALSE]
-if (nrow(df) == 0) stop("No enriched pathways found.")
+if (nrow(df) == 0) save_no_data_and_quit(outfile, "No enriched pathways found.")
 
 df[[pvalue_col]] <- suppressWarnings(as.numeric(df[[pvalue_col]]))
 df <- df[is.finite(df[[pvalue_col]]) & df[[pvalue_col]] > 0, , drop = FALSE]
-if (nrow(df) == 0) stop("No enriched pathways with valid p-values.")
+if (nrow(df) == 0) save_no_data_and_quit(outfile, "No enriched pathways with valid p-values.")
 
 if (is.null(fdr_col)) fdr_col <- pvalue_col
 
@@ -105,7 +108,7 @@ if (!is.null(peak_col)) df[[peak_col]] <- suppressWarnings(as.numeric(df[[peak_c
 if (!is.null(ratio_col)) df[[ratio_col]] <- suppressWarnings(as.numeric(df[[ratio_col]]))
 
 df <- df[is.finite(df[[geneset_col]]) & df[[geneset_col]] > 0, , drop = FALSE]
-if (nrow(df) == 0) stop("No rows with positive geneset size.")
+if (nrow(df) == 0) save_no_data_and_quit(outfile, "No rows with positive geneset size.")
 
 if (!is.null(ratio_col)) {
   df$GeneRatio <- df[[ratio_col]]
@@ -122,11 +125,25 @@ if (!is.null(peak_col)) {
 df <- df[
   is.finite(df$GeneRatio) & df$GeneRatio > 0 &
     is.finite(df$GeneCount) & df$GeneCount > 0 &
-    is.finite(df[[fdr_col]]) & df[[fdr_col]] > 0,
+    is.finite(df[[fdr_col]]),
   ,
   drop = FALSE
 ]
-if (nrow(df) == 0) stop("No plottable rows after filtering.")
+if (nrow(df) == 0) save_no_data_and_quit(outfile, "No plottable rows after filtering.")
+
+fdr_vals <- suppressWarnings(as.numeric(df[[fdr_col]]))
+p_vals <- suppressWarnings(as.numeric(df[[pvalue_col]]))
+
+# Keep log10-safe FDR values; fall back to p-values when FDR is non-positive.
+fdr_plot <- ifelse(is.finite(fdr_vals) & fdr_vals > 0, fdr_vals, NA_real_)
+fdr_plot <- ifelse(is.na(fdr_plot) & is.finite(p_vals) & p_vals > 0, p_vals, fdr_plot)
+if (all(!is.finite(fdr_plot))) {
+  save_no_data_and_quit(outfile, "No positive FDR/p-value values available for plotting.")
+}
+
+min_positive <- min(fdr_plot[is.finite(fdr_plot)], na.rm = TRUE)
+fdr_plot[!is.finite(fdr_plot)] <- min_positive
+df$FDR_plot <- fdr_plot
 
 df <- df[order(df[[fdr_col]], decreasing = FALSE), , drop = FALSE]
 df <- head(df, top_n)
@@ -135,7 +152,7 @@ df <- df[order(df$GeneRatio, decreasing = TRUE), , drop = FALSE]
 df$Term <- as.character(df[[desc_col]])
 df$TermWrapped <- wrap_text(df$Term, width = wrap_width)
 df$TermWrapped <- factor(df$TermWrapped, levels = rev(df$TermWrapped))
-df$FDR <- df[[fdr_col]]
+df$FDR <- df$FDR_plot
 
 fdr_min <- min(df$FDR, na.rm = TRUE)
 fdr_max <- max(df$FDR, na.rm = TRUE)
