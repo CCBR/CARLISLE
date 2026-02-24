@@ -147,8 +147,6 @@ def load_peaks(path, peak_format, sample_id):
 
             rows.append((chrom, start, end, name, score, strand))
 
-    if not rows:
-        raise RuntimeError("No valid peak rows found in %s" % path)
     return rows
 
 
@@ -265,6 +263,42 @@ def expected_rose_outputs(output_dir, sample_id):
     ]
 
 
+def write_reports(output_dir, report):
+    report_json = os.path.join(output_dir, "rose_preflight_report.json")
+    report_txt = os.path.join(output_dir, "rose_preflight_report.txt")
+    with open(report_json, "w") as outj:
+        json.dump(report, outj, indent=2, sort_keys=True)
+
+    with open(report_txt, "w") as outt:
+        outt.write("ROSE preflight summary\n")
+        outt.write("======================\n")
+        outt.write("Sample: %s\n" % report["sample_id"])
+        outt.write("Genome: %s\n" % report["genome"])
+        outt.write("Peak format: %s\n" % report["peak_format"])
+        outt.write("Input peaks: %d\n" % report["counts"]["input_bed6"])
+        outt.write("After TSS exclusion: %d\n" % report["counts"]["after_tss_exclusion"])
+        outt.write("Stitched peaks: %d\n" % report["counts"]["stitched"])
+        outt.write("Prepared stitched BED: %s\n" % report["prepared_stitched_bed"])
+        outt.write("Prepared stitched GFF: %s\n" % report["prepared_stitched_gff"])
+        outt.write("ROSE runnable (>= min_peaks=%d): %s\n" % (report["min_peaks"], str(report["run_rose_allowed"])))
+        outt.write(
+            "Resource estimate: threads=%s, mem=%s, time=%s\n"
+            % (
+                report["resource_estimate"]["threads"],
+                report["resource_estimate"]["mem"],
+                report["resource_estimate"]["time"],
+            )
+        )
+        outt.write("Expected outputs:\n")
+        for item in report["expected_outputs"]:
+            outt.write("  - %s\n" % item)
+        if report.get("notes"):
+            outt.write("Notes:\n")
+            for n in report["notes"]:
+                outt.write("  - %s\n" % n)
+    return report_json, report_txt
+
+
 def validate_bam_and_index(bam_path, label):
     ensure_file(bam_path, label)
     bai1 = bam_path + ".bai"
@@ -363,6 +397,65 @@ def main():
     bed6_raw = os.path.join(intermediate_dir, "01_input_as_bed6.bed")
     write_bed6(raw_rows, bed6_raw)
 
+    raw_n = len(raw_rows)
+    stitched_bed = os.path.join(output_dir, args.prepared_bed_name)
+    stitched_gff = os.path.join(output_dir, args.prepared_gff_name)
+
+    # Early exit for empty/tiny peak sets before expensive filtering/stitching.
+    if raw_n < args.min_peaks:
+        open(stitched_bed, "w").close()
+        open(stitched_gff, "w").close()
+        report = {
+            "genome": args.genome,
+            "sample_id": sanitize_sample_id(args.sample_id),
+            "peak_file": peak_file,
+            "peak_format": peak_format,
+            "treatment_bam": treatment_bam,
+            "control_bam": control_bam,
+            "tss_bed": tss_bed,
+            "blacklist_bed": blacklist_bed,
+            "stitch_distance": args.stitch_distance,
+            "tss_distance": args.tss_distance,
+            "min_peaks": args.min_peaks,
+            "counts": {
+                "input_bed6": raw_n,
+                "after_blacklist": raw_n,
+                "after_tss_exclusion": 0,
+                "stitched": 0,
+            },
+            "software": {
+                "bedtools": bedtools_ver,
+                "samtools": samtools_ver,
+                "rose_main": args.rose_main,
+            },
+            "resource_estimate": estimate_resources(0),
+            "expected_outputs": expected_rose_outputs(output_dir, args.sample_id),
+            "prepared_stitched_bed": stitched_bed,
+            "prepared_stitched_gff": stitched_gff,
+            "run_rose_requested": args.run_rose,
+            "run_rose_allowed": False,
+            "rose_command": None,
+            "notes": [
+                "Input peaks below min_peaks threshold; skipping filtering/stitching and ROSE execution.",
+            ],
+        }
+        report_json, report_txt = write_reports(output_dir, report)
+        if not args.keep_intermediate and os.path.isdir(intermediate_dir):
+            for p in os.listdir(intermediate_dir):
+                fp = os.path.join(intermediate_dir, p)
+                if os.path.isfile(fp):
+                    os.remove(fp)
+            try:
+                os.rmdir(intermediate_dir)
+            except OSError:
+                pass
+        print("[OK] Peak count below threshold (%d < %d); wrote empty prepared files." % (raw_n, args.min_peaks))
+        print("[OK] Prepared ROSE stitched BED: %s" % stitched_bed)
+        print("[OK] Prepared ROSE stitched GFF: %s" % stitched_gff)
+        print("[OK] Wrote report JSON: %s" % report_json)
+        print("[OK] Wrote report TXT:  %s" % report_txt)
+        return 0
+
     stage_bed = bed6_raw
     if blacklist_bed:
         no_blacklist = os.path.join(intermediate_dir, "02_no_blacklist.bed")
@@ -373,9 +466,7 @@ def main():
     no_tss = os.path.join(intermediate_dir, "03_no_tss_overlap.bed")
     filter_with_bedtools(bedtools_bin, stage_bed, tss_plain, no_tss, "TSS exclusion filtering")
 
-    stitched_bed = os.path.join(output_dir, args.prepared_bed_name)
     stitch_with_bedtools(bedtools_bin, no_tss, args.stitch_distance, stitched_bed)
-    stitched_gff = os.path.join(output_dir, args.prepared_gff_name)
     convert_stitched_bed_to_rose_gff(stitched_bed, stitched_gff)
 
     raw_n = count_nonempty_lines(bed6_raw)
@@ -423,6 +514,7 @@ def main():
         "blacklist_bed": blacklist_bed,
         "stitch_distance": args.stitch_distance,
         "tss_distance": args.tss_distance,
+        "min_peaks": args.min_peaks,
         "counts": {
             "input_bed6": raw_n,
             "after_blacklist": no_blacklist_n,
@@ -442,35 +534,7 @@ def main():
         "run_rose_allowed": run_rose_allowed,
         "rose_command": rose_cmd,
     }
-
-    report_json = os.path.join(output_dir, "rose_preflight_report.json")
-    report_txt = os.path.join(output_dir, "rose_preflight_report.txt")
-    with open(report_json, "w") as outj:
-        json.dump(report, outj, indent=2, sort_keys=True)
-
-    with open(report_txt, "w") as outt:
-        outt.write("ROSE preflight summary\n")
-        outt.write("======================\n")
-        outt.write("Sample: %s\n" % report["sample_id"])
-        outt.write("Genome: %s\n" % report["genome"])
-        outt.write("Peak format: %s\n" % report["peak_format"])
-        outt.write("Input peaks: %d\n" % raw_n)
-        outt.write("After TSS exclusion: %d\n" % no_tss_n)
-        outt.write("Stitched peaks: %d\n" % stitched_n)
-        outt.write("Prepared stitched BED: %s\n" % stitched_bed)
-        outt.write("Prepared stitched GFF: %s\n" % stitched_gff)
-        outt.write("ROSE runnable (>= min_peaks=%d): %s\n" % (args.min_peaks, str(run_rose_allowed)))
-        outt.write(
-            "Resource estimate: threads=%s, mem=%s, time=%s\n"
-            % (
-                report["resource_estimate"]["threads"],
-                report["resource_estimate"]["mem"],
-                report["resource_estimate"]["time"],
-            )
-        )
-        outt.write("Expected outputs:\n")
-        for item in report["expected_outputs"]:
-            outt.write("  - %s\n" % item)
+    report_json, report_txt = write_reports(output_dir, report)
 
     if not args.keep_intermediate and os.path.isdir(intermediate_dir):
         for p in os.listdir(intermediate_dir):
