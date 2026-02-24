@@ -695,9 +695,11 @@ rule rose:
     - If `macs2_control == "N"` and peak caller is MACS2, ROSE runs without `-c`.
     - Otherwise ROSE runs with control BAM (`-c`), including pooled controls.
 
-    Outputs:
-    - Preserves expected CARLISLE ROSE outputs:
-      `*_AllStitched.table.txt`, regular/super BEDs, GREAT BEDs, summit BEDs.
+    Required outputs:
+    - `rose_input_Enhancers_withSuper.bed`
+    - `rose_input_Gateway_Enhancers.bed`
+    - `rose_input_Gateway_SuperEnhancers.bed`
+    - `rose_input_AllEnhancers.table.txt`
     - Cleans up large ROSE intermediates (`gff/`, `mappedGFF/`) after success.
     """
     input:
@@ -717,17 +719,13 @@ rule rose:
         control_flag = config["macs2_control"],
         rose_root="/opt/ROSE",
         rose_python="/opt/conda/envs/rose/bin/python",
-        prep_bed_name="{treatment_control_list}.prepared.stitched.bed",
-        prep_gff_name="{treatment_control_list}.prepared.stitched.gff",
+        prep_bed_name="rose_input.prepared.stitched.bed",
+        prep_gff_name="rose_input.prepared.stitched.gff",
     output:
-        no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
-        all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
-        regular=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
-        super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
-        regular_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
-        super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
-        regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
-        super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
+        enh_with_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),
+        gateway_enhancers=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),
+        gateway_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_SuperEnhancers.bed"),
+        all_enhancers_table=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_AllEnhancers.table.txt"),
     container: config["containers"].get("rose", "docker://nciccbr/ccbr_rose:v1")
     shell:
         """
@@ -742,14 +740,6 @@ rule rose:
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
         mkdir -p {params.file_base}
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            dirname=$(basename $(mktemp))
-            TMPDIR="/dev/shm/$dirname"
-            mkdir -p "$TMPDIR"
-        fi
-
         # set bam files
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
         if [[ "{wildcards.control_mode}" == "pooled" ]]; then
@@ -779,16 +769,7 @@ rule rose:
             --tss-distance {params.tss_distance} \
             --output-dir {params.file_base} \
             --prepared-bed-name {params.prep_bed_name} \
-            --prepared-gff-name {params.prep_gff_name} \
-            --keep-intermediate
-
-        no_tss_src={params.file_base}/rose_prep_intermediate/03_no_tss_overlap.bed
-        if [[ -f "$no_tss_src" ]]; then
-            cp "$no_tss_src" {output.no_tss_bed}
-        else
-            echo "ERROR: Missing no_tss intermediate from prep script: $no_tss_src"
-            exit 1
-        fi
+            --prepared-gff-name {params.prep_gff_name}
 
         # If there are more than 5 peaks, run ROSE.
         prep_bed={params.file_base}/{params.prep_bed_name}
@@ -816,31 +797,14 @@ rule rose:
                     -o {params.file_base}
             fi
 
-            # ROSE table -> regular/super bed files.
-            grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==0 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/regular
-            bedtools sort -i $TMPDIR/regular > {output.regular}
-
-            grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==1 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/super
-            bedtools sort -i $TMPDIR/super > {output.super}
-
-            # Cut ROSE output files and create summit overlays.
-            cut -f1-3 {output.regular} > {output.regular_great}
-            cut -f1-3 {output.super} > {output.super_great}
-            bedtools intersect -wa -a {input.peak_file} -b {output.regular} > {output.regular_summit}
-            bedtools intersect -wa -a {input.peak_file} -b {output.super} > {output.super_summit}
-
             # Cleanup large ROSE intermediates not needed downstream.
             rm -rf {params.file_base}/gff {params.file_base}/mappedGFF
         else
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})"
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.no_tss_bed}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_great}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_great}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_summit}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.enh_with_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_enhancers}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all_enhancers_table}
         fi
     """
 if config["run_go_enrichment"]:
