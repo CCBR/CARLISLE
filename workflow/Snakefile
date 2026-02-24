@@ -377,12 +377,17 @@ def get_combined(wildcards):
 def get_rose(wildcards):
     files=[]
     if config['run_rose']:
+        # ROSE workflow currently supported only for hg19/hg38/mm10.
+        if GENOME not in ["hg19", "hg38", "mm10"]:
+            return files
         # ROSE runs separately for each control_mode
         for control_mode in CONTROL_MODES:
             base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
             tc_list = _filter_tc_list(base_list, control_mode)
             
             if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+                anno_m_all=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_m_all)
                 anno_m=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="macs2",qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]),
                 files.extend(anno_m)
             
@@ -390,9 +395,13 @@ def get_rose(wildcards):
             tc_list_sg = _filter_tc_list(base_list_sg, control_mode)
             
             if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+                anno_g_all=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_g_all)
                 anno_g=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="gopeaks",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE,control_mode=[control_mode]),
                 files.extend(anno_g)
             if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+                anno_s_all=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE,control_mode=[control_mode]),
+                files.extend(anno_s_all)
                 anno_s=expand(join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),peak_caller="seacr",qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE,control_mode=[control_mode]),
                 files.extend(anno_s)
     return files

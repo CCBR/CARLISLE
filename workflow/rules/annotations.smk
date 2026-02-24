@@ -685,62 +685,40 @@ rule combine_homer:
 
 rule rose:
     """
-    Developed from code:
-    https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
-    outdated version of rose: https://github.com/younglab/ROSE
+    Run ROSE with a containerized two-step flow:
+    1) `run-prep-rose` normalizes peak BED inputs (MACS2/SEACR/GoPeaks),
+       removes TSS-overlapping regions, stitches peaks, and writes a stitched GFF.
+    2) `ROSE_main.py` is executed from `/opt/ROSE` with:
+       `-g <genome> -i <stitched.gff> -r <treatment.bam> [-c <control.bam>] -s -t -o`.
 
-    # SEACR bed file output format
-    <1>     <2>     <3>     <4>             <5>             <6>
-    <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
+    Control BAM behavior:
+    - If `macs2_control == "N"` and peak caller is MACS2, ROSE runs without `-c`.
+    - Otherwise ROSE runs with control BAM (`-c`), including pooled controls.
 
-    # GOPEAKS bed file output format
-    <1>     <2>     <3>
-    <chr>   <start> <end>
-    chr1	29107	29364	42861.3	222.849	chr1:29151-29291
-
-    # MACS2 bed file output format
-    https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
-    <1>     <2>     <3>     <4>     <5>                             <6>     <7>             <8>             <9>             <10>
-    <chr>   <start> <end>   <name>  <integer score for display>     <empty> <fold-change> <-log10pvalue>    <-log10qvalue>  <relative summit position to peak start>
-    ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff.
-    ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100)
-    ## broadPeak does not have 10th column
-    ### Since in the broad peak calling mode, the peak summit won't be called, the values in the 5th, and 7-9th columns are the mean value across all positions in the peak region
-
-    # rose input (differs from documentation)
-    column 1: chromosome (chr#)
-    column 2: unique ID for each constituent enhancer region
-    column 3: start of constituent
-    column 4: end of constituent
-    Column 5: ignored
-    column 6: strand (+,-,.)
+    Outputs:
+    - Preserves expected CARLISLE ROSE outputs:
+      `*_AllStitched.table.txt`, regular/super BEDs, GREAT BEDs, summit BEDs.
+    - Cleans up large ROSE intermediates (`gff/`, `mappedGFF/`) after success.
     """
     input:
         peak_file=get_peak_file,
         bam = expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-    envmodules:
-        TOOLS["bedtools"],
-        TOOLS["rose"],
-        TOOLS["python3"],
-        TOOLS["samtools"],
-        TOOLS["R"]
     threads: getthreads("rose")
     params:
         genome = config["genome"],
-        regions=config["reference"][config["genome"]]["regions"],
         tss_bed = config["reference"][config["genome"]]["tss_bed"],
-        refseq=config["reference"][config["genome"]]["rose"],
         stitch_distance = config["stitch_distance"],
         tss_distance=config["tss_distance"],
         tc_file="{treatment_control_list}",
         peak_caller_type="{peak_caller_type}",
         dupstatus = "{dupstatus}",
         bam_path=join(RESULTSDIR,"bam"),
-        workdir=join(WORKDIR),
         file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}"),
         control_flag = config["macs2_control"],
-        mapped_gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","mappedGFF"),
-        gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","gff"),
+        rose_root="/opt/ROSE",
+        rose_python="/opt/conda/envs/rose/bin/python",
+        prep_bed_name="{treatment_control_list}.prepared.stitched.bed",
+        prep_gff_name="{treatment_control_list}.prepared.stitched.gff",
     output:
         no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
         all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
@@ -750,125 +728,109 @@ rule rose:
         super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
         regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
         super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
+    container: config["containers"].get("rose", "docker://nciccbr/ccbr_rose:v1")
     shell:
         """
-        # set tmp
-        set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            dirname=$(basename $(mktemp))
-            TMPDIR="/dev/shm/$dirname"
-            mkdir -p $TMPDIR
+        set -euo pipefail
+        if [[ "{params.genome}" != "hg19" && "{params.genome}" != "hg38" && "{params.genome}" != "mm10" ]]; then
+            echo "ERROR: rule rose supports only hg19, hg38, and mm10. Found genome={params.genome}"
+            exit 1
         fi
-
-        # set ROSE specific paths
-        PATHTO=/usr/local/apps/ROSE/1.3.1
-        PYTHONPATH=/usr/local/apps/ROSE/1.3.1/src/lib
-        export PYTHONPATH
-        export PATH=$PATHTO/bin:$PATH
-        
-        # Explicitly use the system Python that ROSE expects
-        unset CONDA_PREFIX
-        unset CONDA_DEFAULT_ENV
 
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # set bam file - for pooled mode, use merged control BAMs
-        treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
+        mkdir -p {params.file_base}
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
+            TMPDIR="/lscratch/$SLURM_JOB_ID"
+        else
+            dirname=$(basename $(mktemp))
+            TMPDIR="/dev/shm/$dirname"
+            mkdir -p "$TMPDIR"
+        fi
 
+        # set bam files
+        treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
         if [[ "{wildcards.control_mode}" == "pooled" ]]; then
             cntrl_bam={params.bam_path}/pooled_controls/${{control}}.{params.dupstatus}.merged.bam
         else
             cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
         fi
-        
-        # Set control bam for ROSE based on control flag and peak caller type
+
+        # Set control bam usage for ROSE based on MACS2 control mode
+        control_arg=""
         if [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
-            # No control used with MACS2
-            rose_files="${{treat_bam}}"
+            echo "ROSE control BAM omitted for MACS2 with macs2_control=N"
         else
-            rose_files="${{treat_bam}} ${{cntrl_bam}}" 
+            control_arg="--control-bam ${{cntrl_bam}}"
         fi
 
-        cp {input.peak_file} $TMPDIR/subset.bed
+        # STEP 1: prep ROSE input (BED/GFF), keeping intermediates for no_tss output.
+        run-prep-rose \
+            --peak-file {input.peak_file} \
+            --peak-format auto \
+            --sample-id {wildcards.treatment_control_list} \
+            --treatment-bam ${{treat_bam}} \
+            ${{control_arg}} \
+            --genome {params.genome} \
+            --tss-bed {params.tss_bed} \
+            --stitch-distance {params.stitch_distance} \
+            --tss-distance {params.tss_distance} \
+            --output-dir {params.file_base} \
+            --prepared-bed-name {params.prep_bed_name} \
+            --prepared-gff-name {params.prep_gff_name} \
+            --keep-intermediate
 
-        # prep for ROSE
-        # macs2 output is prepared for ROSE formatting
-        # seacr and gopeaks must be edited to correct for formatting
-
-        ## correct GOPEAKS
-        ### original: <chr>   <start> <end>
-        ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <0> <.>
-        echo "## Prep Rose"
-        if [[ "{params.peak_caller_type}" == "gopeaks_narrow" ]] || [[ "{params.peak_caller_type}" == "gopeaks_broad" ]]; then
-            echo "#### Fixing GoPeaks"
-            cp $TMPDIR/subset.bed $TMPDIR/save.bed
-            nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="${{treatment}}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
-            paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
-        fi
-
-        ## correct SEACR
-        ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
-        ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
-        if [[ "{params.peak_caller_type}" == "seacr_stringent" ]] || [[ "{params.peak_caller_type}" == "seacr_relaxed" ]]; then
-            echo "#### Fixing SECAR"
-            cp $TMPDIR/subset.bed $TMPDIR/save.bed
-            awk -v sample_id="${{treatment}}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
-            paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
-        fi
-
-        # handle compressed tss_bed file
-        if [[ {params.tss_bed} == *.gz ]]; then
-            echo "## Decompressing tss_bed to tmpdir"
-            zcat {params.tss_bed} > $TMPDIR/tss.bed
-            TSS_BED=$TMPDIR/tss.bed
+        no_tss_src={params.file_base}/rose_prep_intermediate/03_no_tss_overlap.bed
+        if [[ -f "$no_tss_src" ]]; then
+            cp "$no_tss_src" {output.no_tss_bed}
         else
-            TSS_BED={params.tss_bed}
+            echo "ERROR: Missing no_tss intermediate from prep script: $no_tss_src"
+            exit 1
         fi
 
-        # bedtools
-        echo "## Intersecting"
-        bedtools intersect -a $TMPDIR/subset.bed -b $TSS_BED -v > $TMPDIR/tmp.bed
-        bedtools merge -i $TMPDIR/tmp.bed -d {params.stitch_distance} -c 4,5,6 -o distinct,sum,distinct > {output.no_tss_bed}
-
-        # if there are less than 5 peaks, annotation will fail
-        # if there are more, run ROSE
-        num_of_peaks=`cat {output.no_tss_bed} | wc -l`
+        # If there are more than 5 peaks, run ROSE.
+        prep_bed={params.file_base}/{params.prep_bed_name}
+        prep_gff={params.file_base}/{params.prep_gff_name}
+        num_of_peaks=`cat "$prep_bed" | wc -l`
         if [[ ${{num_of_peaks}} -gt 5 ]]; then
-            echo "## More than 5 usable peaks detected ${{num_of_peaks}} - Running rose"
-            cd {params.workdir}
+            echo "More than 5 usable peaks detected (${{num_of_peaks}}). Running ROSE."
+            cd {params.rose_root}
+            if [[ -n "$control_arg" ]]; then
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -c ${{cntrl_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            else
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            fi
 
-            ROSE_main.py \
-                -i {output.no_tss_bed} \
-                --custom={params.refseq} \
-                -r ${{rose_files}} \
-                -t {params.tss_distance} \
-                -s {params.stitch_distance} \
-                -o {params.file_base}
-
-            # rose to bed file
-            echo "## Convert bed"
-            # developed from https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/scripts/roseTable2Bed.sh
+            # ROSE table -> regular/super bed files.
             grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==0 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/regular
             bedtools sort -i $TMPDIR/regular > {output.regular}
 
             grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==1 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/super
             bedtools sort -i $TMPDIR/super > {output.super}
 
-            # cut rose output files, create summits
-            echo "## Cut and summit"
+            # Cut ROSE output files and create summit overlays.
             cut -f1-3 {output.regular} > {output.regular_great}
             cut -f1-3 {output.super} > {output.super_great}
             bedtools intersect -wa -a {input.peak_file} -b {output.regular} > {output.regular_summit}
             bedtools intersect -wa -a {input.peak_file} -b {output.super} > {output.super_summit}
 
-            # cleanup
-            echo "## Cleaning up"
-            rm -r {params.mapped_gff_dir}
-            rm -r {params.gff_dir}
+            # Cleanup large ROSE intermediates not needed downstream.
+            rm -rf {params.file_base}/gff {params.file_base}/mappedGFF
         else
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})"
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.no_tss_bed}

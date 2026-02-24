@@ -496,9 +496,8 @@ GO_ENRICHMENT_METHODS=list(filter(None, [x.strip() for x in config["go_enrichmen
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES
 #########################################################
-if GENOME == "hg38" or GENOME == "hg19" or GENOME == "hs1":
+if GENOME == "hg38" or GENOME == "hg19" or GENOME == "mm10" or GENOME == "hs1":
     check_readaccess(config["reference"][GENOME]["tss_bed"])
-    check_readaccess(config["reference"][GENOME]["rose"])
 
 #########################################################
 # DEFINE LOCAL RULES
