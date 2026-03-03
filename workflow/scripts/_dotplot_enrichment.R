@@ -151,7 +151,9 @@ df <- df[order(df$GeneRatio, decreasing = TRUE), , drop = FALSE]
 
 df$Term <- as.character(df[[desc_col]])
 df$TermWrapped <- wrap_text(df$Term, width = wrap_width)
-df$TermWrapped <- factor(df$TermWrapped, levels = rev(df$TermWrapped))
+# Wrapped term labels can collide across rows; deduplicate factor levels while
+# preserving display order so repeated pathway names do not abort plotting.
+df$TermWrapped <- factor(df$TermWrapped, levels = rev(unique(df$TermWrapped)))
 df$FDR <- df$FDR_plot
 
 fdr_min <- min(df$FDR, na.rm = TRUE)
