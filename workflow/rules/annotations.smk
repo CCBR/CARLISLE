@@ -978,7 +978,7 @@ if config["run_contrasts"] and config["run_go_enrichment"]:
                 tmp_err="$(mktemp)"
                 if ! Rscript {params.rscript} --input {input.tsv} --output {output.png} 2>"$tmp_err"; then
                     cat "$tmp_err"
-                    if rg -q "No plottable rows after filtering|No enriched pathways found|No enriched pathways with valid p-values|No rows with positive geneset size|No rows available in enrichment TSV|Input TSV is empty" "$tmp_err"; then
+                    if grep -Eq "No plottable rows after filtering|No enriched pathways found|No enriched pathways with valid p-values|No rows with positive geneset size|No rows available in enrichment TSV|Input TSV is empty" "$tmp_err"; then
                         echo "[$(date -Is)] WARN: Non-plottable enrichment table; creating placeholder PNG."
                         Rscript -e "png(filename='{output.png}', width=3000, height=2100, res=300, bg='white'); plot.new(); title('No GO Enrichment Results'); text(0.5, 0.45, 'No plottable rows after filtering', cex=1.2); dev.off()"
                     else
