@@ -80,21 +80,21 @@ Check which version is currently active:
 carlisle --version
 [+] Loading singularity  4.2.2  on cn0001
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1
-Version: 2.7.1
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5
+Version: 2.7.5
 ```
 
 ```
 carlisle --help
 [+] Loading singularity  4.2.2  on cn0001
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5
 /spin1/home/linux/kopardevn/carlisle
   --> run CARLISLE
   Cut And Run anaLysIS pipeLinE
 
   USAGE:
-    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
   Required Arguments:
   1.  RUNMODE: [Type: String] Valid options:
       *) init : initialize workdir
