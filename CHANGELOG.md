@@ -1,5 +1,23 @@
 ## CARLISLE development version
 
+## CARLISLE 2.7.5
+
+### New Features
+
+- **ROSE containerization**: Containerized the ROSE workflow, added a dedicated prep script, and simplified dependencies by removing annotation-folder/refseq coupling for supported genomes (`hg19`, `hg38`, `mm10`). (@kopardev)
+- **GO enrichment workflow split**: Separated GO enrichment table generation from dotplot generation to improve rerun behavior and failure isolation. (@kopardev)
+
+### Improvements
+
+- **ROSE output streamlining**: Reduced ROSE outputs to only required deliverables and adjusted cluster resource requests accordingly. (@kopardev)
+- **GO enrichment execution hardening**: Improved GO enrichment and dotplot logging and scheduling defaults for cluster execution. (#210, #211, #212, #213, @kopardev)
+
+### Bug Fixes
+
+- **GO enrichment robustness**: Handle empty BED/TSV inputs without hard failure and improve fallback checks in dotplot generation. (#212, @kopardev)
+- **Dotplot label handling**: Fix duplicate wrapped enrichment labels in GO dotplot output. (@kopardev)
+- **ROSE empty-input handling**: Prevent hard failures when ROSE prep receives empty peak inputs. (@kopardev)
+
 ## CARLISLE 2.7.4
 
 ### Bug Fixes
