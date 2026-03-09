@@ -136,9 +136,10 @@ def subtract_intervals(base_intervals, subtract_intervals):
     result = [(s, e) for s, e in result if e > s]
     return result
 
+
 parser = argparse.ArgumentParser(
     description="Generate TSS, promoter, genebody, and intergenic BED files "
-                "from a GTF file, optionally excluding blacklist and ambiguous regions."
+    "from a GTF file, optionally excluding blacklist and ambiguous regions."
 )
 
 # =========================
@@ -146,35 +147,29 @@ parser = argparse.ArgumentParser(
 # =========================
 input_group = parser.add_argument_group("INPUT FILES")
 
-input_group.add_argument(
-    "--gtf",
-    required=True,
-    help="INPUT: GTF annotation file"
-)
+input_group.add_argument("--gtf", required=True, help="INPUT: GTF annotation file")
 
 input_group.add_argument(
-    "--genome_sizes",
-    required=True,
-    help="INPUT: Genome sizes file (chrom\\tlength)"
+    "--genome_sizes", required=True, help="INPUT: Genome sizes file (chrom\\tlength)"
 )
 
 input_group.add_argument(
     "--blacklist_bed",
     required=False,
-    help="INPUT: BED file of blacklist regions to exclude from intergenic regions"
+    help="INPUT: BED file of blacklist regions to exclude from intergenic regions",
 )
 
 input_group.add_argument(
     "--ambiguous_bed",
     required=False,
-    help="INPUT: BED file of ambiguous-base regions (e.g., Ns) to exclude from intergenic"
+    help="INPUT: BED file of ambiguous-base regions (e.g., Ns) to exclude from intergenic",
 )
 
 input_group.add_argument(
     "--promoter_window",
     type=int,
     default=1000,
-    help="INPUT: Half-window size around TSS (default = 1000 for +/-1kb)"
+    help="INPUT: Half-window size around TSS (default = 1000 for +/-1kb)",
 )
 
 # =========================
@@ -183,28 +178,26 @@ input_group.add_argument(
 output_group = parser.add_argument_group("OUTPUT FILES")
 
 output_group.add_argument(
-    "--tss_bed",
-    required=True,
-    help="OUTPUT: BED file for TSS (1bp)"
+    "--tss_bed", required=True, help="OUTPUT: BED file for TSS (1bp)"
 )
 
 output_group.add_argument(
     "--promoter_bed",
     required=True,
-    help="OUTPUT: BED file for promoter regions (+/- promoter_window)"
+    help="OUTPUT: BED file for promoter regions (+/- promoter_window)",
 )
 
 output_group.add_argument(
     "--genebody_bed",
     required=True,
-    help="OUTPUT: BED file for longest gene bodies (merged isoforms)"
+    help="OUTPUT: BED file for longest gene bodies (merged isoforms)",
 )
 
 output_group.add_argument(
     "--intergenic_bed",
     required=True,
     help="OUTPUT: BED file for intergenic regions "
-         "(genome - genebody - blacklist - ambiguous)"
+    "(genome - genebody - blacklist - ambiguous)",
 )
 
 args = parser.parse_args()
@@ -282,15 +275,15 @@ w = args.promoter_window
 # For building intergenic: chrom -> list of (start, end) for genebody
 genebody_intervals = {chrom: [] for chrom in genome_sizes.keys()}
 
-with open(args.promoter_bed, "w") as promoter_out, \
-     open(args.tss_bed, "w") as tss_out, \
-     open(args.genebody_bed, "w") as genebody_out:
+with open(args.promoter_bed, "w") as promoter_out, open(
+    args.tss_bed, "w"
+) as tss_out, open(args.genebody_bed, "w") as genebody_out:
 
     for gene_id, info in genes.items():
         chrom = info["chrom"]
         strand = info["strand"]
-        min_start = info["min_start"]      # 1-based
-        max_end = info["max_end"]          # 1-based inclusive
+        min_start = info["min_start"]  # 1-based
+        max_end = info["max_end"]  # 1-based inclusive
         gene_name = info["gene_name"]
 
         # Skip genes on chromosomes not present in genome_sizes
@@ -302,14 +295,10 @@ with open(args.promoter_bed, "w") as promoter_out, \
         tss_0based = tss_1based - 1
 
         tss_out.write(
-            "\t".join([
-                chrom,
-                str(tss_0based),
-                str(tss_0based + 1),
-                gene_name,
-                "0",
-                strand
-            ]) + "\n"
+            "\t".join(
+                [chrom, str(tss_0based), str(tss_0based + 1), gene_name, "0", strand]
+            )
+            + "\n"
         )
 
         # --- Promoter: +/- w around TSS (0-based, half-open) ---
@@ -317,14 +306,10 @@ with open(args.promoter_bed, "w") as promoter_out, \
         promoter_end = tss_0based + w  # BED end is exclusive
 
         promoter_out.write(
-            "\t".join([
-                chrom,
-                str(promoter_start),
-                str(promoter_end),
-                gene_name,
-                "0",
-                strand
-            ]) + "\n"
+            "\t".join(
+                [chrom, str(promoter_start), str(promoter_end), gene_name, "0", strand]
+            )
+            + "\n"
         )
 
         # --- Gene body: full span of gene (longest isoform) ---
@@ -336,14 +321,10 @@ with open(args.promoter_bed, "w") as promoter_out, \
             genebody_start = 0
 
         genebody_out.write(
-            "\t".join([
-                chrom,
-                str(genebody_start),
-                str(genebody_end),
-                gene_name,
-                "0",
-                strand
-            ]) + "\n"
+            "\t".join(
+                [chrom, str(genebody_start), str(genebody_end), gene_name, "0", strand]
+            )
+            + "\n"
         )
 
         genebody_intervals[chrom].append((genebody_start, genebody_end))
@@ -385,13 +366,5 @@ with open(args.intergenic_bed, "w") as intergenic_out:
             if end <= start:
                 continue
             intergenic_out.write(
-                "\t".join([
-                    chrom,
-                    str(start),
-                    str(end),
-                    "intergenic",
-                    "0",
-                    "."
-                ]) + "\n"
+                "\t".join([chrom, str(start), str(end), "intergenic", "0", "."]) + "\n"
             )
-

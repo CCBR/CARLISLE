@@ -37,23 +37,22 @@ Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 
 ### 🧩 Preparation Commands
 
-* **`init` (required)** – Initializes the working directory by copying configuration, manifest, and Snakefiles into place. This step must be performed before any other pipeline action.
+- **`init` (required)** – Initializes the working directory by copying configuration, manifest, and Snakefiles into place. This step must be performed before any other pipeline action.
+    - Use the `-f` or `--force` flag to reinitialize an existing directory.
 
-  * Use the `-f` or `--force` flag to reinitialize an existing directory.
-
-* **`dryrun` (optional)** – Performs a non-executing validation of the Snakemake DAG, checking for syntax issues, missing files, or permission problems before a full run.
+- **`dryrun` (optional)** – Performs a non-executing validation of the Snakemake DAG, checking for syntax issues, missing files, or permission problems before a full run.
 
 ### ⚙️ Processing Commands
 
-* **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`).
+- **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`).
 
-* **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion.
+- **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion.
 
 ### 🧰 Maintenance Commands
 
-* **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted.
+- **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted.
 
-* **`runtest`** – Executes a small, bundled test dataset to verify installation and configuration integrity.
+- **`runtest`** – Executes a small, bundled test dataset to verify installation and configuration integrity.
 
 ---
 

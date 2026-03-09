@@ -6,38 +6,34 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
 
 ## Directory Overview
 
-* **`alignment_stats/`** – Contains detailed alignment reports for each sample, including mapping efficiency, read depth, and spike-in alignment metrics.
+- **`alignment_stats/`** – Contains detailed alignment reports for each sample, including mapping efficiency, read depth, and spike-in alignment metrics.
 
-* **`bam/`** – Stores sorted and indexed **BAM** files for all samples. This directory also includes per-sample and spike-in alignment statistics useful for downstream normalization and QC.
+- **`bam/`** – Stores sorted and indexed **BAM** files for all samples. This directory also includes per-sample and spike-in alignment statistics useful for downstream normalization and QC.
 
-* **`bedgraph/`** – Includes **BEDGRAPH** coverage tracks summarizing read density across the genome. These files serve as intermediates for visualization and peak-calling validation.
+- **`bedgraph/`** – Includes **BEDGRAPH** coverage tracks summarizing read density across the genome. These files serve as intermediates for visualization and peak-calling validation.
 
-* **`bigwig/`** – Contains **BigWig** files generated from normalized coverage data, suitable for visualization in genome browsers such as **[UCSC Genome Browser](https://genome.ucsc.edu/)** or **[IGV](https://igv.org/)**.
+- **`bigwig/`** – Contains **BigWig** files generated from normalized coverage data, suitable for visualization in genome browsers such as **[UCSC Genome Browser](https://genome.ucsc.edu/)** or **[IGV](https://igv.org/)**.
 
-* **`fragments/`** – Stores fragment length distributions and deduplicated fragment data (particularly important for **CUT&RUN** and **CUT&Tag** experiments). Useful for assessing fragment size enrichment and MNase digestion efficiency.
+- **`fragments/`** – Stores fragment length distributions and deduplicated fragment data (particularly important for **CUT&RUN** and **CUT&Tag** experiments). Useful for assessing fragment size enrichment and MNase digestion efficiency.
 
-* **`peaks/`** – The core results directory containing called peaks, differential comparisons, and annotations.
+- **`peaks/`** – The core results directory containing called peaks, differential comparisons, and annotations.
+    - Subdirectories are organized by **quality thresholds** (e.g., `0.05`, `0.01`), representing the significance cutoffs applied during peak calling.
+    - Each quality threshold directory includes:
+        - **`contrasts/`** – Contains results of differential binding analyses defined in the contrast manifest, including:
+            - Differential enrichment results from DESeq2 (AUC-based and fragment-based)
+            - 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`)
+            - **`homer_deg/`** – HOMER motif enrichment analysis for differentially enriched peaks
+            - **`ame_deg/`** – AME (Analysis of Motif Enrichment) results for differentially enriched peaks using HOCOMOCO motifs
+        - **`<peak_caller>/`** – Subdirectories for each peak caller (e.g., `macs2`, `seacr`, `gopeaks`). Each includes raw peak calls and annotated results.
+            - **`peak_output/`** – Raw peak calls organized by control mode:
+                - **`individual/`** – Peaks called using individual replicate controls (present for all analyses)
+                - **`pooled/`** – Peaks called using merged high-depth controls (present when `pool_controls: true`)
+            - **`annotation/`** – Contains enriched feature and pathway analyses, organized by control mode:
+                - **`go_enrichment/`** – Results from **[ChIP-Enrich](https://chipenrich.med.umich.edu/)** gene set enrichment, generated when `run_go_enrichment: true` is enabled.
+                - **`homer/`** – Output from **[HOMER](http://homer.ucsd.edu/homer/)** motif discovery and annotation.
+                - **`rose/`** – Output from **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)** super-enhancer analysis, generated when `run_rose: true` is specified.
 
-  * Subdirectories are organized by **quality thresholds** (e.g., `0.05`, `0.01`), representing the significance cutoffs applied during peak calling.
-  * Each quality threshold directory includes:
-
-    * **`contrasts/`** – Contains results of differential binding analyses defined in the contrast manifest, including:
-      * Differential enrichment results from DESeq2 (AUC-based and fragment-based)
-      * 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`)
-      * **`homer_deg/`** – HOMER motif enrichment analysis for differentially enriched peaks
-      * **`ame_deg/`** – AME (Analysis of Motif Enrichment) results for differentially enriched peaks using HOCOMOCO motifs
-    * **`<peak_caller>/`** – Subdirectories for each peak caller (e.g., `macs2`, `seacr`, `gopeaks`). Each includes raw peak calls and annotated results.
-
-      * **`peak_output/`** – Raw peak calls organized by control mode:
-        * **`individual/`** – Peaks called using individual replicate controls (present for all analyses)
-        * **`pooled/`** – Peaks called using merged high-depth controls (present when `pool_controls: true`)
-      * **`annotation/`** – Contains enriched feature and pathway analyses, organized by control mode:
-
-        * **`go_enrichment/`** – Results from **[ChIP-Enrich](https://chipenrich.med.umich.edu/)** gene set enrichment, generated when `run_go_enrichment: true` is enabled.
-        * **`homer/`** – Output from **[HOMER](http://homer.ucsd.edu/homer/)** motif discovery and annotation.
-        * **`rose/`** – Output from **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)** super-enhancer analysis, generated when `run_rose: true` is specified.
-
-* **`qc/`** – Centralized quality control directory containing comprehensive **[MultiQC](https://multiqc.info/)** summaries, **FastQC** metrics, and spike-in normalization reports (when applicable).
+- **`qc/`** – Centralized quality control directory containing comprehensive **[MultiQC](https://multiqc.info/)** summaries, **FastQC** metrics, and spike-in normalization reports (when applicable).
 
 ---
 

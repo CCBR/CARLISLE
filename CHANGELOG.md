@@ -36,7 +36,7 @@
 ### Bug Fixes
 
 - **ROSE environment isolation**: Fixed Python library conflicts between Snakemake and ROSE environments by explicitly managing `PYTHONPATH` and unsetting conda variables. (@kopardev)
-- **ROSE chromosome filtering**: Properly filter NC_ chromosomes (alternative scaffolds, unplaced contigs) from both treatment and control BAM files before enhancer stitching to prevent analysis failures. (@kopardev)
+- **ROSE chromosome filtering**: Properly filter NC\_ chromosomes (alternative scaffolds, unplaced contigs) from both treatment and control BAM files before enhancer stitching to prevent analysis failures. (@kopardev)
 - **BED file decompression**: Implemented consistent decompression handling for all compressed BED files across init, alignment, and annotation rules. (@kopardev)
 
 ## CARLISLE 2.7.2

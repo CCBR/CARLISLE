@@ -46,7 +46,7 @@ localrules: create_contrast_peakcaller_files, homer_annotations, combine_homer
 rule homer_motif:
     """
     HOMER peak annotation and motif discovery
-    
+
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
 
     Notes on using alternative genomes now in config
@@ -81,7 +81,7 @@ rule homer_motif:
         fi
 
         preparsedDir="$TMPDIR/preparsedDir"
-        mkdir -p $preparsedDir        
+        mkdir -p $preparsedDir
         echo "=========================================="
         echo "DEBUG: Starting HOMER motif analysis"
         echo "DEBUG: Peak file: {input.peak_file}"
@@ -89,19 +89,19 @@ rule homer_motif:
         echo "DEBUG: Output directory: {params.outDir}"
         echo "DEBUG: Threads: {threads}"
         echo "=========================================="
-        
+
         # Check if peak file is empty or has no peaks
         num_peaks=$(wc -l < {input.peak_file} || echo 0)
         echo "DEBUG: Number of peaks detected: $num_peaks"
-        
+
         if [[ $num_peaks -lt 5 ]]; then
             echo "WARNING: Only $num_peaks peaks found in {input.peak_file}"
             echo "INFO: Skipping HOMER analysis and creating empty output files"
-            
+
             # Create empty annotation files
             echo "# No peaks found for HOMER annotation" > {output.annotation}
             echo -e "Annotation\\tDistance to TSS\\tNumber of Peaks\\t% of Peaks\\tTotal size (bp)\\tLog10 p-value\\tLog2 Ratio (vs. Genome)\\tLogP enrichment (+values depleted)" > {output.annotation_summary}
-            
+
             # Create minimal motif output directory and files
             mkdir -p {params.outDir}
             echo "<html><body><h1>No peaks available for motif analysis</h1><p>Peak file contained fewer than 5 peaks.</p></body></html>" > {output.known_html}
@@ -110,7 +110,7 @@ rule homer_motif:
             echo "DEBUG: Empty output files created successfully"
         else
             echo "INFO: Found $num_peaks peaks, proceeding with HOMER analysis..."
-            
+
             # ============================================
             # STEP 1: HOMER Peak Annotation
             # ============================================
@@ -140,7 +140,7 @@ rule homer_motif:
             else
                 echo "ERROR: HOCOMOCO motif file NOT found at {params.hocomoco_motif}"
             fi
-            
+
             if [[ {params.genome} == "hs1" ]]; then
                 echo "DEBUG: Running findMotifsGenome.pl with hs1 genome"
                 findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \\
@@ -149,7 +149,7 @@ rule homer_motif:
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             else
                 echo "DEBUG: Running findMotifsGenome.pl with standard genome"
                 findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \\
@@ -158,11 +158,11 @@ rule homer_motif:
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             fi
             echo "DEBUG: findMotifsGenome.pl completed"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: HOMER motif analysis completed successfully"
         echo "=========================================="
@@ -257,7 +257,7 @@ rule homer_motif_deg:
                     -mknown {params.hocomoco_motif} \\\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             else
                 findMotifsGenome.pl {input.deg_peak_file} {params.genome} {params.outDir} \\
                     -nomotif \\
@@ -305,7 +305,7 @@ rule ame_motif_enrichment:
             TMPDIR="/dev/shm/$dirname"
         fi
         mkdir -p $TMPDIR
-        
+
         echo "=========================================="
         echo "DEBUG: Starting AME motif enrichment analysis"
         echo "DEBUG: Target FASTA: {input.target_fasta}"
@@ -313,18 +313,18 @@ rule ame_motif_enrichment:
         echo "DEBUG: Output directory: {params.outDir}"
         echo "DEBUG: Threads: {threads}"
         echo "=========================================="
-        
+
         # Check if FASTA files are empty
         target_lines=$(wc -l < {input.target_fasta} 2>/dev/null || echo 0)
         background_lines=$(wc -l < {input.background_fasta} 2>/dev/null || echo 0)
-        
+
         if [[ $target_lines -eq 0 ]] || [[ $background_lines -eq 0 ]]; then
             echo "WARNING: Empty FASTA files detected (target: $target_lines, background: $background_lines)"
             echo "INFO: Skipping AME analysis and creating empty results file"
             echo "# No sequences for AME analysis" > {output.ame_results}
         else
             echo "INFO: FASTA files ready (target: $target_lines lines, background: $background_lines lines)"
-            
+
             # ============================================
             # STEP 1: Prepare FASTA files for AME
             # ============================================
@@ -341,16 +341,16 @@ rule ame_motif_enrichment:
             mkdir -p tmpdir
             echo "DEBUG: Created tmpdir"
 
-            
+
             # Check if HOMER generated fasta files
             if [[ -f {params.outDir}/target.fa ]]; then
                 echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
-            cp {params.outDir}/target.fa tmpdir/target.fa 
+            cp {params.outDir}/target.fa tmpdir/target.fa
             else
                 echo "WARNING: target.fa NOT found"
 touch {params.outDir}/target.fa
             fi
-            
+
             if [[ -f {params.outDir}/background.fa ]]; then
                 echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
             cp {params.outDir}/background.fa tmpdir/background.fa
@@ -368,7 +368,7 @@ touch {params.outDir}/background.fa
             echo "DEBUG: STEP 2 - Running AME motif enrichment analysis"
             cd tmpdir
             echo "DEBUG: Changed to tmpdir: $(pwd)"
-            
+
             # Initialize AME results file with header
             printf '%b\n' 'rank\tmotif_DB\tmotif_ID\tmotif_ALT_ID\tconsensus\tp-value\tadjusted-p-value\tE-value\ttests\tFAMP\tn_sequences\tTP\t%TP\tFP\t%FP' > {output.ame_results}
             echo "DEBUG: Created AME results file with header"
@@ -380,13 +380,13 @@ touch {params.outDir}/background.fa
                 cp {params.hocomoco_memes_tar} .
                 tar xzf $(basename {params.hocomoco_memes_tar})
                 echo "DEBUG: Extraction complete"
-                
+
                 # Create list of meme files
                 echo "DEBUG: Creating list of meme files..."
                 ls *.meme 2>/dev/null | sort > memes || touch memes
                 num_meme_files=$(wc -l < memes 2>/dev/null || echo 0)
                 echo "DEBUG: Found $num_meme_files meme files"
-                
+
                 # Check fasta file availability
                 echo "DEBUG: Checking fasta files in tmpdir..."
                 if [[ -f target.fa ]]; then
@@ -394,29 +394,29 @@ touch {params.outDir}/background.fa
                 else
                     echo "WARNING: target.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -f background.fa ]]; then
                     echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
                 else
                     echo "WARNING: background.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
                     echo "DEBUG: All prerequisites met, generating AME commands..."
-                    
+
                     # Generate AME commands
                     while read a; do
                         echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
                     done < memes > do_memes
-                    
+
                     num_commands=$(wc -l < do_memes)
                     echo "DEBUG: Generated $num_commands AME commands"
-                    
+
                     # Run AME in parallel
                     echo "DEBUG: Running AME in parallel with {threads} threads..."
                     parallel -j {threads} < do_memes
                     echo "DEBUG: AME parallel execution completed"
-                    
+
                     # Collect and process AME results
                     echo "DEBUG: Collecting AME results..."
                     find . -name 'ame.tsv' -exec cat {{}} \\; | \\
@@ -427,11 +427,11 @@ touch {params.outDir}/background.fa
                     uniq | \\
                     sort -k7,7g | \\
                     python {params.python_script} >> {output.ame_results}
-                    
+
                     echo "DEBUG: Processed results from AME outputs"
                     final_lines=$(wc -l < {output.ame_results})
                     echo "DEBUG: Final AME results file has $final_lines lines"
-                    
+
                 else
                     echo "WARNING: Prerequisites not met for AME analysis"
                     echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
@@ -441,13 +441,13 @@ touch {params.outDir}/background.fa
                 echo "ERROR: HOCOMOCO meme files not found at {params.hocomoco_memes_tar}"
                 echo "# HOCOMOCO meme files not found at {params.hocomoco_memes_tar}" > {output.ame_results}
             fi
-            
+
             cd {params.outDir}
             echo "DEBUG: Returned to {params.outDir}"
             rm -rf tmpdir
             echo "DEBUG: Deleted tmpdir"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: AME motif enrichment analysis completed successfully"
         echo "=========================================="
@@ -515,12 +515,12 @@ rule ame_motif_enrichment_deg:
             # Check if HOMER generated fasta files
             if [[ -f {params.outDir}/target.fa ]]; then
                 echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
-                cp {params.outDir}/target.fa tmpdir/target.fa 
+                cp {params.outDir}/target.fa tmpdir/target.fa
             else
                 echo "WARNING: target.fa NOT found"
                 touch {params.outDir}/target.fa
             fi
-            
+
             if [[ -f {params.outDir}/background.fa ]]; then
                 echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
                 cp {params.outDir}/background.fa tmpdir/background.fa
@@ -564,7 +564,7 @@ rule ame_motif_enrichment_deg:
                 else
                     echo "WARNING: target.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -f background.fa ]]; then
                     echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
                 else
@@ -573,20 +573,20 @@ rule ame_motif_enrichment_deg:
 
                 if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
                     echo "DEBUG: All prerequisites met, generating AME commands..."
-                    
+
                     # Generate AME commands
                     while read a; do
                         echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
                     done < memes > do_memes
-                    
+
                     num_commands=$(wc -l < do_memes)
                     echo "DEBUG: Generated $num_commands AME commands"
-                    
+
                     # Run AME in parallel
                     echo "DEBUG: Running AME in parallel with {threads} threads..."
                     parallel -j {threads} < do_memes
                     echo "DEBUG: AME parallel execution completed"
-                    
+
                     # Collect and process AME results
                     echo "DEBUG: Collecting AME results..."
                     find . -name 'ame.tsv' -exec cat {{}} \; | \
@@ -597,11 +597,11 @@ rule ame_motif_enrichment_deg:
                     uniq | \
                     sort -k7,7g | \
                     python {params.python_script} >> {output.ame_results}
-                    
+
                     echo "DEBUG: Processed results from AME outputs"
                     final_lines=$(wc -l < {output.ame_results})
                     echo "DEBUG: Final AME results file has $final_lines lines"
-                    
+
                 else
                     echo "WARNING: Prerequisites not met for AME analysis (DEG)"
                     echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
@@ -617,7 +617,7 @@ rule ame_motif_enrichment_deg:
             rm -rf tmpdir
             echo "DEBUG: Deleted tmpdir"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: AME motif enrichment analysis (DEG) completed successfully"
         echo "=========================================="
@@ -753,7 +753,7 @@ rule rose:
         PYTHONPATH=/usr/local/apps/ROSE/1.3.1/src/lib
         export PYTHONPATH
         export PATH=$PATHTO/bin:$PATH
-        
+
         # Explicitly use the system Python that ROSE expects
         unset CONDA_PREFIX
         unset CONDA_DEFAULT_ENV
@@ -770,13 +770,13 @@ rule rose:
         else
             cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
         fi
-        
+
         # Set control bam for ROSE based on control flag and peak caller type
         if [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
             # No control used with MACS2
             rose_files="${{treat_bam}}"
         else
-            rose_files="${{treat_bam}} ${{cntrl_bam}}" 
+            rose_files="${{treat_bam}} ${{cntrl_bam}}"
         fi
 
         cp {input.peak_file} $TMPDIR/subset.bed

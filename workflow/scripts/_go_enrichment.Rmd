@@ -216,12 +216,12 @@ The hybrid p-value is given as 2*min(chipenrich_pvalue, polyenrich_pvalue). This
 if (isTRUE(skip_hybrid)) {
   print("--Skipping peak_h (hybrid) by user option")
 } else {
-for (rowid in seq_len(max_samples)) {
-  peak_caller <- peak_df[["peak_caller"]][rowid]
-  if (peak_caller == "seacr") {
-    GO_ANALYSIS_MAIN(rowid, "hybrid")
+  for (rowid in seq_len(max_samples)) {
+    peak_caller <- peak_df[["peak_caller"]][rowid]
+    if (peak_caller == "seacr") {
+      GO_ANALYSIS_MAIN(rowid, "hybrid")
+    }
   }
-}
 }
 ```
 
