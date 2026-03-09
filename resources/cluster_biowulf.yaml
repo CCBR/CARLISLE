@@ -8,7 +8,7 @@ __default__:
   threads: 2
   name: "{rule}.{wildcards}"
   output: "logs/${{SLURM_JOBID}}/{rule}.%j.out"
-  error:  "logs/${{SLURM_JOBID}}/{rule}.%j.err"
+  error: "logs/${{SLURM_JOBID}}/{rule}.%j.err"
 ###################################################################
 align:
   mem: 240g

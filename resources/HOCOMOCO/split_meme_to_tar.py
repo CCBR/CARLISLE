@@ -82,9 +82,7 @@ def motif_name_from_block(motif_lines: List[str]) -> str:
     return parts[1]
 
 
-def make_single_meme_text(
-    header_lines: List[str], motif_lines: List[str]
-) -> str:
+def make_single_meme_text(header_lines: List[str], motif_lines: List[str]) -> str:
     """
     Construct the contents of a single-motif MEME file as text.
     Assumes header_lines already contain 'MEME version 4', ALPHABET, background, etc.
@@ -151,10 +149,11 @@ def main():
     header_lines, motifs = split_header_and_motifs(lines)
 
     print(f"Found {len(motifs)} motifs.")
-    write_motifs_to_tar(header_lines, motifs, args.output_tar_gz, base_prefix=args.prefix)
+    write_motifs_to_tar(
+        header_lines, motifs, args.output_tar_gz, base_prefix=args.prefix
+    )
     print(f"Written all motifs into tar.gz: {args.output_tar_gz}")
 
 
 if __name__ == "__main__":
     main()
-

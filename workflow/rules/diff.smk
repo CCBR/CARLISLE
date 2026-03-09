@@ -16,11 +16,11 @@ def _filter_tc_list(base_list, control_mode):
 def get_all_peak_files(wildcards):
     files=[]
     pool_controls = config.get("pool_controls", False)
-    
+
     control_modes = ["individual"]
     if pool_controls:
         control_modes.append("pooled")
-    
+
     for control_mode in control_modes:
         # Choose base lists and filter according to mode
         base_m = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M

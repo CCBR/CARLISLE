@@ -384,16 +384,16 @@ def get_rose(wildcards):
         for control_mode in CONTROL_MODES:
             base_list = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_M
             tc_list = _filter_tc_list(base_list, control_mode)
-            
+
             if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]))
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]))
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_SuperEnhancers.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]))
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_AllEnhancers.table.txt"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE,control_mode=[control_mode]))
-            
+
             base_list_sg = TREATMENT_CONTROL_LIST_POOLED if control_mode == "pooled" else TREATMENT_LIST_SG
             tc_list_sg = _filter_tc_list(base_list_sg, control_mode)
-            
+
             if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE,control_mode=[control_mode]))
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE,control_mode=[control_mode]))
@@ -518,7 +518,7 @@ for cmd in spooker jobby; do
 done
 cd {WORKDIR}
 # jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
-jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby
 spooker \\
     --outdir "{WORKDIR}" \\
     --name "{config[pipeline]}" \\
@@ -558,7 +558,7 @@ for cmd in spooker jobby; do
 done
 cd {WORKDIR}
 # jobby --outerr --tsv logs/snakemake.log | tee logs/snakemake.log.jobby | awk -F$'\\t' -v OFS=$'\\t' '{{print $2,$3,$18}}' > logs/snakemake.log.jobby.short
-jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby 
+jobby --tsv logs/snakemake.log | tee logs/snakemake.log.jobby
 spooker \\
     --outdir "{WORKDIR}" \\
     --name "{config[pipeline]}" \\

@@ -12,14 +12,13 @@ The CARLISLE pipeline is configured and controlled through a set of editable con
 
 CARLISLE’s configuration system is modular and designed for both flexibility and transparency. The main configuration files include:
 
-* `config/config.yaml` – global pipeline settings and user parameters.
-* `resources/cluster.yaml` – cluster resource specifications for **[Biowulf](https://hpc.nih.gov/)** or other SLURM-based systems.
-* `resources/tools.yaml` – software versions, tool paths, and binary locations.
+- `config/config.yaml` – global pipeline settings and user parameters.
+- `resources/cluster.yaml` – cluster resource specifications for **[Biowulf](https://hpc.nih.gov/)** or other SLURM-based systems.
+- `resources/tools.yaml` – software versions, tool paths, and binary locations.
 
 ### Cluster Configuration (`cluster.yaml`)
 
 The cluster configuration file defines computational resources such as memory, CPU cores, and runtime limits for each Snakemake rule. Parameters can be adjusted globally or per rule. Edits should be made with caution, as inappropriate resource settings may cause job failures or queuing delays.
-
 
 ### Tools Configuration (`tools.yaml`)
 
@@ -29,9 +28,9 @@ This file specifies which versions of each tool are used during execution. When 
 
 The main configuration file (`config.yaml`) contains parameters grouped into logical sections:
 
-* **Folders and Paths:** defines input/output directories and manifest file locations.
-* **User Parameters:** controls feature-level behavior (e.g., thresholds, normalization methods, peak calling options).
-* **References:** specifies genome assemblies, index paths, spike-in references, and species annotations.
+- **Folders and Paths:** defines input/output directories and manifest file locations.
+- **User Parameters:** controls feature-level behavior (e.g., thresholds, normalization methods, peak calling options).
+- **References:** specifies genome assemblies, index paths, spike-in references, and species annotations.
 
 > ⚠️ **Important:** Always verify that reference genome paths and spike-in references correspond to accessible Biowulf or shared filesystem locations.
 
@@ -41,9 +40,9 @@ The main configuration file (`config.yaml`) contains parameters grouped into log
 
 ### Spike-in Controls
 
-CARLISLE supports spike-in normalization using reference genomes such as *E. coli* or *Drosophila melanogaster*. The parameter `spikein_genome` defines the spike-in species, and `spikein_reference` provides the corresponding FASTA path.
+CARLISLE supports spike-in normalization using reference genomes such as _E. coli_ or _Drosophila melanogaster_. The parameter `spikein_genome` defines the spike-in species, and `spikein_reference` provides the corresponding FASTA path.
 
-Example for *E. coli* spike-in:
+Example for _E. coli_ spike-in:
 
 ```yaml
 run_contrasts: true
@@ -54,7 +53,7 @@ spikein_reference:
     fa: "PIPELINE_HOME/resources/spikein/Ecoli_GCF_000005845.2_ASM584v2_genomic.fna"
 ```
 
-Example for *Drosophila* spike-in:
+Example for _Drosophila_ spike-in:
 
 ```yaml
 run_contrasts: true
@@ -79,6 +78,7 @@ Control deduplication behavior using the `dupstatus` parameter:
 ```yaml
 dupstatus: "dedup, no_dedup"
 ```
+
 > ✅ **Recommendation:** Keep this setting unchanged, let CARLISLIE run with dedup and no_dedup options and then choose which peakSets to use later.
 
 > 🧬 **Note:** Linear deduplication is essential for CUT&RUN and CUT&Tag datasets to avoid PCR bias and ensure accurate read quantification.
@@ -112,8 +112,8 @@ macs2_control: "Y"
 Control execution of computationally intensive annotation steps:
 
 ```yaml
-run_rose: false              # ROSE super-enhancer analysis (set to true to enable)
-run_go_enrichment: false     # ChIP-Enrich GO enrichment (set to true to enable)
+run_rose: false # ROSE super-enhancer analysis (set to true to enable)
+run_go_enrichment: false # ChIP-Enrich GO enrichment (set to true to enable)
 ```
 
 > ⏱️ **Performance Note:** ROSE and GO enrichment are disabled by default due to their computational requirements. Enable them when you need super-enhancer identification or pathway enrichment analysis.
@@ -128,8 +128,8 @@ pool_controls: true
 
 When enabled (`true`), CARLISLE runs peak calling in **both modes**:
 
-* **Individual mode** – Each treatment replicate is paired with its individual control replicate
-* **Pooled mode** – Each treatment replicate is compared against merged high-depth controls from all control replicates
+- **Individual mode** – Each treatment replicate is paired with its individual control replicate
+- **Pooled mode** – Each treatment replicate is compared against merged high-depth controls from all control replicates
 
 This dual-mode analysis enables comparison of replicate-specific vs merged control strategies. Results are organized in separate `individual/` and `pooled/` subdirectories within peak calling outputs.
 
@@ -147,9 +147,9 @@ quality_thresholds: "0.1, 0.05, 0.01"
 
 Refer to tool-specific defaults:
 
-* MACS2 q-value: [0.05](https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html)
-* GoPeaks p-value: [0.05](https://github.com/maxsonBraunLab/gopeaks#usage)
-* SEACR FDR threshold: [1.0](https://github.com/FredHutch/SEACR#usage)
+- MACS2 q-value: [0.05](https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html)
+- GoPeaks p-value: [0.05](https://github.com/maxsonBraunLab/gopeaks#usage)
+- SEACR FDR threshold: [1.0](https://github.com/FredHutch/SEACR#usage)
 
 ---
 
@@ -161,17 +161,17 @@ CARLISLE includes comprehensive reference annotations for supported genomes:
 
 For each genome (hg38, hg19, hs1/T2T, mm10), the pipeline provides:
 
-* **Gene annotations**: TSS, gene bodies, promoters, intergenic regions (protein-coding and all genes)
-* **Blacklisted regions**: ENCODE DAC blacklists for artifact exclusion
-* **cCREs (candidate cis-Regulatory Elements)**: From ENCODE SCREEN database
-  * **PLS** – Promoter-like signatures
-  * **pELS** – Proximal enhancer-like signatures  
-  * **dELS** – Distal enhancer-like signatures
-  * **CA-CTCF** – CTCF-bound chromatin accessibility regions
-  * **CA-H3K4me3** – H3K4me3-marked chromatin accessibility (active promoters)
-  * **CA-TF** – Transcription factor-bound chromatin accessibility
-  * **CA** – General chromatin accessibility
-  * **TF** – Transcription factor binding sites
+- **Gene annotations**: TSS, gene bodies, promoters, intergenic regions (protein-coding and all genes)
+- **Blacklisted regions**: ENCODE DAC blacklists for artifact exclusion
+- **cCREs (candidate cis-Regulatory Elements)**: From ENCODE SCREEN database
+  - **PLS** – Promoter-like signatures
+  - **pELS** – Proximal enhancer-like signatures
+  - **dELS** – Distal enhancer-like signatures
+  - **CA-CTCF** – CTCF-bound chromatin accessibility regions
+  - **CA-H3K4me3** – H3K4me3-marked chromatin accessibility (active promoters)
+  - **CA-TF** – Transcription factor-bound chromatin accessibility
+  - **CA** – General chromatin accessibility
+  - **TF** – Transcription factor binding sites
 
 These annotations are automatically used by HOMER, GO enrichment, and other annotation tools.
 
@@ -200,19 +200,18 @@ species_name:
 
 CARLISLE uses two manifests:
 
-* `samplemanifest` – required for all analyses.
-* `contrasts` – optional, required only for differential analysis with DESeq2.
+- `samplemanifest` – required for all analyses.
+- `contrasts` – optional, required only for differential analysis with DESeq2.
 
 ### Sample Manifest (Required)
 
 Defines sample-level metadata, including sample names, controls, and FASTQ paths.
 
-| sampleName | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                   | path_to_R2                                   |
-| ---------- | --------------- | --------- | ------------------------------- | ---------------------- | -------------------------------------------- | -------------------------------------------- |
-| 53_H3K4me3 | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz | <path_to>/53_H3K4me3_1.R2.fastq.gz |
-| 54_H3K4me3 | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/54_H3K4me3_1.R1.fastq.gz | <path_to>/54_H3K4me3_1.R2.fastq.gz |
-| HN6_IgG_rabbit_negative_control | 1               | Y         |  |                      | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
-
+| sampleName                      | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                              | path_to_R2                                              |
+| ------------------------------- | --------------- | --------- | ------------------------------- | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| 53_H3K4me3                      | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz                      | <path_to>/53_H3K4me3_1.R2.fastq.gz                      |
+| 54_H3K4me3                      | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/54_H3K4me3_1.R1.fastq.gz                      | <path_to>/54_H3K4me3_1.R2.fastq.gz                      |
+| HN6_IgG_rabbit_negative_control | 1               | Y         |                                 |                        | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
 
 ### Contrast Manifest (Optional)
 
