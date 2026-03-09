@@ -16,7 +16,7 @@ def print_bind_paths(config_filename, samples_filename):
 
 
 def get_paths(config_filename, samples_filename):
-    paths = { config_filename, samples_filename }
+    paths = {config_filename, samples_filename}
     with open(config_filename, "r") as config_file:
         config = yaml.safe_load(config_file)
     conf_keys = [
@@ -26,11 +26,11 @@ def get_paths(config_filename, samples_filename):
         "contrasts",
         "preparsedDir",
         "adapters",
-        "ccbr_tools_path"
+        "ccbr_tools_path",
     ]
-    paths.update({ config[key] for key in conf_keys if key in config })
-    paths.update(config['reference'][config['genome']].values())
-    paths.update(config['spikein_reference'][config['spikein_genome']].values())
+    paths.update({config[key] for key in conf_keys if key in config})
+    paths.update(config["reference"][config["genome"]].values())
+    paths.update(config["spikein_reference"][config["spikein_genome"]].values())
 
     with open(samples_filename, "r") as samples_file:
         next(samples_file)  # skip header

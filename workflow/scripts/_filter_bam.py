@@ -62,12 +62,20 @@ parser = argparse.ArgumentParser(description=Description)
 parser.add_argument("--bam_in", required=True, help="Input BAM")
 parser.add_argument("--bam_out", required=True, help="Output BAM")
 parser.add_argument("--metrics_path", required=True, help="Metrics text output")
-parser.add_argument("--fraglen", type=int, default=int(1e6),
-                    help="Max allowed fragment length for paired-end (default: 1e6)")
-parser.add_argument("--minmapq", type=int, default=20,
-                    help="Minimum mapping quality (default: 20)")
-parser.add_argument("--no-linear-dedup", action="store_true",
-                    help="Disable linear deduplication; apply only primary/proper-pair (PE), MAPQ, and fragment-length filters")
+parser.add_argument(
+    "--fraglen",
+    type=int,
+    default=int(1e6),
+    help="Max allowed fragment length for paired-end (default: 1e6)",
+)
+parser.add_argument(
+    "--minmapq", type=int, default=20, help="Minimum mapping quality (default: 20)"
+)
+parser.add_argument(
+    "--no-linear-dedup",
+    action="store_true",
+    help="Disable linear deduplication; apply only primary/proper-pair (PE), MAPQ, and fragment-length filters",
+)
 args = parser.parse_args()
 
 
@@ -84,12 +92,12 @@ def filter_only_mode():
     No deduplication: write reads that are primary (and proper pair for PE),
     pass MAPQ, and pass fragment-length filter for PE.
     """
-    i = 0            # reads considered
-    kept = 0         # reads written
+    i = 0  # reads considered
+    kept = 0  # reads written
 
-    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, \
-         pysam.AlignmentFile(args.bam_out, "wb", header=bam_in.header) as bam_out:
-
+    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, pysam.AlignmentFile(
+        args.bam_out, "wb", header=bam_in.header
+    ) as bam_out:
         for r in bam_in.fetch(until_eof=True):
             if not is_primary_mapped(r):
                 continue
@@ -123,7 +131,7 @@ def dedup_mode():
     paired_best = {}  # key -> (qname, mapq)
     single_best = {}
 
-    considered = 0   # number of alignments that entered dedup logic
+    considered = 0  # number of alignments that entered dedup logic
 
     with pysam.AlignmentFile(args.bam_in, "rb") as bam_in:
         for r in bam_in.fetch(until_eof=True):
@@ -145,22 +153,28 @@ def dedup_mode():
 
                 key = f"{ref}{strand_char(r)}{pos}"
                 considered += 1
-                if (key not in paired_best) or (paired_best[key][1] < r.mapping_quality):
+                if (key not in paired_best) or (
+                    paired_best[key][1] < r.mapping_quality
+                ):
                     paired_best[key] = (r.query_name, r.mapping_quality)
             else:
                 key = f"{ref}{strand_char(r)}{pos}"
                 considered += 1
-                if (key not in single_best) or (single_best[key][1] < r.mapping_quality):
+                if (key not in single_best) or (
+                    single_best[key][1] < r.mapping_quality
+                ):
                     single_best[key] = (r.query_name, r.mapping_quality)
 
-    kept_qnames = set(q for q, _ in paired_best.values()) | set(q for q, _ in single_best.values())
+    kept_qnames = set(q for q, _ in paired_best.values()) | set(
+        q for q, _ in single_best.values()
+    )
     unique_sites = len(kept_qnames)  # count of unique start-site winners (QNAMEs)
 
     # Second pass: write all primary reads for the kept QNAMEs
     written_reads = 0
-    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, \
-         pysam.AlignmentFile(args.bam_out, "wb", header=bam_in.header) as bam_out:
-
+    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, pysam.AlignmentFile(
+        args.bam_out, "wb", header=bam_in.header
+    ) as bam_out:
         for r in bam_in.fetch(until_eof=True):
             if not is_primary_mapped(r):
                 continue

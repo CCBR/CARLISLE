@@ -8,7 +8,6 @@ Welcome to the **CARLISLE Pipeline Tutorial!** This guide walks you through runn
 
 Before beginning, review the [Getting Started Guide](https://ccbr.github.io/CARLISLE/user-guide/getting-started/) for installation, environment setup, and dependency loading instructions.
 
-
 ---
 
 ### Step 1. Set Your Working Directory

@@ -221,7 +221,7 @@ if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
             # Alignment stats
             flagstat=expand(rules.align.output.bamflagstat,replicate=REPLICATES),
             idxstat=expand(rules.align.output.bamidxstats,replicate=REPLICATES),
-            gopeaks_broad=expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,control_mode=["individual"]) + 
+            gopeaks_broad=expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,control_mode=["individual"]) +
                          (expand(rules.gopeaks_broad.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_CONTROL_LIST_POOLED,dupstatus=DUPSTATUS,control_mode=["pooled"]) if config.get("pool_controls", False) else []),
             gopeaks_narrow=expand(rules.gopeaks_narrow.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_LIST_SG,dupstatus=DUPSTATUS,control_mode=["individual"]) +
                           (expand(rules.gopeaks_narrow.output.json,qthresholds=QTRESHOLDS,treatment_control_list=TREATMENT_CONTROL_LIST_POOLED,dupstatus=DUPSTATUS,control_mode=["pooled"]) if config.get("pool_controls", False) else [])
