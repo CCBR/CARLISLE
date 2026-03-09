@@ -216,7 +216,7 @@ hocomoco_memes_targz: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_memes.tar.gz"
 containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v7"
   carlisle_r: "docker://nciccbr/carlisle_r:v5"
-  go_enrichment: "docker://nciccbr/ccbr_chipenrich:latest"
+  go_enrichment: "docker://nciccbr/ccbr_chipenrich:v1"
   rose: "docker://nciccbr/ccbr_rose:v1"
 
 # Pipeline information
