@@ -25,20 +25,20 @@ rule merge_control_bams:
         merged_bai = join(RESULTSDIR,"bam","pooled_controls","{control_sample}.{dupstatus}.merged.bam.bai")
     params:
         bam_list = lambda w, input: " ".join(input.bams)
-    threads: getthreads("samtools")
+    threads: getthreads("merge_control_bams")
     envmodules:
         TOOLS["samtools"]
     shell:
         """
         set -exo pipefail
-        
+
         # Merge BAM files
         if [[ {threads} -gt 1 ]]; then
             samtools merge -@ {threads} {output.merged_bam} {params.bam_list}
         else
             samtools merge {output.merged_bam} {params.bam_list}
         fi
-        
+
         # Index merged BAM
         samtools index {output.merged_bam}
         """
@@ -71,10 +71,10 @@ rule create_pooled_control_fragments:
             TMPDIR="/dev/shm/$dirname"
             mkdir -p $TMPDIR
         fi
-        
+
         # Name-sort BAM (required for bedtools bamtobed -bedpe)
         samtools sort -n -@ {threads} -T $TMPDIR -o ${{TMPDIR}}/{params.control_sample}.{params.dupstatus}.namesorted.bam {input.merged_bam}
-        
+
         # Convert BAM to fragments bed
         bedtools bamtobed -bedpe -i ${{TMPDIR}}/{params.control_sample}.{params.dupstatus}.namesorted.bam | \
         awk -v OFS='\\t' -v flen={params.fragment_len} -v mapq={params.mapping_quality} \
@@ -103,19 +103,19 @@ rule create_pooled_control_bedgraph:
     shell:
         """
         set -exo pipefail
-        
+
         # Get scaling factor from alignment stats
         # For pooled controls, use average of all control replicate scaling factors
         if [[ {params.norm_method} == "LIBRARY" ]]; then
             # Calculate average library scaling factor across control replicates
             scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$NF; count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
         elif [[ {params.norm_method} == "SPIKEIN" ]]; then
-            # Calculate average spikein scaling factor across control replicates  
+            # Calculate average spikein scaling factor across control replicates
             scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$(NF-1); count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
         else
             scale=1
         fi
-        
+
         # Create bedgraph with scaling
         bedtools genomecov -bg -scale $scale -i {input.fragments} -g {input.genome_len} | \
         sort -k1,1 -k2,2n > {output.bedgraph}
@@ -206,8 +206,8 @@ rule macs2_narrow:
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
         macs2_genome = config["reference"][GENOME]["macs2_g"],
-        memG = getmemG("macs2"),
-    threads: getthreads("macs2")
+        memG = getmemG("macs2_narrow"),
+    threads: getthreads("macs2_narrow")
     envmodules:
         TOOLS["macs2"],
         TOOLS["ucsc"],
@@ -228,7 +228,7 @@ rule macs2_narrow:
         tc_pair="{params.tc_file}"
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
-        
+
         if [[ "$control_mode" == "pooled" ]]; then
             # Pooled mode: control should NOT end with _N pattern
             if [[ "$control" =~ _[0-9]+$ ]]; then
@@ -253,7 +253,7 @@ rule macs2_narrow:
 
         # set treatment fragment file
         treat_bed={params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed
-        
+
         # set control fragment file based on control_mode wildcard
         if [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
@@ -336,8 +336,8 @@ rule macs2_broad:
         pool_controls = config.get("pool_controls", False),
         broadtreshold = config["macs2_broad_peak_threshold"],
         macs2_genome = config["reference"][GENOME]["macs2_g"],
-        memG = getmemG("macs2"),
-    threads: getthreads("macs2")
+        memG = getmemG("macs2_broad"),
+    threads: getthreads("macs2_broad")
     envmodules:
         TOOLS["macs2"],
         TOOLS["ucsc"],
@@ -360,7 +360,7 @@ rule macs2_broad:
 
         # set treatment fragment file
         treat_bed={params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed
-        
+
         # set control fragment file based on control_mode wildcard
         if [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
@@ -457,7 +457,7 @@ rule seacr_stringent:
         tc_pair="{params.tc_file}"
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
-        
+
         if [[ "$control_mode" == "pooled" ]]; then
             if [[ "$control" =~ _[0-9]+$ ]]; then
                 echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
@@ -559,7 +559,7 @@ rule seacr_relaxed:
             tc_pair="{params.tc_file}"
             control_mode="{params.control_mode}"
             control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
-            
+
             if [[ "$control_mode" == "pooled" ]]; then
                 if [[ "$control" =~ _[0-9]+$ ]]; then
                     echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
@@ -659,7 +659,7 @@ rule gopeaks_narrow:
         tc_pair="{params.tc_file}"
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
-        
+
         if [[ "$control_mode" == "pooled" ]]; then
             if [[ "$control" =~ _[0-9]+$ ]]; then
                 echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
@@ -743,7 +743,7 @@ rule gopeaks_broad:
         tc_pair="{params.tc_file}"
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
-        
+
         if [[ "$control_mode" == "pooled" ]]; then
             if [[ "$control" =~ _[0-9]+$ ]]; then
                 echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"

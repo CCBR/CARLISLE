@@ -1,3 +1,5 @@
+import re
+
 def get_peak_file(wildcards):
     # MACS2 OPTIONS
     if wildcards.peak_caller_type == "macs2_narrow":
@@ -42,11 +44,11 @@ def get_deg_bed(wildcards):
     return bed
 
 
-localrules: create_contrast_peakcaller_files, homer_annotations, combine_homer
+localrules: homer_annotations, combine_homer
 rule homer_motif:
     """
     HOMER peak annotation and motif discovery
-    
+
     Developed from code: https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
 
     Notes on using alternative genomes now in config
@@ -81,7 +83,7 @@ rule homer_motif:
         fi
 
         preparsedDir="$TMPDIR/preparsedDir"
-        mkdir -p $preparsedDir        
+        mkdir -p $preparsedDir
         echo "=========================================="
         echo "DEBUG: Starting HOMER motif analysis"
         echo "DEBUG: Peak file: {input.peak_file}"
@@ -89,19 +91,19 @@ rule homer_motif:
         echo "DEBUG: Output directory: {params.outDir}"
         echo "DEBUG: Threads: {threads}"
         echo "=========================================="
-        
+
         # Check if peak file is empty or has no peaks
         num_peaks=$(wc -l < {input.peak_file} || echo 0)
         echo "DEBUG: Number of peaks detected: $num_peaks"
-        
+
         if [[ $num_peaks -lt 5 ]]; then
             echo "WARNING: Only $num_peaks peaks found in {input.peak_file}"
             echo "INFO: Skipping HOMER analysis and creating empty output files"
-            
+
             # Create empty annotation files
             echo "# No peaks found for HOMER annotation" > {output.annotation}
             echo -e "Annotation\\tDistance to TSS\\tNumber of Peaks\\t% of Peaks\\tTotal size (bp)\\tLog10 p-value\\tLog2 Ratio (vs. Genome)\\tLogP enrichment (+values depleted)" > {output.annotation_summary}
-            
+
             # Create minimal motif output directory and files
             mkdir -p {params.outDir}
             echo "<html><body><h1>No peaks available for motif analysis</h1><p>Peak file contained fewer than 5 peaks.</p></body></html>" > {output.known_html}
@@ -110,7 +112,7 @@ rule homer_motif:
             echo "DEBUG: Empty output files created successfully"
         else
             echo "INFO: Found $num_peaks peaks, proceeding with HOMER analysis..."
-            
+
             # ============================================
             # STEP 1: HOMER Peak Annotation
             # ============================================
@@ -140,7 +142,7 @@ rule homer_motif:
             else
                 echo "ERROR: HOCOMOCO motif file NOT found at {params.hocomoco_motif}"
             fi
-            
+
             if [[ {params.genome} == "hs1" ]]; then
                 echo "DEBUG: Running findMotifsGenome.pl with hs1 genome"
                 findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \\
@@ -149,7 +151,7 @@ rule homer_motif:
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             else
                 echo "DEBUG: Running findMotifsGenome.pl with standard genome"
                 findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \\
@@ -158,11 +160,11 @@ rule homer_motif:
                     -mknown {params.hocomoco_motif} \\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             fi
             echo "DEBUG: findMotifsGenome.pl completed"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: HOMER motif analysis completed successfully"
         echo "=========================================="
@@ -257,7 +259,7 @@ rule homer_motif_deg:
                     -mknown {params.hocomoco_motif} \\\
                     -p {threads} \\
                     -dumpFasta -cpg -maxN 0.1 -len 10 \\
-                    -preparsedDir $preparsedDir 
+                    -preparsedDir $preparsedDir
             else
                 findMotifsGenome.pl {input.deg_peak_file} {params.genome} {params.outDir} \\
                     -nomotif \\
@@ -305,7 +307,7 @@ rule ame_motif_enrichment:
             TMPDIR="/dev/shm/$dirname"
         fi
         mkdir -p $TMPDIR
-        
+
         echo "=========================================="
         echo "DEBUG: Starting AME motif enrichment analysis"
         echo "DEBUG: Target FASTA: {input.target_fasta}"
@@ -313,18 +315,18 @@ rule ame_motif_enrichment:
         echo "DEBUG: Output directory: {params.outDir}"
         echo "DEBUG: Threads: {threads}"
         echo "=========================================="
-        
+
         # Check if FASTA files are empty
         target_lines=$(wc -l < {input.target_fasta} 2>/dev/null || echo 0)
         background_lines=$(wc -l < {input.background_fasta} 2>/dev/null || echo 0)
-        
+
         if [[ $target_lines -eq 0 ]] || [[ $background_lines -eq 0 ]]; then
             echo "WARNING: Empty FASTA files detected (target: $target_lines, background: $background_lines)"
             echo "INFO: Skipping AME analysis and creating empty results file"
             echo "# No sequences for AME analysis" > {output.ame_results}
         else
             echo "INFO: FASTA files ready (target: $target_lines lines, background: $background_lines lines)"
-            
+
             # ============================================
             # STEP 1: Prepare FASTA files for AME
             # ============================================
@@ -341,16 +343,16 @@ rule ame_motif_enrichment:
             mkdir -p tmpdir
             echo "DEBUG: Created tmpdir"
 
-            
+
             # Check if HOMER generated fasta files
             if [[ -f {params.outDir}/target.fa ]]; then
                 echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
-            cp {params.outDir}/target.fa tmpdir/target.fa 
+            cp {params.outDir}/target.fa tmpdir/target.fa
             else
                 echo "WARNING: target.fa NOT found"
 touch {params.outDir}/target.fa
             fi
-            
+
             if [[ -f {params.outDir}/background.fa ]]; then
                 echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
             cp {params.outDir}/background.fa tmpdir/background.fa
@@ -368,7 +370,7 @@ touch {params.outDir}/background.fa
             echo "DEBUG: STEP 2 - Running AME motif enrichment analysis"
             cd tmpdir
             echo "DEBUG: Changed to tmpdir: $(pwd)"
-            
+
             # Initialize AME results file with header
             printf '%b\n' 'rank\tmotif_DB\tmotif_ID\tmotif_ALT_ID\tconsensus\tp-value\tadjusted-p-value\tE-value\ttests\tFAMP\tn_sequences\tTP\t%TP\tFP\t%FP' > {output.ame_results}
             echo "DEBUG: Created AME results file with header"
@@ -380,13 +382,13 @@ touch {params.outDir}/background.fa
                 cp {params.hocomoco_memes_tar} .
                 tar xzf $(basename {params.hocomoco_memes_tar})
                 echo "DEBUG: Extraction complete"
-                
+
                 # Create list of meme files
                 echo "DEBUG: Creating list of meme files..."
                 ls *.meme 2>/dev/null | sort > memes || touch memes
                 num_meme_files=$(wc -l < memes 2>/dev/null || echo 0)
                 echo "DEBUG: Found $num_meme_files meme files"
-                
+
                 # Check fasta file availability
                 echo "DEBUG: Checking fasta files in tmpdir..."
                 if [[ -f target.fa ]]; then
@@ -394,29 +396,29 @@ touch {params.outDir}/background.fa
                 else
                     echo "WARNING: target.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -f background.fa ]]; then
                     echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
                 else
                     echo "WARNING: background.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
                     echo "DEBUG: All prerequisites met, generating AME commands..."
-                    
+
                     # Generate AME commands
                     while read a; do
                         echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
                     done < memes > do_memes
-                    
+
                     num_commands=$(wc -l < do_memes)
                     echo "DEBUG: Generated $num_commands AME commands"
-                    
+
                     # Run AME in parallel
                     echo "DEBUG: Running AME in parallel with {threads} threads..."
                     parallel -j {threads} < do_memes
                     echo "DEBUG: AME parallel execution completed"
-                    
+
                     # Collect and process AME results
                     echo "DEBUG: Collecting AME results..."
                     find . -name 'ame.tsv' -exec cat {{}} \\; | \\
@@ -427,11 +429,11 @@ touch {params.outDir}/background.fa
                     uniq | \\
                     sort -k7,7g | \\
                     python {params.python_script} >> {output.ame_results}
-                    
+
                     echo "DEBUG: Processed results from AME outputs"
                     final_lines=$(wc -l < {output.ame_results})
                     echo "DEBUG: Final AME results file has $final_lines lines"
-                    
+
                 else
                     echo "WARNING: Prerequisites not met for AME analysis"
                     echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
@@ -441,13 +443,13 @@ touch {params.outDir}/background.fa
                 echo "ERROR: HOCOMOCO meme files not found at {params.hocomoco_memes_tar}"
                 echo "# HOCOMOCO meme files not found at {params.hocomoco_memes_tar}" > {output.ame_results}
             fi
-            
+
             cd {params.outDir}
             echo "DEBUG: Returned to {params.outDir}"
             rm -rf tmpdir
             echo "DEBUG: Deleted tmpdir"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: AME motif enrichment analysis completed successfully"
         echo "=========================================="
@@ -515,12 +517,12 @@ rule ame_motif_enrichment_deg:
             # Check if HOMER generated fasta files
             if [[ -f {params.outDir}/target.fa ]]; then
                 echo "DEBUG: target.fa exists ($(wc -l < {params.outDir}/target.fa) lines)"
-                cp {params.outDir}/target.fa tmpdir/target.fa 
+                cp {params.outDir}/target.fa tmpdir/target.fa
             else
                 echo "WARNING: target.fa NOT found"
                 touch {params.outDir}/target.fa
             fi
-            
+
             if [[ -f {params.outDir}/background.fa ]]; then
                 echo "DEBUG: background.fa exists ($(wc -l < {params.outDir}/background.fa) lines)"
                 cp {params.outDir}/background.fa tmpdir/background.fa
@@ -564,7 +566,7 @@ rule ame_motif_enrichment_deg:
                 else
                     echo "WARNING: target.fa NOT found in tmpdir"
                 fi
-                
+
                 if [[ -f background.fa ]]; then
                     echo "DEBUG: background.fa found in tmpdir ($(wc -l < background.fa) lines)"
                 else
@@ -573,20 +575,20 @@ rule ame_motif_enrichment_deg:
 
                 if [[ -s memes ]] && [[ -f target.fa ]] && [[ -f background.fa ]]; then
                     echo "DEBUG: All prerequisites met, generating AME commands..."
-                    
+
                     # Generate AME commands
                     while read a; do
                         echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
                     done < memes > do_memes
-                    
+
                     num_commands=$(wc -l < do_memes)
                     echo "DEBUG: Generated $num_commands AME commands"
-                    
+
                     # Run AME in parallel
                     echo "DEBUG: Running AME in parallel with {threads} threads..."
                     parallel -j {threads} < do_memes
                     echo "DEBUG: AME parallel execution completed"
-                    
+
                     # Collect and process AME results
                     echo "DEBUG: Collecting AME results..."
                     find . -name 'ame.tsv' -exec cat {{}} \; | \
@@ -597,11 +599,11 @@ rule ame_motif_enrichment_deg:
                     uniq | \
                     sort -k7,7g | \
                     python {params.python_script} >> {output.ame_results}
-                    
+
                     echo "DEBUG: Processed results from AME outputs"
                     final_lines=$(wc -l < {output.ame_results})
                     echo "DEBUG: Final AME results file has $final_lines lines"
-                    
+
                 else
                     echo "WARNING: Prerequisites not met for AME analysis (DEG)"
                     echo "DEBUG: memes file size: $(wc -l < memes 2>/dev/null || echo 0)"
@@ -617,7 +619,7 @@ rule ame_motif_enrichment_deg:
             rm -rf tmpdir
             echo "DEBUG: Deleted tmpdir"
         fi
-        
+
         echo "=========================================="
         echo "DEBUG: AME motif enrichment analysis (DEG) completed successfully"
         echo "=========================================="
@@ -627,9 +629,21 @@ def get_annotation_files(wildcards):
     """
     treatment_control_list depends on the peak caller
     """
+    def control_has_replicate(pair):
+        parts = pair.split("_vs_")
+        if len(parts) != 2:
+            return False
+        return re.search(r"_[0-9]+$", parts[1]) is not None
+
+    base_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG
+    if wildcards.control_mode == "pooled":
+        tc_list = [p for p in base_list if not control_has_replicate(p)]
+    else:
+        tc_list = [p for p in base_list if control_has_replicate(p)]
+
     return expand(join(RESULTSDIR,"peaks", wildcards.qthresholds, wildcards.peak_caller, "annotation","homer", wildcards.control_mode,
            "{treatment_control_list}" + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".annotation.summary"),
-           treatment_control_list = TREATMENT_LIST_M if wildcards.peak_caller.startswith('macs2') else TREATMENT_LIST_SG)
+           treatment_control_list = tc_list)
 
 
 rule homer_annotations:
@@ -671,292 +685,315 @@ rule combine_homer:
 
 rule rose:
     """
-    Developed from code:
-    https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/rules/pipeline.chipseq.smk
-    outdated version of rose: https://github.com/younglab/ROSE
+    Run ROSE with a containerized two-step flow:
+    1) `run-prep-rose` normalizes peak BED inputs (MACS2/SEACR/GoPeaks),
+       removes TSS-overlapping regions, stitches peaks, and writes a stitched GFF.
+    2) `ROSE_main.py` is executed from `/opt/ROSE` with:
+       `-g <genome> -i <stitched.gff> -r <treatment.bam> [-c <control.bam>] -s -t -o`.
 
-    # SEACR bed file output format
-    <1>     <2>     <3>     <4>             <5>             <6>
-    <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
+    Control BAM behavior:
+    - If `macs2_control == "N"` and peak caller is MACS2, ROSE runs without `-c`.
+    - Otherwise ROSE runs with control BAM (`-c`), including pooled controls.
 
-    # GOPEAKS bed file output format
-    <1>     <2>     <3>
-    <chr>   <start> <end>
-    chr1	29107	29364	42861.3	222.849	chr1:29151-29291
-
-    # MACS2 bed file output format
-    https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
-    <1>     <2>     <3>     <4>     <5>                             <6>     <7>             <8>             <9>             <10>
-    <chr>   <start> <end>   <name>  <integer score for display>     <empty> <fold-change> <-log10pvalue>    <-log10qvalue>  <relative summit position to peak start>
-    ## integer score for display: It's calculated as int(-10*log10pvalue) or int(-10*log10qvalue) depending on whether -p (pvalue) or -q (qvalue) is used as score cutoff.
-    ### Please note that currently this value might be out of the [0-1000] range defined in UCSC ENCODE narrowPeak format. You can let the value saturated at 1000 (i.e. p/q-value = 10^-100)
-    ## broadPeak does not have 10th column
-    ### Since in the broad peak calling mode, the peak summit won't be called, the values in the 5th, and 7-9th columns are the mean value across all positions in the peak region
-
-    # rose input (differs from documentation)
-    column 1: chromosome (chr#)
-    column 2: unique ID for each constituent enhancer region
-    column 3: start of constituent
-    column 4: end of constituent
-    Column 5: ignored
-    column 6: strand (+,-,.)
+    Required outputs:
+    - `rose_input_Enhancers_withSuper.bed`
+    - `rose_input_Gateway_Enhancers.bed`
+    - `rose_input_Gateway_SuperEnhancers.bed`
+    - `rose_input_AllEnhancers.table.txt`
+    - Cleans up large ROSE intermediates (`gff/`, `mappedGFF/`) after success.
     """
     input:
         peak_file=get_peak_file,
         bam = expand(join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-    envmodules:
-        TOOLS["bedtools"],
-        TOOLS["rose"],
-        TOOLS["python3"],
-        TOOLS["samtools"],
-        TOOLS["R"]
     threads: getthreads("rose")
     params:
         genome = config["genome"],
-        regions=config["reference"][config["genome"]]["regions"],
         tss_bed = config["reference"][config["genome"]]["tss_bed"],
-        refseq=config["reference"][config["genome"]]["rose"],
         stitch_distance = config["stitch_distance"],
         tss_distance=config["tss_distance"],
         tc_file="{treatment_control_list}",
         peak_caller_type="{peak_caller_type}",
         dupstatus = "{dupstatus}",
         bam_path=join(RESULTSDIR,"bam"),
-        workdir=join(WORKDIR),
         file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}"),
         control_flag = config["macs2_control"],
-        mapped_gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","mappedGFF"),
-        gff_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","gff"),
+        rose_root="/opt/ROSE",
+        rose_python="/opt/conda/envs/rose/bin/python",
+        prep_bed_name="rose_input.prepared.stitched.bed",
+        prep_gff_name="rose_input.prepared.stitched.gff",
     output:
-        no_tss_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.no_TSS_{s_dist}.bed"),
-        all=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.txt"),
-        regular=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllEnhancers.table.regular.bed"),
-        super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.bed"),
-        regular_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.GREAT.bed"),
-        super_great=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.GREAT.bed"),
-        regular_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.regular.summits.bed"),
-        super_summit=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","{treatment_control_list}_AllStitched.table.super.summits.bed"),
+        enh_with_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),
+        gateway_enhancers=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),
+        gateway_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_SuperEnhancers.bed"),
+        all_enhancers_table=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_AllEnhancers.table.txt"),
+    container: config["containers"].get("rose", "docker://nciccbr/ccbr_rose:v1")
     shell:
         """
-        # set tmp
-        set -exo pipefail
-        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
-            TMPDIR="/lscratch/$SLURM_JOB_ID"
-        else
-            dirname=$(basename $(mktemp))
-            TMPDIR="/dev/shm/$dirname"
-            mkdir -p $TMPDIR
+        set -euo pipefail
+        if [[ "{params.genome}" != "hg19" && "{params.genome}" != "hg38" && "{params.genome}" != "mm10" ]]; then
+            echo "ERROR: rule rose supports only hg19, hg38, and mm10. Found genome={params.genome}"
+            exit 1
         fi
-
-        # set ROSE specific paths
-        PATHTO=/usr/local/apps/ROSE/1.3.1
-        PYTHONPATH=/usr/local/apps/ROSE/1.3.1/src/lib
-        export PYTHONPATH
-        export PATH=$PATHTO/bin:$PATH
-        
-        # Explicitly use the system Python that ROSE expects
-        unset CONDA_PREFIX
-        unset CONDA_DEFAULT_ENV
 
         # pull treatment and control ids
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # set bam file - for pooled mode, use merged control BAMs
+        mkdir -p {params.file_base}
+        # set bam files
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
-
         if [[ "{wildcards.control_mode}" == "pooled" ]]; then
             cntrl_bam={params.bam_path}/pooled_controls/${{control}}.{params.dupstatus}.merged.bam
         else
             cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
         fi
-        
-        # Set control bam for ROSE based on control flag and peak caller type
+
+        # Set control bam usage for ROSE based on MACS2 control mode
+        control_arg=""
         if [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
-            # No control used with MACS2
-            rose_files="${{treat_bam}}"
+            echo "ROSE control BAM omitted for MACS2 with macs2_control=N"
         else
-            rose_files="${{treat_bam}} ${{cntrl_bam}}" 
+            control_arg="--control-bam ${{cntrl_bam}}"
         fi
 
-        cp {input.peak_file} $TMPDIR/subset.bed
+        # STEP 1: prep ROSE input (BED/GFF), keeping intermediates for no_tss output.
+        run-prep-rose \
+            --peak-file {input.peak_file} \
+            --peak-format auto \
+            --sample-id {wildcards.treatment_control_list} \
+            --treatment-bam ${{treat_bam}} \
+            ${{control_arg}} \
+            --genome {params.genome} \
+            --tss-bed {params.tss_bed} \
+            --stitch-distance {params.stitch_distance} \
+            --tss-distance {params.tss_distance} \
+            --output-dir {params.file_base} \
+            --prepared-bed-name {params.prep_bed_name} \
+            --prepared-gff-name {params.prep_gff_name}
 
-        # prep for ROSE
-        # macs2 output is prepared for ROSE formatting
-        # seacr and gopeaks must be edited to correct for formatting
+        # If there are 5 or more peaks, run ROSE.
+        prep_bed={params.file_base}/{params.prep_bed_name}
+        prep_gff={params.file_base}/{params.prep_gff_name}
+        num_of_peaks=`cat "$prep_bed" | wc -l`
+        if [[ ${{num_of_peaks}} -gt 4 ]]; then
+            echo "5 or more usable peaks detected (${{num_of_peaks}}). Running ROSE."
+            cd {params.rose_root}
+            if [[ -n "$control_arg" ]]; then
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -c ${{cntrl_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            else
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            fi
 
-        ## correct GOPEAKS
-        ### original: <chr>   <start> <end>
-        ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <0> <.>
-        echo "## Prep Rose"
-        if [[ "{params.peak_caller_type}" == "gopeaks_narrow" ]] || [[ "{params.peak_caller_type}" == "gopeaks_broad" ]]; then
-            echo "#### Fixing GoPeaks"
-            cp $TMPDIR/subset.bed $TMPDIR/save.bed
-            nl --number-format=rz --number-width=3 $TMPDIR/subset.bed | awk -v sample_id="${{treatment}}_" \'{{print sample_id$1"\\t0\\t."}}\' > $TMPDIR/col.txt
-            paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
-        fi
-
-        ## correct SEACR
-        ### original: <chr>   <start> <end>   <total signal>  <max signal>	<max signal region>
-        ### output: <chr>   <start> <end> <$sampleid_uniquenumber> <total signal> <.>
-        if [[ "{params.peak_caller_type}" == "seacr_stringent" ]] || [[ "{params.peak_caller_type}" == "seacr_relaxed" ]]; then
-            echo "#### Fixing SECAR"
-            cp $TMPDIR/subset.bed $TMPDIR/save.bed
-            awk -v sample_id="${{treatment}}_" \'{{print $1"\\t"$2"\\t"$3"\\t"sample_id$1"\\t"$4"\\t."}}\' $TMPDIR/subset.bed > $TMPDIR/col.txt
-            paste -d "\t" $TMPDIR/save.bed $TMPDIR/col.txt > $TMPDIR/subset.bed
-        fi
-
-        # handle compressed tss_bed file
-        if [[ {params.tss_bed} == *.gz ]]; then
-            echo "## Decompressing tss_bed to tmpdir"
-            zcat {params.tss_bed} > $TMPDIR/tss.bed
-            TSS_BED=$TMPDIR/tss.bed
-        else
-            TSS_BED={params.tss_bed}
-        fi
-
-        # bedtools
-        echo "## Intersecting"
-        bedtools intersect -a $TMPDIR/subset.bed -b $TSS_BED -v > $TMPDIR/tmp.bed
-        bedtools merge -i $TMPDIR/tmp.bed -d {params.stitch_distance} -c 4,5,6 -o distinct,sum,distinct > {output.no_tss_bed}
-
-        # if there are less than 5 peaks, annotation will fail
-        # if there are more, run ROSE
-        num_of_peaks=`cat {output.no_tss_bed} | wc -l`
-        if [[ ${{num_of_peaks}} -gt 5 ]]; then
-            echo "## More than 5 usable peaks detected ${{num_of_peaks}} - Running rose"
-            cd {params.workdir}
-
-            ROSE_main.py \
-                -i {output.no_tss_bed} \
-                --custom={params.refseq} \
-                -r ${{rose_files}} \
-                -t {params.tss_distance} \
-                -s {params.stitch_distance} \
-                -o {params.file_base}
-
-            # rose to bed file
-            echo "## Convert bed"
-            # developed from https://github.com/CCRGeneticsBranch/khanlab_pipeline/blob/master/scripts/roseTable2Bed.sh
-            grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==0 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/regular
-            bedtools sort -i $TMPDIR/regular > {output.regular}
-
-            grep -v "^[#|REGION]" {output.all} | awk -v OFS="\\t" -F"\\t" \'$NF==1 {{for(i=2; i<=NF; i++){{printf $i; printf (i<NF?"\\t":"\\n")}}}}\' > $TMPDIR/super
-            bedtools sort -i $TMPDIR/super > {output.super}
-
-            # cut rose output files, create summits
-            echo "## Cut and summit"
-            cut -f1-3 {output.regular} > {output.regular_great}
-            cut -f1-3 {output.super} > {output.super_great}
-            bedtools intersect -wa -a {input.peak_file} -b {output.regular} > {output.regular_summit}
-            bedtools intersect -wa -a {input.peak_file} -b {output.super} > {output.super_summit}
-
-            # cleanup
-            echo "## Cleaning up"
-            rm -r {params.mapped_gff_dir}
-            rm -r {params.gff_dir}
+            # Cleanup large ROSE intermediates not needed downstream.
+            rm -rf {params.file_base}/gff {params.file_base}/mappedGFF
         else
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})"
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.no_tss_bed}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_great}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_great}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.regular_summit}
-            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_summit}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.enh_with_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_enhancers}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all_enhancers_table}
         fi
     """
-if config["run_contrasts"]:
-    rule create_contrast_peakcaller_files:
+if config["run_go_enrichment"]:
+    rule go_enrichment_peaks:
         """
-        Reads in all of the output from Rules create_contrast_data_files which match the same peaktype and merges them together
+        Run GO enrichment on all peak BED files.
         """
+        wildcard_constraints:
+            peak_type="narrow|broad|stringent|relaxed",
+            geneset_id="[^/]+",
+            method="[^/]+",
         input:
-            contrast_files=lambda wildcards: expand(
-                join(
-                    RESULTSDIR,
-                    "peaks",
-                    "{qthresholds}",
-                    "contrasts",
-                    "{control_mode}",
-                    "{contrast_list}.{dupstatus}",
-                    "{contrast_list}.{dupstatus}.{peak_caller_type}.txt",
-                ),
-                qthresholds=wildcards.qthresholds,
-                contrast_list=wildcards.contrast_list,
-                dupstatus=wildcards.dupstatus,
-                peak_caller_type=[
-                    pt for pt in PEAKTYPE if pt.startswith(wildcards.peak_caller + "_")
-                ],
-                control_mode=wildcards.control_mode,
-            )
+            peaks_bed=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","peak_output","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.peaks.bed")
         params:
-            qthresholds = "{qthresholds}",
-            contrast_list = "{contrast_list}",
-            dupstatus = "{dupstatus}",
-            peak_caller = "{peak_caller}",
-            control_mode = "{control_mode}",
-            search_dir=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}")
+            rscript=join(SCRIPTSDIR,"_get_enrichment.R"),
+            genome=config["genome"],
+            output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.tsv")
         output:
-            peak_contrast_files=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.txt")
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","logs","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.log")
+        threads: getthreads("go_enrichment_peaks")
+        container: config['containers']['go_enrichment']
         shell:
             """
-            cat {input.contrast_files} | sort | uniq > {output.peak_contrast_files}
+            set -euo pipefail
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_peaks"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_peaks={input.peaks_bed}"
+                echo "output_expected={output.tsv}"
+                echo "output_base={params.output_tsv_base}"
+                echo "geneset_id={wildcards.geneset_id} method={wildcards.method} n_cores={threads}"
+
+                if ! Rscript {params.rscript} \\
+                    --peaks_bed {input.peaks_bed} \\
+                    --geneset_id {wildcards.geneset_id} \\
+                    --genome {params.genome} \\
+                    --output_tsv {params.output_tsv_base} \\
+                    --methods {wildcards.method} \\
+                    --n_cores {threads}; then
+                    echo "[$(date -Is)] ERROR: Rscript failed"
+                    exit 1
+                fi
+
+                outdir="$(dirname "{params.output_tsv_base}")"
+                outprefix="$(basename "{params.output_tsv_base}" .tsv)"
+                echo "Generated TSV candidates:"
+                ls -lh "$outdir"/"$outprefix".*.tsv 2>/dev/null || echo "(none found)"
+
+                if [[ ! -f "{output.tsv}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.tsv}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_peaks"
+            }} > >(tee -a {log.runlog}) 2>&1
             """
 
-    rule go_enrichment:
+if config["run_contrasts"] and config["run_go_enrichment"]:
+    rule go_enrichment_diffbed:
         """
-        https://bioconductor.org/packages/devel/bioc/vignettes/chipenrich/inst/doc/chipenrich-vignette.html#peak-distance-to-tss-distribution
+        Run GO enrichment on differential peak BED files.
         """
+        wildcard_constraints:
+            diff_type="AUCbased_up_group1|AUCbased_up_group2|fragmentsbased_up_group1|fragmentsbased_up_group2",
+            peak_caller_type="[^/]+",
+            geneset_id="[^/]+",
+            method="[^/]+",
         input:
-            contrast_file=rules.create_contrast_peakcaller_files.output.peak_contrast_files
+            peaks_bed=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","{contrast_list}.{dupstatus}","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.bed")
         params:
-            rscript_wrapper=join(SCRIPTSDIR,"_go_enrichment_wrapper.R"),
-            rmd=join(SCRIPTSDIR,"_go_enrichment.Rmd"),
-            carlisle_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            rscript_diff=join(SCRIPTSDIR,"_diff_markdown_wrapper.R"),
-            rscript_functions=join(SCRIPTSDIR,"_carlisle_functions.R"),
-            output_dir = join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}"),
-            species = config["genome"],
-            geneset_id = GENESET_ID,
-            dedup_status =  "{dupstatus}"
+            rscript=join(SCRIPTSDIR,"_get_enrichment.R"),
+            genome=config["genome"],
+            output_tsv_base=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.tsv")
         output:
-            html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{contrast_list}.{dupstatus}.go_enrichment.html"),
-        threads: getthreads("go_enrichment")
-        container: config['containers']['carlisle_r']
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","logs","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.log")
+        threads: getthreads("go_enrichment_diffbed")
+        container: config['containers']['go_enrichment']
         shell:
             """
-            set -exo pipefail
+            set -euo pipefail
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_diffbed"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_peaks={input.peaks_bed}"
+                echo "output_expected={output.tsv}"
+                echo "output_base={params.output_tsv_base}"
+                echo "geneset_id={wildcards.geneset_id} method={wildcards.method} n_cores={threads}"
 
-            # run script
-            Rscript {params.rscript_wrapper} \\
-                --rmd {params.rmd} \\
-                --carlisle_functions {params.carlisle_functions} \\
-                --output_dir {params.output_dir} \\
-                --report {output.html} \\
-                --contrast_file {input.contrast_file} \\
-                --species {params.species} \\
-                --geneset_id {params.geneset_id} \\
-                --dedup_status {params.dedup_status} \\
-                --n_cores {threads} \\
-                --skip_hybrid
+                if ! Rscript {params.rscript} \\
+                    --peaks_bed {input.peaks_bed} \\
+                    --geneset_id {wildcards.geneset_id} \\
+                    --genome {params.genome} \\
+                    --output_tsv {params.output_tsv_base} \\
+                    --methods {wildcards.method} \\
+                    --n_cores {threads}; then
+                    echo "[$(date -Is)] ERROR: Rscript failed"
+                    exit 1
+                fi
+
+                outdir="$(dirname "{params.output_tsv_base}")"
+                outprefix="$(basename "{params.output_tsv_base}" .tsv)"
+                echo "Generated TSV candidates:"
+                ls -lh "$outdir"/"$outprefix".*.tsv 2>/dev/null || echo "(none found)"
+
+                if [[ ! -f "{output.tsv}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.tsv}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_diffbed"
+            }} > >(tee -a {log.runlog}) 2>&1
             """
-rule motif_enrichment:
-    """
-    Perform motif enrichment analysis if enabled in the configuration.
-    """
-    input:
-        annotation_summary=get_annotation_files
-    output:
-        enrich_png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}","enrichment.{dupstatus}.{peak_caller_type}.png")
-    params:
-        annotation_dir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer","{control_mode}"),
-        peak_mode="{peak_caller_type}",
-        dupstatus="{dupstatus}",
-        rscript=join(SCRIPTSDIR,"_plot_feature_enrichment.R")
-    container: config['containers']['carlisle_r']
-    shell:
+
+if config["run_go_enrichment"]:
+    rule go_enrichment_dotplot_peaks:
         """
-        Rscript {params.rscript} {params.annotation_dir} {params.peak_mode} {params.dupstatus} {output.enrich_png}
+        Generate one GO enrichment dot plot PNG from one GO enrichment TSV (peak-call outputs).
         """
+        wildcard_constraints:
+            peak_type="narrow|broad|stringent|relaxed",
+            geneset_id="[^/]+",
+            method="[^/]+",
+        input:
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        output:
+            png=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","go_enrichment","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_type}.go_enrichment.{geneset_id}.{method}.png")
+        params:
+            rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
+        container: config['containers']['go_enrichment']
+        shell:
+            """
+            set -euo pipefail
+            Rscript {params.rscript} --input {input.tsv} --output {output.png}
+            """
+
+if config["run_contrasts"] and config["run_go_enrichment"]:
+    rule go_enrichment_dotplot_diffbed:
+        """
+        Generate one GO enrichment dot plot PNG from one GO enrichment TSV (differential peak outputs).
+        """
+        wildcard_constraints:
+            diff_type="AUCbased_up_group1|AUCbased_up_group2|fragmentsbased_up_group1|fragmentsbased_up_group2",
+            peak_caller_type="[^/]+",
+            geneset_id="[^/]+",
+            method="[^/]+",
+        input:
+            tsv=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.tsv")
+        output:
+            png=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.png")
+        log:
+            runlog=join(RESULTSDIR,"peaks","{qthresholds}","contrasts","{control_mode}","go_enrichment","logs","{contrast_list}.{dupstatus}.{peak_caller_type}.{diff_type}.go_enrichment.{geneset_id}.{method}.dotplot.log")
+        params:
+            rscript=join(SCRIPTSDIR,"_dotplot_enrichment.R")
+        container: config['containers']['go_enrichment']
+        shell:
+            """
+            set -euo pipefail
+            mkdir -p "$(dirname "{log.runlog}")"
+            {{
+                echo "[$(date -Is)] START go_enrichment_dotplot_diffbed"
+                echo "host=$(hostname) slurm_job_id=${{SLURM_JOB_ID:-NA}}"
+                echo "input_tsv={input.tsv}"
+                echo "output_png={output.png}"
+
+                tmp_err="$(mktemp)"
+                if ! Rscript {params.rscript} --input {input.tsv} --output {output.png} 2>"$tmp_err"; then
+                    cat "$tmp_err"
+                    if grep -Eq "No plottable rows after filtering|No enriched pathways found|No enriched pathways with valid p-values|No rows with positive geneset size|No rows available in enrichment TSV|Input TSV is empty" "$tmp_err"; then
+                        echo "[$(date -Is)] WARN: Non-plottable enrichment table; creating placeholder PNG."
+                        Rscript -e "png(filename='{output.png}', width=3000, height=2100, res=300, bg='white'); plot.new(); title('No GO Enrichment Results'); text(0.5, 0.45, 'No plottable rows after filtering', cex=1.2); dev.off()"
+                    else
+                        echo "[$(date -Is)] ERROR: dotplot Rscript failed with unexpected error"
+                        rm -f "$tmp_err"
+                        exit 1
+                    fi
+                fi
+                rm -f "$tmp_err"
+
+                if [[ ! -f "{output.png}" ]]; then
+                    echo "[$(date -Is)] ERROR: Expected output missing: {output.png}"
+                    exit 1
+                fi
+
+                echo "[$(date -Is)] DONE go_enrichment_dotplot_diffbed"
+            }} > >(tee -a {log.runlog}) 2>&1
+            """

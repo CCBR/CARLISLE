@@ -8,7 +8,7 @@ While CUT&Tag uses an engineered transposase to insert sequencing adapters direc
 
 Inspired by the **[nf-core/cutandrun](https://nf-co.re/cutandrun/3.2.2/)** pipeline, CARLISLE incorporates modular and reproducible analysis steps that emphasize transparency and scalability. It begins with raw **FASTQ** files, performing adapter trimming followed by alignment using **[Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)**. Linear deduplication is an important part of the process—especially for CUT&RUN and CUT&Tag data—to remove PCR artifacts and ensure accurate quantification of unique DNA fragments.
 
-Normalization is performed using either user-provided spike-in controls (e.g., *E. coli*) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
+Normalization is performed using either user-provided spike-in controls (e.g., _E. coli_) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
 
 ---
 
@@ -80,21 +80,21 @@ Check which version is currently active:
 carlisle --version
 [+] Loading singularity  4.2.2  on cn0001
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1
-Version: 2.7.1
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5
+Version: 2.7.5
 ```
 
 ```
 carlisle --help
 [+] Loading singularity  4.2.2  on cn0001
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5
 /spin1/home/linux/kopardevn/carlisle
   --> run CARLISLE
   Cut And Run anaLysIS pipeLinE
 
   USAGE:
-    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.1/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.5/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
   Required Arguments:
   1.  RUNMODE: [Type: String] Valid options:
       *) init : initialize workdir

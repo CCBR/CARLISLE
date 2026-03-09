@@ -11,6 +11,8 @@
 
 SNAKEMAKE_VERSION="snakemake/7"
 SINGULARITY_VERSION="singularity"
+# Snakemake --rerun-triggers options: mtime, params, input, software-env, code
+RERUN_TRIGGERS="mtime"
 
 set -eo pipefail
 
@@ -27,7 +29,7 @@ tools_specific_yaml="tools_biowulf.yaml"
 # these are relative to the workflows' base folder
 # these are copied into the WORKDIR
 ESSENTIAL_FILES="config/config.yaml config/samples.tsv config/contrasts.tsv config/fqscreen_config.conf config/multiqc_config.yaml config/rpackages.csv"
-ESSENTIAL_FOLDERS="workflow/scripts annotation"
+ESSENTIAL_FOLDERS="workflow/scripts"
 
 # ## setting PIPELINE_HOME
 export PIPELINE_HOME=$(readlink -f $(dirname "$0"))
@@ -117,12 +119,6 @@ function init() {
   #create log and stats folders
   if [ ! -d $WORKDIR/logs ]; then mkdir -p $WORKDIR/logs;echo "Logs Dir: $WORKDIR/logs";fi
   if [ ! -d $WORKDIR/stats ];then mkdir -p $WORKDIR/stats;echo "Stats Dir: $WORKDIR/stats";fi
-
-  #create links for rose file
-  if [[ ! -d $WORKDIR/annotation ]]; then
-    mkdir -p $WORKDIR/annotation
-    cp ${PIPELINE_HOME}/annotation/* $WORKDIR/annotation/
-  fi
 
   echo "Done Initializing $WORKDIR. You can now edit $WORKDIR/config/config.yaml and $WORKDIR/config/samples.tsv"
 
@@ -278,7 +274,7 @@ function run() {
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cores all \
@@ -318,7 +314,7 @@ function run() {
     --singularity-args "$SINGULARITY_BINDS" \
     --use-envmodules \
     --printshellcmds \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \
@@ -348,7 +344,7 @@ EOF
     --directory $WORKDIR \
     --use-envmodules \
     --printshellcmds \
-    --rerun-triggers mtime code \
+    --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \

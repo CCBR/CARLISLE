@@ -1,6 +1,7 @@
 import sys
 import io
 
+
 def process_data():
     """
     Reads data line-by-line from stdin, splits fields using variable whitespace,
@@ -8,11 +9,11 @@ def process_data():
     the result to stdout as clean Tab-Separated Values (TSV).
     """
     # Use TextIOWrapper for robust handling of standard input
-    input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding='utf-8')
+    input_stream = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
     row_number = 1
 
     # Define the output separator as a single tab
-    OUTPUT_DELIMITER = '\t'
+    OUTPUT_DELIMITER = "\t"
 
     for line in input_stream:
         # 1. Split on any sequence of whitespace (spaces or tabs).
@@ -34,5 +35,6 @@ def process_data():
 
         row_number += 1
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     process_data()
