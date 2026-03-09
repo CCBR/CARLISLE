@@ -490,8 +490,8 @@ refdata["spikein_genome"] = SPIKED_GENOMEFA
 # set annotation params
 S_DISTANCE=config["stitch_distance"]
 GENESET_ID=config["geneset_id"]
-GO_ENRICHMENT_GENESETS=list(filter(None, [x.strip() for x in config["geneset_id"].split(",")]))
-GO_ENRICHMENT_METHODS=list(filter(None, [x.strip() for x in config["go_enrichment_methods"].split(",")]))
+GO_ENRICHMENT_GENESETS=list(filter(None, [x.strip() for x in config.get("geneset_id", "GOBP").split(",")]))
+GO_ENRICHMENT_METHODS=list(filter(None, [x.strip() for x in config.get("go_enrichment_methods", "chipenrich").split(",")]))
 
 #########################################################
 # CHECK ACCESS TO OTHER RESOURCES
