@@ -771,12 +771,12 @@ rule rose:
             --prepared-bed-name {params.prep_bed_name} \
             --prepared-gff-name {params.prep_gff_name}
 
-        # If there are more than 5 peaks, run ROSE.
+        # If there are 5 or more peaks, run ROSE.
         prep_bed={params.file_base}/{params.prep_bed_name}
         prep_gff={params.file_base}/{params.prep_gff_name}
         num_of_peaks=`cat "$prep_bed" | wc -l`
-        if [[ ${{num_of_peaks}} -gt 5 ]]; then
-            echo "More than 5 usable peaks detected (${{num_of_peaks}}). Running ROSE."
+        if [[ ${{num_of_peaks}} -gt 4 ]]; then
+            echo "5 or more usable peaks detected (${{num_of_peaks}}). Running ROSE."
             cd {params.rose_root}
             if [[ -n "$control_arg" ]]; then
                 {params.rose_python} ROSE_main.py \
