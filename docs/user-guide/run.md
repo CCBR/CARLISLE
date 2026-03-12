@@ -30,6 +30,15 @@ Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 | `--version, -v`   | Print the current version of CARLISLE.                                                                                                  |
 | `--force, -f`     | Force re-execution of all Snakemake rules (overrides cache).                                                                            |
 | `--singcache, -c` | Define a custom **Singularity cache directory**. Defaults to `/data/${USER}/.singularity`, or `${WORKDIR}/.singularity` if unavailable. |
+Scheduler-safe defaults for cluster execution:
+- `-j 100`
+- `--max-jobs-per-second 1`
+- `--max-status-checks-per-second 0.1`
+
+Advanced users can override these defaults with environment variables:
+- `CARLISLE_MAX_JOBS`
+- `CARLISLE_MAX_JOBS_PER_SECOND`
+- `CARLISLE_MAX_STATUS_CHECKS_PER_SECOND`
 
 ---
 
