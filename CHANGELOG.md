@@ -1,7 +1,5 @@
 ## CARLISLE development version
 
-## CARLISLE development version
-
 ## CARLISLE 2.7.5
 
 ### New Features
