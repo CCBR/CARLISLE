@@ -4,58 +4,58 @@
 
 ### New Features
 
-- **ROSE containerization**: Containerized the ROSE workflow, added a dedicated prep script, and simplified dependencies by removing annotation-folder/refseq coupling for supported genomes (`hg19`, `hg38`, `mm10`). (@kopardev)
-- **GO enrichment workflow split**: Separated GO enrichment table generation from dotplot generation to improve rerun behavior and failure isolation. (@kopardev)
+- **ROSE containerization**: Containerized the ROSE workflow, added a dedicated prep script, and simplified dependencies by removing annotation-folder/refseq coupling for supported genomes (`hg19`, `hg38`, `mm10`). (#215, @kopardev)
+- **GO enrichment workflow split**: Separated GO enrichment table generation from dotplot generation to improve rerun behavior and failure isolation. (#215, @kopardev)
 
 ### Improvements
 
-- **ROSE output streamlining**: Reduced ROSE outputs to only required deliverables and adjusted cluster resource requests accordingly. (@kopardev)
-- **GO enrichment execution hardening**: Improved GO enrichment and dotplot logging and scheduling defaults for cluster execution. (#210, #211, #212, #213, @kopardev)
+- **ROSE output streamlining**: Reduced ROSE outputs to only required deliverables and adjusted cluster resource requests accordingly. (#215, @kopardev)
+- **GO enrichment execution hardening**: Improved GO enrichment and dotplot logging and scheduling defaults for cluster execution. (#210, #211, #212, #213, #215, @kopardev)
 
 ### Bug Fixes
 
-- **GO enrichment robustness**: Handle empty BED/TSV inputs without hard failure and improve fallback checks in dotplot generation. (#212, @kopardev)
-- **Dotplot label handling**: Fix duplicate wrapped enrichment labels in GO dotplot output. (@kopardev)
-- **ROSE empty-input handling**: Prevent hard failures when ROSE prep receives empty peak inputs. (@kopardev)
+- **GO enrichment robustness**: Handle empty BED/TSV inputs without hard failure and improve fallback checks in dotplot generation. (#212, #215, @kopardev)
+- **Dotplot label handling**: Fix duplicate wrapped enrichment labels in GO dotplot output. (#215, @kopardev)
+- **ROSE empty-input handling**: Prevent hard failures when ROSE prep receives empty peak inputs. (#215, @kopardev)
 
 ## CARLISLE 2.7.4
 
 ### Bug Fixes
 
-- **HOMER annotation outputs with control modes**: Fix `rule all` expectations to include the `control_mode` subdirectory for HOMER annotation plots and combined q-value tables, preventing MissingInputException during dryruns. (@kopardev)
+- **HOMER annotation outputs with control modes**: Fix `rule all` expectations to include the `control_mode` subdirectory for HOMER annotation plots and combined q-value tables, preventing MissingInputException during dryruns. (#209, @kopardev)
 
 ## CARLISLE 2.7.3
 
 ### New Features
 
-- **Pooled control mode support**: Complete pipeline implementation for pooled control analysis across MACS2, SEACR, GoPeaks, ROSE, HOMER, and differential analysis workflows. Enables comparison of replicate-specific vs merged high-depth controls. (@kopardev)
-- **ROSE dual control mode**: ROSE enhancer analysis now runs separately for both individual and pooled control modes, generating separate super-enhancer calls for each approach. (@kopardev)
-- **Reference file compression**: All reference BED files (blacklists, TSS, gene annotations, cCREs) now stored as `.bed.gz` with automatic decompression during analysis, significantly reducing storage requirements. (@kopardev)
-- **cCRE annotations**: Added comprehensive candidate cis-Regulatory Element (cCRE) annotations from ENCODE SCREEN database for all supported genomes (hg38, hg19, mm10, hs1), including:
+- **Pooled control mode support**: Complete pipeline implementation for pooled control analysis across MACS2, SEACR, GoPeaks, ROSE, HOMER, and differential analysis workflows. Enables comparison of replicate-specific vs merged high-depth controls. (#206, @kopardev)
+- **ROSE dual control mode**: ROSE enhancer analysis now runs separately for both individual and pooled control modes, generating separate super-enhancer calls for each approach. (#206, @kopardev)
+- **Reference file compression**: All reference BED files (blacklists, TSS, gene annotations, cCREs) now stored as `.bed.gz` with automatic decompression during analysis, significantly reducing storage requirements. (#206, @kopardev)
+- **cCRE annotations**: Added comprehensive candidate cis-Regulatory Element (cCRE) annotations from ENCODE SCREEN database for all supported genomes (hg38, hg19, mm10, hs1) (#206, @kopardev), including:
   - Promoter-like signatures (PLS)
   - Proximal enhancer-like signatures (pELS)
   - Distal enhancer-like signatures (dELS)
   - Chromatin accessibility regions (CA-CTCF, CA-H3K4me3, CA-TF)
-- **Motif enrichment for DEG peaks**: Added HOMER motif discovery and AME motif enrichment analysis specifically for differentially enriched peaks (both AUC-based and fragments-based, for up-regulated peaks in each group). (@kopardev)
-- **Enhanced differential analysis outputs**: Added 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`) for downstream enrichment analyses. (@kopardev)
-- **HOCOMOCO v14 CORE motifs**: Added complete HOCOMOCO v14 CORE motif database in both HOMER and MEME formats for comprehensive motif enrichment analysis. (@kopardev)
+- **Motif enrichment for DEG peaks**: Added HOMER motif discovery and AME motif enrichment analysis specifically for differentially enriched peaks (both AUC-based and fragments-based, for up-regulated peaks in each group). (#206, @kopardev)
+- **Enhanced differential analysis outputs**: Added 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`) for downstream enrichment analyses. (#206, @kopardev)
+- **HOCOMOCO v14 CORE motifs**: Added complete HOCOMOCO v14 CORE motif database in both HOMER and MEME formats for comprehensive motif enrichment analysis. (#206, @kopardev)
 
 ### Improvements
 
-- **Increased resource allocations**: Enhanced memory and thread allocation for computationally intensive rules:
+- **Increased resource allocations**: Enhanced memory and thread allocation for computationally intensive rules (#206, @kopardev):
   - ROSE: 96GB memory, 16 threads
   - DESeq2: 96GB memory
   - GO enrichment: 32GB memory, 8 threads
   - deepTools tasks: Increased memory allocations
-- **Enhanced GO enrichment**: Improved GO enrichment workflow with contrast file support and parallel processing options for better performance. (@kopardev)
-- **deepTools optimization**: Added temporary directory handling and expanded bedtype support for improved coverage analysis. (@kopardev)
-- **Improved logging and reruns**: Better handling of rerun scenarios and enhanced logging throughout the pipeline. (@kopardev)
+- **Enhanced GO enrichment**: Improved GO enrichment workflow with contrast file support and parallel processing options for better performance. (#206, @kopardev)
+- **deepTools optimization**: Added temporary directory handling and expanded bedtype support for improved coverage analysis. (#206, @kopardev)
+- **Improved logging and reruns**: Better handling of rerun scenarios and enhanced logging throughout the pipeline. (#206, @kopardev)
 
 ### Bug Fixes
 
-- **ROSE environment isolation**: Fixed Python library conflicts between Snakemake and ROSE environments by explicitly managing `PYTHONPATH` and unsetting conda variables. (@kopardev)
-- **ROSE chromosome filtering**: Properly filter NC\_ chromosomes (alternative scaffolds, unplaced contigs) from both treatment and control BAM files before enhancer stitching to prevent analysis failures. (@kopardev)
-- **BED file decompression**: Implemented consistent decompression handling for all compressed BED files across init, alignment, and annotation rules. (@kopardev)
+- **ROSE environment isolation**: Fixed Python library conflicts between Snakemake and ROSE environments by explicitly managing `PYTHONPATH` and unsetting conda variables. (#206, @kopardev)
+- **ROSE chromosome filtering**: Properly filter NC\_ chromosomes (alternative scaffolds, unplaced contigs) from both treatment and control BAM files before enhancer stitching to prevent analysis failures. (#206, @kopardev)
+- **BED file decompression**: Implemented consistent decompression handling for all compressed BED files across init, alignment, and annotation rules. (#206, @kopardev)
 
 ## CARLISLE 2.7.2
 
