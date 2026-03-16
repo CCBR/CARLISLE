@@ -2,6 +2,7 @@
 """
 set_singularity_bind_paths.py <config_filename> <samples_filename>
 """
+
 import os
 import pathlib
 import sys

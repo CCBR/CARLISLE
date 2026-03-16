@@ -159,20 +159,26 @@ if (debug) {
     filtered_si <- file.path(args$tmpdir, "filtered.sampleinfo.tsv")
 
     # Read sampleinfo and filter out excluded samplenames
-    sidf <- tryCatch({
-      read.table(coldata, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
-    }, error = function(e) {
-      stop(paste("Failed to read sampleinfo:", coldata, e))
-    })
+    sidf <- tryCatch(
+      {
+        read.table(coldata, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+      },
+      error = function(e) {
+        stop(paste("Failed to read sampleinfo:", coldata, e))
+      }
+    )
     sidf <- sidf[!(sidf$samplename %in% excl), , drop = FALSE]
     write.table(sidf, file = filtered_si, sep = "\t", quote = FALSE, row.names = FALSE)
 
     # Read counts matrix and drop excluded columns
-    cmdf <- tryCatch({
-      read.table(rawcountsmatrix, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
-    }, error = function(e) {
-      stop(paste("Failed to read countsmatrix:", rawcountsmatrix, e))
-    })
+    cmdf <- tryCatch(
+      {
+        read.table(rawcountsmatrix, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+      },
+      error = function(e) {
+        stop(paste("Failed to read countsmatrix:", rawcountsmatrix, e))
+      }
+    )
     keep_cols <- setdiff(colnames(cmdf), excl)
     cmdf <- cmdf[, keep_cols, drop = FALSE]
     write.table(cmdf, file = filtered_cm, sep = "\t", quote = FALSE, row.names = FALSE)
