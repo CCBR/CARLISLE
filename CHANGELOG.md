@@ -1,4 +1,4 @@
-## CARLISLE development version
+## CARLISLE 2.7.6
 
 ### Improvements
 

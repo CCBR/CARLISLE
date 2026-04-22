@@ -1,0 +1,53 @@
+FROM mambaorg/micromamba:1.5.10
+
+USER root
+SHELL ["/bin/bash", "-lc"]
+
+# Base utilities used by wrapper scripts
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates bash coreutils findutils grep sed gawk \
+    && rm -rf /var/lib/apt/lists/*
+
+# Single-runtime environment: Python 2.7 only (+ ROSE deps and required tools)
+# NOTE: use explicit channels; r-base 4.x is incompatible with python 2.7-era stack.
+RUN micromamba create -y -n rose -c conda-forge -c bioconda \
+    python=2.7 \
+    "numpy<1.17" \
+    "scipy<1.3" \
+    "matplotlib<3" \
+    bedtools \
+    samtools \
+    "r-base<4" \
+    && micromamba clean --all --yes
+
+# Young lab ROSE from Bitbucket master
+WORKDIR /opt
+RUN curl -L "https://bitbucket.org/young_computation/rose/get/master.tar.gz" -o rose.tar.gz \
+    && tar -xzf rose.tar.gz \
+    && rm -f rose.tar.gz \
+    && mv young_computation-rose-* ROSE
+
+ENV ROSE_HOME=/opt/ROSE
+ENV PATH=/opt/conda/envs/rose/bin:${ROSE_HOME}:${PATH}
+ENV PYTHONPATH="${ROSE_HOME}"
+
+# Include ROSE prep script in image
+COPY _prep_rose_input.py /opt/ROSE/_prep_rose_input.py
+RUN chmod 755 /opt/ROSE/_prep_rose_input.py
+
+# Convenience wrappers
+RUN cat > /usr/local/bin/run-rose << 'EOF' && chmod +x /usr/local/bin/run-rose
+#!/usr/bin/env bash
+set -euo pipefail
+exec /opt/conda/envs/rose/bin/python /opt/ROSE/ROSE_main.py "$@"
+EOF
+
+RUN cat > /usr/local/bin/run-prep-rose << 'EOF' && chmod +x /usr/local/bin/run-prep-rose
+#!/usr/bin/env bash
+set -euo pipefail
+exec /opt/conda/envs/rose/bin/python /opt/ROSE/_prep_rose_input.py "$@"
+EOF
+
+WORKDIR /work
+ENTRYPOINT ["/usr/bin/env", "bash", "-lc"]
+CMD ["echo 'Use run-prep-rose ... or run-rose ...'"]
