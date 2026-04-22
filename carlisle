@@ -13,6 +13,9 @@ SNAKEMAKE_VERSION="snakemake/7"
 SINGULARITY_VERSION="singularity"
 # Snakemake --rerun-triggers options: mtime, params, input, software-env, code
 RERUN_TRIGGERS="mtime"
+MAX_JOBS="${CARLISLE_MAX_JOBS:-100}"
+MAX_JOBS_PER_SECOND="${CARLISLE_MAX_JOBS_PER_SECOND:-1}"
+MAX_STATUS_CHECKS_PER_SECOND="${CARLISLE_MAX_STATUS_CHECKS_PER_SECOND:-0.1}"
 
 set -eo pipefail
 
@@ -263,6 +266,8 @@ function run() {
 # 3. unlock or
 # 4. slurm
 
+  SNAKEMAKE_SCHEDULER_ARGS="-j ${MAX_JOBS} --max-jobs-per-second ${MAX_JOBS_PER_SECOND} --max-status-checks-per-second ${MAX_STATUS_CHECKS_PER_SECOND}"
+
   if [ "$1" == "local" ]; then
     preruncleanup
 
@@ -278,6 +283,7 @@ function run() {
     --latency-wait 120 \
     --configfile ${WORKDIR}/config/config.yaml \
     --cores all \
+    ${SNAKEMAKE_SCHEDULER_ARGS} \
     --stats ${WORKDIR}/logs/snakemake.stats \
     2>&1|tee ${WORKDIR}/logs/snakemake.log
 
@@ -292,7 +298,17 @@ function run() {
 
     preruncleanup
 
+    REWRITE_SUBMIT_SCRIPT="false"
     if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
+      REWRITE_SUBMIT_SCRIPT="true"
+    elif ! grep -q -- "--max-jobs-per-second" "${WORKDIR}/submit_script.sbatch"; then
+      backup_file="${WORKDIR}/submit_script.sbatch.$(date +%Y%m%d%H%M%S).bak"
+      cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
+      echo "Existing submit script lacked scheduler throttling flags; backed up to ${backup_file}"
+      REWRITE_SUBMIT_SCRIPT="true"
+    fi
+
+    if [[ "${REWRITE_SUBMIT_SCRIPT}" == "true" ]]; then
     cat > ${WORKDIR}/submit_script.sbatch << EOF
 #!/bin/bash
 #SBATCH --job-name="CARLISLE"
@@ -319,7 +335,7 @@ function run() {
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
-    -j 500 \
+    ${SNAKEMAKE_SCHEDULER_ARGS} \
     --rerun-incomplete \
     --keep-going \
     --restart-times 1 \
@@ -349,7 +365,7 @@ EOF
     --configfile ${WORKDIR}/config/config.yaml \
     --cluster-config ${WORKDIR}/config/cluster.yaml \
     --cluster "sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name {cluster.name} --output {cluster.output} --error {cluster.error}" \
-    -j 500 \
+    ${SNAKEMAKE_SCHEDULER_ARGS} \
     --rerun-incomplete \
     --keep-going \
     --touch \
@@ -417,6 +433,7 @@ function main(){
   fi
   mkdir -p $SING_CACHE_DIR
   EXPORT_SING_CACHE_DIR_CMD="export SINGULARITY_CACHEDIR=\"${SING_CACHE_DIR}\""
+  echo "Snakemake scheduler limits: -j ${MAX_JOBS}, --max-jobs-per-second ${MAX_JOBS_PER_SECOND}, --max-status-checks-per-second ${MAX_STATUS_CHECKS_PER_SECOND}"
 
   case $RUNMODE in
     init) init && exit 0;;

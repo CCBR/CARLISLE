@@ -1,0 +1,21 @@
+FROM bioconductor/bioconductor_docker:RELEASE_3_18
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# R/Bioconductor dependencies
+RUN R -q -e "install.packages(c('argparse','tidyverse','viridis'), repos='https://cloud.r-project.org')" && \
+    R -q -e "if (!requireNamespace('BiocManager', quietly=TRUE)) install.packages('BiocManager', repos='https://cloud.r-project.org')" && \
+    R -q -e "BiocManager::install(c('chipenrich','BiocParallel','AnnotationDbi','org.Hs.eg.db','org.Mm.eg.db'), ask=FALSE, update=FALSE)"
+
+RUN mkdir -p /opt2 /data2
+
+COPY Dockerfile.go_enrichment /Dockerfile.go_enrichment
+
+WORKDIR /data2
+
+ENTRYPOINT ["/bin/bash"]
