@@ -7,7 +7,9 @@ suppressPackageStartupMessages({
 
 pick_col <- function(df, candidates) {
   for (nm in candidates) {
-    if (nm %in% names(df)) return(nm)
+    if (nm %in% names(df)) {
+      return(nm)
+    }
   }
   NULL
 }
@@ -39,7 +41,9 @@ if (length(args) == 0) {
 
 get_arg <- function(flag, default = NULL) {
   idx <- which(args == flag)
-  if (length(idx) == 0) return(default)
+  if (length(idx) == 0) {
+    return(default)
+  }
   if (idx[length(idx)] == length(args)) stop(paste0("Missing value for ", flag))
   args[idx[length(idx)] + 1]
 }
@@ -125,8 +129,7 @@ if (!is.null(peak_col)) {
 df <- df[
   is.finite(df$GeneRatio) & df$GeneRatio > 0 &
     is.finite(df$GeneCount) & df$GeneCount > 0 &
-    is.finite(df[[fdr_col]]),
-  ,
+    is.finite(df[[fdr_col]]), ,
   drop = FALSE
 ]
 if (nrow(df) == 0) save_no_data_and_quit(outfile, "No plottable rows after filtering.")
