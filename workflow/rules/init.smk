@@ -126,32 +126,49 @@ print("# Sample manifest is confirmed!")
 
 print("#"*100)
 print("# Checking Contrast Manifest...:")
+RUN_WITHOUT_CONTROLS = bool(config.get("run_without_controls", False))
+if RUN_WITHOUT_CONTROLS:
+    print("# INFO: run_without_controls is TRUE — skipping control validation")
+    print("# INFO: All treatment samples will be run without a paired control")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
 TREATMENT_CONTROL_LIST=[]
 TREATMENT_WITHOUTCONTROL_LIST=[]
 TREAT_to_CONTRL_DICT=dict()
-for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
-    crow=df[df['replicateName']==t].iloc[0]
-    c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
-    if not c in REPLICATES:
-        print("# Control NOT found for sampleName_replicateNumber:"+t)
-        print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
-        exit()
-    print("## "+str(i+1)+") "+t+"        "+c)
-    process_replicates.extend([t,c])
-    TREATMENTS.append(t)
-    CONTROLS.append(c)
-    TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
-    TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
-    TREAT_to_CONTRL_DICT[t]=c
+if not RUN_WITHOUT_CONTROLS:
+    for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
+        crow=df[df['replicateName']==t].iloc[0]
+        c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
+        if not c in REPLICATES:
+            print("# Control NOT found for sampleName_replicateNumber:"+t)
+            print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
+            exit()
+        print("## "+str(i+1)+") "+t+"        "+c)
+        process_replicates.extend([t,c])
+        TREATMENTS.append(t)
+        CONTROLS.append(c)
+        TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+        TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
+        TREAT_to_CONTRL_DICT[t]=c
+else:
+    # Control-free mode: populate lists from all non-control replicates
+    for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
+        print("## "+str(i+1)+") "+t+"  (no control)")
+        process_replicates.append(t)
+        TREATMENTS.append(t)
+        TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
+        TREAT_to_CONTRL_DICT[t]="nocontrol"
 process_replicates=list(set(process_replicates))
-if len(process_replicates)!=len(REPLICATES):
-    not_to_process = set(REPLICATES) - set(process_replicates)
-    print("# Following replicates will not be processed as they are not part of any Treatment Control combination!")
-    for i in not_to_process:
-        print("# "+i)
+if not RUN_WITHOUT_CONTROLS:
+    if len(process_replicates)!=len(REPLICATES):
+        not_to_process = set(REPLICATES) - set(process_replicates)
+        print("# Following replicates will not be processed as they are not part of any Treatment Control combination!")
+        for i in not_to_process:
+            print("# "+i)
+        REPLICATES = process_replicates
+else:
+    # In control-free mode, REPLICATES = only the treatment replicates
     REPLICATES = process_replicates
 print("# Contrast manifest is confirmed!")
 
@@ -162,7 +179,16 @@ split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
 finalDF = split_keysDF.join(originalDF['val'])
 finalDF.to_csv(fpath, sep='\t', header=False, index=False)
 
-# validate pool_controls setting
+# Force-override incompatible settings when running without controls
+if RUN_WITHOUT_CONTROLS:
+    if config.get("macs2_control", "Y") == "Y":
+        print("# WARNING: run_without_controls is true — forcing macs2_control to 'N'")
+        config["macs2_control"] = "N"
+    if config.get("pool_controls", False):
+        print("# WARNING: run_without_controls is true — forcing pool_controls to false")
+        config["pool_controls"] = False
+
+# validate pool_controls setting (only relevant when controls are present)
 if config.get("pool_controls", False):
     if not CONTROLS or len(CONTROLS) == 0:
         print("#"*100)
@@ -190,11 +216,12 @@ if config.get("pool_controls", False):
 # Get unique control sample names from samples.tsv where isControl == Y
 # This is the authoritative list of base control names (e.g., PBS_IgG, mSTAR_IgG)
 # Works with any naming convention including multiple underscores
-CONTROL_SAMPLES = list(df[df['isControl']=="Y"]['sampleName'].unique())
+# Empty when run_without_controls is true
+CONTROL_SAMPLES = [] if RUN_WITHOUT_CONTROLS else list(df[df['isControl']=="Y"]['sampleName'].unique())
 
 # Set control modes based on pool_controls setting
 # When pool_controls is true, we run analysis with both individual and pooled controls
-# When pool_controls is false, we only run with individual controls
+# When pool_controls is false (or run_without_controls is true), only individual mode
 CONTROL_MODES = ["individual", "pooled"] if config.get("pool_controls", False) else ["individual"]
 
 # Create pooled treatment control lists where control replicate numbers are removed
@@ -233,11 +260,15 @@ def is_valid_control_treatment_combo(control_mode, treatment_control_list):
 
 # set treatment lists depending on whether controls were used for all peak callers
 # macs2 allows for with or without controls; all other callers require with controls
+# when run_without_controls is true, all callers use the nocontrol list
 if (config["macs2_control"] == "Y"):
     TREATMENT_LIST_M=TREATMENT_CONTROL_LIST
 else:
     TREATMENT_LIST_M=TREATMENT_WITHOUTCONTROL_LIST
-TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
+if RUN_WITHOUT_CONTROLS:
+    TREATMENT_LIST_SG=TREATMENT_WITHOUTCONTROL_LIST
+else:
+    TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
 
 # create duplication and peaktype list
 DUPSTATUS=config["dupstatus"]
