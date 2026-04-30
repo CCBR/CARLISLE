@@ -15,15 +15,21 @@ pp = pprint.PrettyPrinter(indent=4)
 #########################################################
 # FILE-ACTION FUNCTIONS
 #########################################################
-def check_existence(filename):
+def check_existence(filename, context=""):
   if not os.path.exists(filename):
-    exit("# File: %s does not exists!"%(filename))
+    msg = "ERROR: File does not exist: %s" % filename
+    if context:
+      msg += "\n       Context: %s" % context
+    exit(msg)
   return True
 
-def check_readaccess(filename):
-  check_existence(filename)
+def check_readaccess(filename, context=""):
+  check_existence(filename, context=context)
   if not os.access(filename,os.R_OK):
-    exit("# File: %s exists, but cannot be read!"%(filename))
+    msg = "ERROR: File exists but cannot be read: %s" % filename
+    if context:
+      msg += "\n       Context: %s" % context
+    exit(msg)
   return True
 
 def check_writeaccess(filename):
@@ -101,7 +107,7 @@ for r in REPLICATES:
         if not os.path.exists(r1new):
             open(r1new, 'a').close()
     else:
-        check_readaccess(r1)
+        check_readaccess(r1, context="Sample '%s' replicate %d - R1 file not found. Check %s" % (sn, int(df[df['replicateName']==r].iloc[0].replicateNumber), config["samplemanifest"]))
         if not os.path.exists(r1new):
             os.symlink(r1,r1new)
     replicateName2R1[r]=r1new
@@ -112,7 +118,7 @@ for r in REPLICATES:
         if not os.path.exists(r2new):
             open(r2new, 'a').close()
     else:
-        check_readaccess(r2)
+        check_readaccess(r2, context="Sample '%s' replicate %d - R2 file not found. Check %s" % (sn, int(df[df['replicateName']==r].iloc[0].replicateNumber), config["samplemanifest"]))
         if not os.path.exists(r2new):
             os.symlink(r2,r2new)
     replicateName2R2[r]=r2new
@@ -136,9 +142,11 @@ for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
     crow=df[df['replicateName']==t].iloc[0]
     c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
     if not c in REPLICATES:
-        print("# Control NOT found for sampleName_replicateNumber:"+t)
-        print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
-        exit()
+        exit("ERROR: Control sample missing!\n" +
+             "       Treatment: %s\n" % t +
+             "       Expected control: %s (replicateNumber: %d)\n" % (crow.controlName, int(crow.controlReplicateNumber)) +
+             "       The control must be defined in: %s\n" % config["samplemanifest"] +
+             "       OR set 'run_without_controls: true' in config.yaml to run without controls")
     print("## "+str(i+1)+") "+t+"        "+c)
     process_replicates.extend([t,c])
     TREATMENTS.append(t)
