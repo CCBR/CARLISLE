@@ -278,6 +278,7 @@ function run() {
     --printshellcmds \
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
@@ -291,6 +292,7 @@ function run() {
       snakemake -s $SNAKEFILE \
       --report ${WORKDIR}/logs/runlocal_snakemake_report.html \
       --directory $WORKDIR \
+      --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
@@ -328,6 +330,7 @@ function run() {
     --directory $WORKDIR \
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --printshellcmds \
     --rerun-triggers ${RERUN_TRIGGERS} \
@@ -346,6 +349,7 @@ function run() {
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
       --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
+      --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
@@ -358,6 +362,8 @@ EOF
   else # for unlock and dryrun
     snakemake $1 -s $SNAKEFILE \
     --directory $WORKDIR \
+    --use-singularity \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --printshellcmds \
     --rerun-triggers ${RERUN_TRIGGERS} \
