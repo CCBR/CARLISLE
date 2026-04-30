@@ -21,6 +21,7 @@ theme:
 plugins:
   - search
   - git-revision-date
+  - mike
   - minify:
       minify_html: true
 

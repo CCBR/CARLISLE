@@ -98,3 +98,38 @@ carlisle --runmode=run --workdir=/path/to/output/dir
 ```
 
 > ✅ **Recommendation:** Always perform a dry run before full execution to verify file paths, environment modules, and configuration correctness.
+
+---
+
+## Running in Control-Free Mode
+
+If your experiment has no IgG or antibody control samples, enable control-free mode in `config/config.yaml` before running the pipeline:
+
+```yaml
+run_without_controls: true
+seacr_threshold: 0.01
+```
+
+With this set:
+
+- The sample manifest **does not** need `controlName` or `controlReplicateNumber` filled in — leave those columns blank for all treatment samples.
+- `macs2_control` and `pool_controls` are automatically overridden by the pipeline; you do not need to set them manually.
+- SEACR will use the numeric `seacr_threshold` (fraction of the signal distribution) instead of a control bedgraph.
+- GoPeaks and MACS2 will run without a control BAM/fragment file.
+
+The rest of the workflow is identical:
+
+```bash
+# Step 1: Initialize working directory
+carlisle --runmode=init --workdir=/path/to/output/dir
+
+# Step 2: Edit config/config.yaml — set run_without_controls: true
+
+# Step 3: Dry run to validate
+carlisle --runmode=dryrun --workdir=/path/to/output/dir
+
+# Step 4: Submit to cluster
+carlisle --runmode=run --workdir=/path/to/output/dir
+```
+
+> ⚠️ **Caution:** Control-free peak calling has higher false-positive rates. Validate results carefully, especially for SEACR where the numeric threshold is the sole background model.

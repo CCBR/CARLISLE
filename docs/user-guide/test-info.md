@@ -87,3 +87,29 @@ total                                 478              1             56
 ```
 
 > 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestratio
+
+---
+
+## Running the Test in Control-Free Mode
+
+To validate the control-free code path, you can run the test dataset without controls by editing `config/config.yaml` in your working directory after `init`:
+
+```yaml
+run_without_controls: true
+seacr_threshold: 0.01
+```
+
+You also need a simplified sample manifest that omits control entries. Edit `config/samples.tsv` so that all rows have `isControl: N` and leave `controlName` and `controlReplicateNumber` blank:
+
+| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1 | path_to_R2 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 53_H3K4me3 | 1 | N | | | `<path>/53_H3K4me3_1.R1.fastq.gz` | `<path>/53_H3K4me3_1.R2.fastq.gz` |
+| 53_H3K4me3 | 2 | N | | | `<path>/53_H3K4me3_2.R1.fastq.gz` | `<path>/53_H3K4me3_2.R2.fastq.gz` |
+
+Then dryrun to confirm the DAG resolves cleanly:
+
+```bash
+carlisle --runmode=dryrun --workdir=/path/to/output/dir
+```
+
+In control-free mode the job count will be lower (no pooled-controls rules, no control-paired peak calls), but all three peak callers (MACS2, SEACR, GoPeaks) will run against each treatment replicate using their no-control execution paths.

@@ -137,6 +137,26 @@ This dual-mode analysis enables comparison of replicate-specific vs merged contr
 
 > ⚠️ **Note:** If controls have no replicates to pool (each control has only 1 replicate), pooling will have no effect. Consider setting `pool_controls: false` in such cases.
 
+### Control-Free Mode
+
+When no IgG or antibody control samples are available, set `run_without_controls: true` to run all peak callers without a control:
+
+```yaml
+run_without_controls: true
+seacr_threshold: 0.01  # numeric FDR threshold used by SEACR in control-free mode
+```
+
+When enabled:
+
+- **All treatment samples** are called as peaks against no background control.
+- `macs2_control` is automatically forced to `"N"` (no-control MACS2 mode).
+- `pool_controls` is automatically forced to `false`.
+- **SEACR** uses the numeric `seacr_threshold` value instead of a control bedgraph. The value represents the fraction of the signal distribution used as the peak-calling threshold (e.g., `0.01` = top 1%).
+- **GoPeaks** runs without the `-c` control BAM flag.
+- The sample manifest **does not** require `controlName` or `controlReplicateNumber` columns to be filled in.
+
+> ⚠️ **Caution:** Control-free peak calling will yield higher false-positive rates. Results should be interpreted with care and ideally validated by comparing to matched control experiments.
+
 ### Quality Thresholds
 
 Set peak-calling quality thresholds using the `quality_thresholds` parameter:
