@@ -424,7 +424,9 @@ function main(){
   echo "Working Dir: $WORKDIR"
 
   if [[ -z "$SING_CACHE_DIR" ]]; then
-    if [[ -d "/data/$USER" ]]; then
+    if [[ -n "$SIFCACHE" ]]; then
+      SING_CACHE_DIR="$SIFCACHE"
+    elif [[ -d "/data/$USER" ]]; then
       SING_CACHE_DIR="/data/$USER/.singularity"
     else
       SING_CACHE_DIR="${WORKDIR}/.singularity"
