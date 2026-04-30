@@ -188,7 +188,13 @@ function dryrun() {
     modtime=$(stat ${WORKDIR}/dryrun.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/dryrun.log ${WORKDIR}/logs/dryrun/dryrun.${modtime}.log
   fi
-  run "--dry-run -r" | tee ${WORKDIR}/dryrun.log
+
+  echo "========================================" | tee ${WORKDIR}/dryrun.log
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
+  echo "========================================" | tee -a ${WORKDIR}/dryrun.log
+
+  run "--dry-run -r" | tee -a ${WORKDIR}/dryrun.log
 }
 
 function unlock() {
@@ -209,6 +215,10 @@ function runlocal() {
   set_singularity_binds
   if [ "$SLURM_JOB_ID" == "" ];then err "runlocal can only be done on an interactive node"; fi
   module load $SINGULARITY_VERSION
+  echo "========================================"
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+  echo "========================================"
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
 }
 
@@ -227,6 +237,10 @@ function runslurm() {
 # Submit the execution of the pipeline to the biowulf job scheduler (slurm)
   runcheck
   set_singularity_binds
+  echo "========================================"
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+  echo "========================================"
   run "--dry-run" && echo "Dry-run was successful .... submitting jobs to job-scheduler" && run "slurm"
 }
 
@@ -271,6 +285,13 @@ function run() {
   if [ "$1" == "local" ]; then
     preruncleanup
 
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+    echo "========================================"
+    echo ""
+
     $EXPORT_SING_CACHE_DIR_CMD
 
     snakemake -s $SNAKEFILE \
@@ -300,6 +321,13 @@ function run() {
 
     preruncleanup
 
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+    echo "========================================"
+    echo ""
+
     REWRITE_SUBMIT_SCRIPT="false"
     if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
       REWRITE_SUBMIT_SCRIPT="true"
@@ -325,6 +353,13 @@ function run() {
     cd \$SLURM_SUBMIT_DIR
 
     $EXPORT_SING_CACHE_DIR_CMD
+
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR has been set to: $SING_CACHE_DIR"
+    echo "========================================"
+    echo ""
 
     snakemake -s $SNAKEFILE \
     --directory $WORKDIR \
