@@ -20,7 +20,8 @@ def check_existence(filename, context=""):
     msg = "ERROR: File does not exist: %s" % filename
     if context:
       msg += "\n       Context: %s" % context
-    exit(msg)
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
   return True
 
 def check_readaccess(filename, context=""):
@@ -29,13 +30,15 @@ def check_readaccess(filename, context=""):
     msg = "ERROR: File exists but cannot be read: %s" % filename
     if context:
       msg += "\n       Context: %s" % context
-    exit(msg)
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
   return True
 
 def check_writeaccess(filename):
   check_existence(filename)
   if not os.access(filename,os.W_OK):
-    exit("# File: %s exists, but cannot be read!"%(filename))
+    sys.stderr.write("# File: %s exists, but cannot be read!\n"%(filename))
+    sys.exit(1)
   return True
 
 def get_file_size(filename):
@@ -147,11 +150,12 @@ if not RUN_WITHOUT_CONTROLS:
         crow=df[df['replicateName']==t].iloc[0]
         c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
         if not c in REPLICATES:
-            exit("ERROR: Control sample missing!\n" +
+            sys.stderr.write("ERROR: Control sample missing!\n" +
                  "       Treatment: %s\n" % t +
                  "       Expected control: %s (replicateNumber: %d)\n" % (crow.controlName, int(crow.controlReplicateNumber)) +
                  "       The control must be defined in: %s\n" % config["samplemanifest"] +
-                 "       OR set 'run_without_controls: true' in config.yaml to run without controls")
+                 "       OR set 'run_without_controls: true' in config.yaml to run without controls\n")
+            sys.exit(1)
         print("## "+str(i+1)+") "+t+"        "+c)
         process_replicates.extend([t,c])
         TREATMENTS.append(t)
@@ -209,7 +213,7 @@ if config.get("pool_controls", False):
         print("#   1. Set pool_controls: false in config.yaml, OR")
         print("#   2. Add control samples to your samples.tsv")
         print("#"*100)
-        exit(1)
+        sys.exit(1)
     # Check if controls have replicates for pooling
     control_samples = list(set([c.rsplit('_',1)[0] for c in CONTROLS]))
     if len(control_samples) == len(CONTROLS):
@@ -296,9 +300,9 @@ for pt in PEAKTYPE:
     elif pt == "seacr_stringent" or pt == "seacr_relaxed":
         s_set.append(pt)
     else:
-        print("A peak type combination was used that is non-compatiable")
-        print(pt)
-        exit()
+        sys.stderr.write("A peak type combination was used that is non-compatiable\n")
+        sys.stderr.write(str(pt) + "\n")
+        sys.exit(1)
 PEAKTYPE_M=list(set(macs_set))
 PEAKTYPE_G=list(set(g_set))
 PEAKTYPE_S=list(set(s_set))
@@ -324,13 +328,13 @@ DEEPTOOLS_BEDTYPES = list(
     filter(None, [x.strip() for x in config.get("deeptools_bedtypes", "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels").split(",")])
 )
 if len(DEEPTOOLS_BEDTYPES) == 0:
-    print("# ERROR: deeptools_bedtypes is empty. Please provide at least one bedtype.")
-    exit(1)
+    sys.stderr.write("# ERROR: deeptools_bedtypes is empty. Please provide at least one bedtype.\n")
+    sys.exit(1)
 invalid_bedtypes = [x for x in DEEPTOOLS_BEDTYPES if x not in ALLOWED_DEEPTOOLS_BEDTYPES]
 if invalid_bedtypes:
-    print("# ERROR: Invalid deeptools_bedtypes in config:", ",".join(invalid_bedtypes))
-    print("# Allowed options are:", ",".join(ALLOWED_DEEPTOOLS_BEDTYPES))
-    exit(1)
+    sys.stderr.write("# ERROR: Invalid deeptools_bedtypes in config: %s\n" % ",".join(invalid_bedtypes))
+    sys.stderr.write("# Allowed options are: %s\n" % ",".join(ALLOWED_DEEPTOOLS_BEDTYPES))
+    sys.exit(1)
 DEEPTOOLS_BEDTYPE_PATTERN = "|".join([re.escape(x) for x in DEEPTOOLS_BEDTYPES])
 
 # set contrast settings
@@ -355,18 +359,18 @@ if config["run_contrasts"]:
         c1 = row['condition1']
         c2 = row['condition2']
         if not c1 in SAMPLE2REPLICATES:
-            print(" # %s condition1 in %s has no samples/replicates!"%(c1,contrasts_table))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' in %s is not defined in the sample manifest. Available samples: %s\n" % (c1, contrasts_table, ", ".join(SAMPLE2REPLICATES.keys())))
+            sys.exit(1)
         if not c2 in SAMPLE2REPLICATES:
-            print(" # %s condition2 in %s has no samples/replicates!"%(c2,contrasts_table))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' in %s is not defined in the sample manifest. Available samples: %s\n" % (c2, contrasts_table, ", ".join(SAMPLE2REPLICATES.keys())))
+            sys.exit(1)
         # Ensure both conditions have at least one replicate listed
         if len(SAMPLE2REPLICATES[c1]) == 0:
-            print(" # %s has no replicates in samples manifest!" % (c1))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' has no replicates in the sample manifest\n" % (c1))
+            sys.exit(1)
         if len(SAMPLE2REPLICATES[c2]) == 0:
-            print(" # %s has no replicates in samples manifest!" % (c2))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' has no replicates in the sample manifest\n" % (c2))
+            sys.exit(1)
         for ds in DUPSTATUS:
             for pt in PEAKTYPE:
                 for qt in QTRESHOLDS:
@@ -389,15 +393,15 @@ if config["run_contrasts"]:
                         continue
                     m = re.match(r'^(.+?)_(\d+)$', ex)
                     if not m:
-                        print(" # Invalid replicate format in exclude_replicates: %s. Expected sampleName_N" % (ex))
-                        exit()
+                        sys.stderr.write(" # Invalid replicate format in exclude_replicates: %s. Expected sampleName_N\n" % (ex))
+                        sys.exit(1)
                     base_sample = m.group(1)
                     if base_sample not in [c1, c2]:
-                        print(" # Excluded replicate %s does not belong to %s or %s" % (ex, c1, c2))
-                        exit()
+                        sys.stderr.write(" # Excluded replicate %s does not belong to %s or %s\n" % (ex, c1, c2))
+                        sys.exit(1)
                     if ex not in REPLICATES:
-                        print(" # Excluded replicate %s not found in samples manifest replicates" % (ex))
-                        exit()
+                        sys.stderr.write(" # Excluded replicate %s not found in samples manifest replicates\n" % (ex))
+                        sys.exit(1)
                 CONTRAST_EXCLUDE[c1+"_vs_"+c2] = excludes
             else:
                 CONTRAST_EXCLUDE[c1+"_vs_"+c2] = []
@@ -515,8 +519,8 @@ elif NORM_METHOD == "LIBRARY":
 elif NORM_METHOD == "NONE":
     SPIKED_GENOMEFA=""
 else:
-    print("User must select from one of the three available norm methods: spikein,library, none")
-    exit()
+    sys.stderr.write("User must select from one of the three available norm methods: spikein,library, none\n")
+    sys.exit(1)
 
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
 refdata = dict()
