@@ -180,6 +180,7 @@ function controlcheck(){
 function dryrun() {
 # Dry-run
   runcheck
+  module load $SINGULARITY_VERSION
   controlcheck
 
   if [ ! -d ${WORKDIR}/logs/dryrun/ ]; then mkdir ${WORKDIR}/logs/dryrun/; fi
@@ -200,6 +201,7 @@ function dryrun() {
 function unlock() {
 # Unlock the workdir if previous snakemake run ended abruptly
   runcheck
+  module load $SINGULARITY_VERSION
   run "--unlock"
 }
 
