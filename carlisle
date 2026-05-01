@@ -194,6 +194,7 @@ function dryrun() {
   echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
   echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
   echo "========================================" | tee -a ${WORKDIR}/dryrun.log
+  print_versions | tee -a ${WORKDIR}/dryrun.log
 
   run "--dry-run -r" | tee -a ${WORKDIR}/dryrun.log
 }
@@ -221,6 +222,8 @@ function runlocal() {
   echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
   echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
   echo "========================================"
+  print_versions
+
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
 }
 
@@ -238,12 +241,23 @@ function runtest() {
 function runslurm() {
 # Submit the execution of the pipeline to the biowulf job scheduler (slurm)
   runcheck
+  module load $SINGULARITY_VERSION
   set_singularity_binds
   echo "========================================"
   echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
   echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
   echo "========================================"
+  print_versions
   run "--dry-run" && echo "Dry-run was successful .... submitting jobs to job-scheduler" && run "slurm"
+}
+
+function print_versions() {
+# Print versions of Snakemake and Singularity
+  echo "========================================"
+  echo "Tool Versions:"
+  snakemake --version 2>/dev/null && echo "Snakemake version checked" || echo "Snakemake version: unable to determine"
+  singularity --version 2>/dev/null && echo "Singularity version checked" || echo "Singularity/Apptainer version: UNAVAILABLE"
+  echo "========================================"
 }
 
 function preruncleanup() {
@@ -292,6 +306,7 @@ function run() {
     echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
     echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
     echo "========================================"
+    print_versions
     echo ""
 
     $EXPORT_SING_CACHE_DIR_CMD
@@ -328,6 +343,7 @@ function run() {
     echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
     echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
     echo "========================================"
+    print_versions
     echo ""
 
     REWRITE_SUBMIT_SCRIPT="false"
@@ -353,6 +369,17 @@ function run() {
     module load $SINGULARITY_VERSION
 
     cd \$SLURM_SUBMIT_DIR
+
+    # Diagnostic output: show which modules loaded and check tool availability
+    echo "========================================"
+    echo "Loaded modules:"
+    module list 2>&1 | head -20
+    echo ""
+    echo "Tool availability check:"
+    echo "Snakemake: \$(which snakemake)"
+    echo "Singularity: \$(which singularity)"
+    echo "========================================"
+    echo ""
 
     $EXPORT_SING_CACHE_DIR_CMD
 
