@@ -443,22 +443,35 @@ rule deeptools_prep:
     output:
         deeptools_prep = expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.deeptools_prep"),group=TREATMENTS+["all_samples"],dupstatus=DUPSTATUS),
     run:
+        # Use the appropriate treatment-control list based on mode
+        treatment_control_list_to_use = TREATMENT_WITHOUTCONTROL_LIST if RUN_WITHOUT_CONTROLS else TREATMENT_CONTROL_LIST
+        
         for dupstatus in DUPSTATUS:
-            for item in TREATMENT_CONTROL_LIST:
+            for item in treatment_control_list_to_use:
                 labels = item.split('_vs_')
                 treatment, control = labels
-                bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                # In control-free mode, only include treatment bigwig (control is "nocontrol" sentinel, not a real file)
+                if RUN_WITHOUT_CONTROLS and control == "nocontrol":
+                    bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(treatment, dupstatus))]
+                    labels_for_prep = [treatment]
+                else:
+                    bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                    labels_for_prep = labels
                 f=open(join(RESULTSDIR,"deeptools","temp","{}.{}.deeptools_prep".format(treatment, dupstatus) ),'w')
                 f.write("{}\n".format(dupstatus))
                 f.write("{}\n".format(" ".join(bws)))
-                f.write("{}\n".format(" ".join(labels)))
+                f.write("{}\n".format(" ".join(labels_for_prep)))
                 f.close()
 
         for dupstatus in DUPSTATUS:
             labels = []
             for c in CONTROL_to_TREAT_DICT:
-                labels += CONTROL_to_TREAT_DICT[c]
-                labels.append(c)
+                # In control-free mode, skip the "nocontrol" sentinel value (it's not a real replicate)
+                if RUN_WITHOUT_CONTROLS and c == "nocontrol":
+                    labels += CONTROL_to_TREAT_DICT[c]
+                elif not RUN_WITHOUT_CONTROLS:
+                    labels += CONTROL_to_TREAT_DICT[c]
+                    labels.append(c)
             bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
 
             f_all=open(join(RESULTSDIR,"deeptools","temp","all_samples.{}.deeptools_prep".format(dupstatus)),'w')
