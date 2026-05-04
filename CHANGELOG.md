@@ -1,5 +1,20 @@
 ## CARLISLE development version
 
+### New Features
+
+- **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true` config flag with `seacr_threshold` parameter for SEACR numeric threshold specification. (#224, #225, #226)
+- **Documentation versioning**: Added mike plugin for version-specific documentation selector with dropdown menu on ReadTheDocs. Automatically injects version selector into all documentation pages.
+- **Singularity cache configuration**: Explicit `SIFCACHE` environment variable support throughout wrapper script and Snakemake configuration for flexible container storage location management.
+
+### Bug Fixes
+
+- **deeptools_prep control-free handling**: Fixed rule to use `TREATMENT_WITHOUTCONTROL_LIST` in control-free mode instead of empty `TREATMENT_CONTROL_LIST`, preventing MissingOutputException. Properly excludes 'nocontrol' sentinel from bigwig file lists.
+- **Differential analysis with nocontrol pairs**: Fixed `_control_has_replicate()` function in diff.smk to properly handle control-free sentinel values, ensuring control-free pairs are included in individual mode analysis.
+- **Singularity module availability on login node**: Fixed runslurm() to load Singularity module before dryrun execution, preventing WorkflowError when submitting to cluster scheduler.
+- **Singularity prefix configuration consistency**: Added explicit `--singularity-prefix` to all Snakemake invocations to respect SIFCACHE environment variable settings across all execution modes.
+- **Enhanced error messaging**: Improved error messages for file validation and control sample checks in init.smk for clearer troubleshooting.
+- **Version and module diagnostics**: Added print_versions() function to display Snakemake and Singularity versions and added module loading diagnostics to SBATCH scripts for better troubleshooting of cluster execution issues.
+
 ## CARLISLE 2.7.6
 
 ### Improvements
