@@ -84,7 +84,16 @@ rule create_pooled_control_fragments:
 
 rule create_pooled_control_bedgraph:
     """
-    Create bedgraph file from pooled control fragments for SEACR and GoPeaks
+    Create bedgraph file from pooled control fragments for SEACR and GoPeaks.
+
+    Scaling factor is computed by _get_pooled_scale.py using named columns from
+    alignment_stats.tsv (column-position agnostic):
+      LIBRARY  -> spikein_scale / sum(dedup_nreads_genome)  across matching replicates
+      SPIKEIN  -> spikein_scale / sum(no_dedup_nreads_spikein) across matching replicates
+                  (fragment-length+mapq filtered, duplicates not removed; matches bam2bg individual logic)
+      NONE     -> scale = 1
+    Summing (not averaging) is correct because the pooled BAM merges all replicates,
+    so its total read depth equals the sum of individual replicate counts.
     """
     input:
         fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
@@ -94,27 +103,23 @@ rule create_pooled_control_bedgraph:
         bedgraph = join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph")
     params:
         norm_method = NORM_METHOD,
-        scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else None,
+        spikein_scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else 1,
         control_sample = "{control_sample}",
-        dupstatus = "{dupstatus}"
+        pyscript = join(SCRIPTSDIR,"_get_pooled_scale.py"),
     threads: 1
     envmodules:
-        TOOLS["bedtools"]
+        TOOLS["bedtools"],
+        TOOLS["python3"]
     shell:
         """
         set -exo pipefail
 
-        # Get scaling factor from alignment stats
-        # For pooled controls, use average of all control replicate scaling factors
-        if [[ {params.norm_method} == "LIBRARY" ]]; then
-            # Calculate average library scaling factor across control replicates
-            scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$NF; count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
-        elif [[ {params.norm_method} == "SPIKEIN" ]]; then
-            # Calculate average spikein scaling factor across control replicates
-            scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$(NF-1); count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
-        else
-            scale=1
-        fi
+        # Compute scaling factor using named columns from alignment_stats.tsv
+        scale=$(python {params.pyscript} \
+            --align_stats {input.align_stats} \
+            --sample_pattern "^{params.control_sample}_[0-9]+$" \
+            --norm_method {params.norm_method} \
+            --spikein_scale {params.spikein_scale})
 
         # Create bedgraph with scaling
         bedtools genomecov -bg -scale $scale -i {input.fragments} -g {input.genome_len} | \

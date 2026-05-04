@@ -2,12 +2,17 @@
 
 ### New Features
 
+- **New helper script `_get_pooled_scale.py`**: Computes pooled control scaling factors using named column access from `alignment_stats.tsv`, replacing fragile positional awk column references in `create_pooled_control_bedgraph`. (#230)
 - **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true` config flag with `seacr_threshold` parameter for SEACR numeric threshold specification. (#224, #225, #226)
 - **Documentation versioning**: Added mike plugin for version-specific documentation selector with dropdown menu on ReadTheDocs. Automatically injects version selector into all documentation pages.
 - **Singularity cache configuration**: Explicit `SIFCACHE` environment variable support throughout wrapper script and Snakemake configuration for flexible container storage location management.
 
 ### Bug Fixes
 
+- **Pooled control bedgraph: reversed scaling factor columns**: `create_pooled_control_bedgraph` used `$NF` (col 11, `dedup_nreads_spikein`) for LIBRARY and `$(NF-1)` (col 10, `dedup_nreads_genome`) for SPIKEIN — exactly swapped. Fixed with named column access via `_get_pooled_scale.py`. (#230)
+- **Pooled control bedgraph: SPIKEIN used pre-filter read counts**: Corrected to `no_dedup_nreads_spikein` (fragment-length + mapq filtered, not deduplicated) to match the individual-replicate `bam2bg` rule. (#230)
+- **Pooled control bedgraph: averaged instead of summed read counts**: The merged pooled BAM contains reads from all replicates; its total depth equals the sum of individual counts, not their average. Fixed aggregation. (#230)
+- **Pooled control bedgraph: spurious dupstatus filter**: Old awk filtered `$2 == "{dupstatus}"` on a non-existent column, silently dropping all rows. `alignment_stats.tsv` has one row per replicate. Filter removed. (#230)
 - **deeptools_prep control-free handling**: Fixed rule to use `TREATMENT_WITHOUTCONTROL_LIST` in control-free mode instead of empty `TREATMENT_CONTROL_LIST`, preventing MissingOutputException. Properly excludes 'nocontrol' sentinel from bigwig file lists.
 - **Differential analysis with nocontrol pairs**: Fixed `_control_has_replicate()` function in diff.smk to properly handle control-free sentinel values, ensuring control-free pairs are included in individual mode analysis.
 - **Singularity module availability on login node**: Fixed runslurm() to load Singularity module before dryrun execution, preventing WorkflowError when submitting to cluster scheduler.
