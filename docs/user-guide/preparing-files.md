@@ -67,9 +67,11 @@ spikein_reference:
 If spike-ins are unavailable or insufficient, normalization can alternatively be performed based on library size. Recommended workflow:
 
 1. Run CARLISLE with `norm_method: spikein` for an initial QC assessment.
-2. Evaluate spike-in alignment statistics.
-3. Add `alignment_stats` to your configuration.
-4. Re-run CARLISLE using library-size normalization.
+2. Evaluate spike-in alignment statistics (found in `alignment_stats/alignment_stats.tsv` in your results directory).
+3. Change `norm_method` to `library` in your `config.yaml`.
+4. Re-run CARLISLE — pooled control outputs are automatically regenerated when `norm_method` changes.
+
+> ℹ️ **Note:** `alignment_stats.tsv` is generated automatically by the pipeline and does not need to be specified in your configuration.
 
 ### Duplication Status
 
