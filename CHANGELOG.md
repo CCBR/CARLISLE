@@ -21,6 +21,7 @@
 - **Singularity prefix configuration consistency**: Added explicit `--singularity-prefix` to all Snakemake invocations to respect SIFCACHE environment variable settings across all execution modes.
 - **Enhanced error messaging**: Improved error messages for file validation and control sample checks in init.smk for clearer troubleshooting.
 - **Version and module diagnostics**: Added print_versions() function to display Snakemake and Singularity versions and added module loading diagnostics to SBATCH scripts for better troubleshooting of cluster execution issues.
+- **ROSE container: truncated prep script in v1**: `Dockerfile.rose` used an incorrect `COPY` source path (`_prep_rose_input.py` at build-context root) instead of `workflow/scripts/_prep_rose_input.py`, resulting in an empty/truncated file being baked into the image. At runtime this caused a `SyntaxError: EOL while scanning string literal` in `/opt/ROSE/_prep_rose_input.py`, failing all ROSE jobs. Fixed in container `ccbr_rose:v2`.
 
 ## CARLISLE 2.7.6
 
