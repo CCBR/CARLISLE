@@ -14,31 +14,34 @@ Normalization is performed using either user-provided spike-in controls (e.g., _
 
 ## Setup Dependencies
 
-> **Note:** All dependencies are currently module-loaded from the **[Biowulf HPC environment](https://hpc.nih.gov/)**. However, future versions of the CARLISLE pipeline will transition to a fully containerized setup using **[Singularity/Apptainer](https://apptainer.org/)** or **[Docker](https://www.docker.com/)** for improved reproducibility and portability.
+> **Note:** CARLISLE supports execution via **[Singularity/Apptainer](https://apptainer.org/)** containers on **[Biowulf HPC](https://hpc.nih.gov/)**. Most dependencies are loaded from environment modules; select R-based steps use container images. Provide a local Singularity cache directory at run time with the `--singcache` flag.
 
 CARLISLE relies on several dependencies, most of which are pre-installed and auto-loaded on **Biowulf** via the `ccbrpipeliner` module.
 
-| Tool         | Module / Version                                      |
-| ------------ | ----------------------------------------------------- |
-| bedtools     | `bedtools/2.30.0`                                     |
-| bedops       | `bedops/2.4.40`                                       |
-| bowtie2      | `bowtie/2-2.4.2`                                      |
-| cutadapt     | `cutadapt/1.18`                                       |
-| fastqc       | `fastqc/0.11.9`                                       |
-| fastq_screen | `fastq_screen/0.15.2`                                 |
-| fastq_val    | `/data/CCBR_Pipeliner/iCLIP/bin/fastQValidator`       |
-| fastxtoolkit | `fastxtoolkit/0.0.14`                                 |
-| gopeaks      | `git clone https://github.com/maxsonBraunLab/gopeaks` |
-| macs2        | `macs/2.2.7.1`                                        |
-| multiqc      | `multiqc/1.9`                                         |
-| perl         | `perl/5.34.0`                                         |
-| picard       | `picard/2.26.9`                                       |
-| python       | `python/3.7`                                          |
-| R            | `R/4.2.2`                                             |
-| rose         | `ROSE/1.3.1`                                          |
-| samtools     | `samtools/1.15`                                       |
-| seacr        | `seacr/1.4-beta.2`                                    |
-| ucsc         | `ucsc/407`                                            |
+| Tool         | Module / Version                                          |
+| ------------ | --------------------------------------------------------- |
+| bedtools     | `bedtools/2.30.0`                                         |
+| bedops       | `bedops/2.4.41`                                           |
+| bowtie2      | `bowtie/2-2.4.5`                                          |
+| cutadapt     | `cutadapt/4.0`                                            |
+| deeptools    | `deeptools/3.5.1`                                         |
+| fastqc       | `fastqc/0.11.9`                                           |
+| fastq_screen | `fastq_screen/0.15.2`                                     |
+| fastq_val    | `/data/CCBR_Pipeliner/bin/fastQValidator`                 |
+| fastxtoolkit | `fastxtoolkit/0.0.14`                                     |
+| gopeaks      | `/data/CCBR_Pipeliner/bin/GoPeaks/gopeaks`                |
+| homer        | `homer/4.11.1`                                            |
+| macs2        | `macs/2.2.7.1`                                            |
+| meme         | `meme/5.5.5`                                              |
+| multiqc      | `multiqc/1.14`                                            |
+| perl         | `perl/5.34`                                               |
+| picard       | `picard/2.27.3`                                           |
+| python       | `python/3.9`                                              |
+| R            | `R/4.3.2`                                                 |
+| rose         | `ROSE/1.3.1`                                              |
+| samtools     | `samtools/1.15`                                           |
+| seacr        | `SEACR/1.4-beta.2`                                        |
+| ucsc         | `ucsc/445`                                                |
 
 ---
 

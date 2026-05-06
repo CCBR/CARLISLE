@@ -4,8 +4,6 @@ The CARLISLE pipeline is configured and controlled through a set of editable con
 
 > ⚙️ **Technical Note:** CARLISLE follows a Snakemake-driven workflow architecture where all configuration parameters are read dynamically at runtime. Users are encouraged to version-control configuration files (e.g., via Git) to ensure reproducibility across runs.
 
-> 🚀 **Future Development:** While dependencies are currently module-loaded on the **[Biowulf HPC environment](https://hpc.nih.gov/)**, future releases will adopt containerization using **[Singularity/Apptainer](https://apptainer.org/)** and **[Docker](https://www.docker.com/)**. This shift will provide complete environment encapsulation, allowing consistent execution across HPC and cloud environments.
-
 ---
 
 ## Configuration Files
@@ -139,6 +137,17 @@ This dual-mode analysis enables comparison of replicate-specific vs merged contr
 
 > ⚠️ **Note:** If controls have no replicates to pool (each control has only 1 replicate), pooling will have no effect. Consider setting `pool_controls: false` in such cases.
 
+### Control Sample Requirements
+
+By default, **CARLISLE requires a control sample** (e.g., IgG, input DNA) paired with every treatment sample. Each non-control row in the sample manifest must have `controlName` and `controlReplicateNumber` filled in.
+
+If you do not have control samples, **control-free mode is supported** — see [Control-Free Mode](#control-free-mode) below.
+
+> 💡 **No controls?** Options include:
+> - Using publicly available IgG controls from similar cell types ([GEO](https://www.ncbi.nlm.nih.gov/geo/), [ENCODE](https://www.encodeproject.org/))
+> - Using input DNA as a proxy control
+> - Enabling `run_without_controls: true` (see next section)
+
 ### Control-Free Mode
 
 When no IgG or antibody control samples are available, set `run_without_controls: true` to run all peak callers without a control:
@@ -234,6 +243,8 @@ Defines sample-level metadata, including sample names, controls, and FASTQ paths
 | 53_H3K4me3                      | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz                      | <path_to>/53_H3K4me3_1.R2.fastq.gz                      |
 | 54_H3K4me3                      | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/54_H3K4me3_1.R1.fastq.gz                      | <path_to>/54_H3K4me3_1.R2.fastq.gz                      |
 | HN6_IgG_rabbit_negative_control | 1               | Y         |                                 |                        | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
+
+> ℹ️ **Note:** `controlName` and `controlReplicateNumber` are **required** for non-control samples in normal mode. In control-free mode (`run_without_controls: true`), leave these columns blank for all samples and omit control rows entirely.
 
 ### Contrast Manifest (Optional)
 

@@ -61,7 +61,7 @@ DESeq                                  24              1              1
 align                                   9             56             56
 alignstats                              9              2              2
 all                                     1              1              1
-bam2bg                                  9              4              4
+bam2bg                                  9             32             32
 create_contrast_data_files             24              1              1
 create_contrast_peakcaller_files       12              1              1
 create_reference                        1             32             32
