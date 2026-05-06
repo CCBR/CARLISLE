@@ -50,7 +50,7 @@ rule create_pooled_control_fragments:
     input:
         merged_bam = join(RESULTSDIR,"bam","pooled_controls","{control_sample}.{dupstatus}.merged.bam")
     output:
-        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed")
+        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed")
     params:
         fragment_len = config["fragment_len_filter"],
         mapping_quality = config["mapping_quality"],
@@ -96,11 +96,11 @@ rule create_pooled_control_bedgraph:
     so its total read depth equals the sum of individual replicate counts.
     """
     input:
-        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        bedgraph = join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph")
+        bedgraph = join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph")
     params:
         norm_method = NORM_METHOD,
         spikein_scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else 1,
@@ -195,7 +195,7 @@ rule macs2_narrow:
     '''
     input:
         fragments_bed = expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
                                 control_sample=CONTROL_SAMPLES,
                                 dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
@@ -213,6 +213,7 @@ rule macs2_narrow:
         qthresholds = "{qthresholds}",
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
+        norm_method = NORM_METHOD,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         memG = getmemG("macs2_narrow"),
     threads: getthreads("macs2_narrow")
@@ -269,7 +270,7 @@ rule macs2_narrow:
         if [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
             control_sample=`echo ${{control}} | sed 's/_[0-9]*$//'`
-            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.fragments.bed
+            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.fragments.bed
         else
             # Use per-replicate control (individual mode)
             control_sample=${{control}}
@@ -327,7 +328,7 @@ rule macs2_broad:
     '''
     input:
         fragments_bed = expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
                                 control_sample=CONTROL_SAMPLES,
                                 dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
@@ -345,6 +346,7 @@ rule macs2_broad:
         qthresholds = "{qthresholds}",
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
+        norm_method = NORM_METHOD,
         broadtreshold = config["macs2_broad_peak_threshold"],
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         memG = getmemG("macs2_broad"),
@@ -378,7 +380,7 @@ rule macs2_broad:
         elif [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
             control_sample=`echo ${{control}} | sed 's/_[0-9]*$//'`
-            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.fragments.bed
+            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.fragments.bed
         else
             # Use per-replicate control (individual mode)
             control_sample=${{control}}
@@ -431,7 +433,7 @@ rule seacr_stringent:
     input:
         tc_list=join(RESULTSDIR,"treatment_control_list.txt"),
         bg = expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph"),
+        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph"),
                                  control_sample=CONTROL_SAMPLES, dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
@@ -506,7 +508,7 @@ rule seacr_stringent:
             # Set control bedgraph based on control_mode
             if [[ "{params.control_mode}" == "pooled" ]]; then
                 control_sample=$(echo $control | sed 's/_[0-9]*$//')
-                cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.bedgraph
+                cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.bedgraph
             else
                 cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
             fi
@@ -541,7 +543,7 @@ rule seacr_stringent:
 rule seacr_relaxed:
     input:
         bg = expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph"),
+        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph"),
                                  control_sample=CONTROL_SAMPLES, dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
@@ -616,7 +618,7 @@ rule seacr_relaxed:
                 # Set control bedgraph based on control_mode
                 if [[ "{params.control_mode}" == "pooled" ]]; then
                     control_sample=$(echo $control | sed 's/_[0-9]*$//')
-                    cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.bedgraph
+                    cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.bedgraph
                 else
                     cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
                 fi
