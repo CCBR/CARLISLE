@@ -17,7 +17,7 @@ def run_library_norm(wildcards):
 
 def run_deeptools_bw(wildcards):
     files=[]
-    b3=expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
+    b3=expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"),replicate=REPLICATES,dupstatus=DUPSTATUS)
     files.extend(b3)
     return files
 
