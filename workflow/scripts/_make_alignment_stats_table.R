@@ -9,20 +9,29 @@ suppressPackageStartupMessages(library("tidyverse"))
 parser <- ArgumentParser()
 
 
-parser$add_argument("--yamlDir",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--yamlDir",
+  type = "character",
+  required = TRUE,
   help = "absolute path to location of yamls"
 )
-parser$add_argument("--excludeFromName",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--excludeFromName",
+  type = "character",
+  required = TRUE,
   help = "sample info as TSV"
 )
-parser$add_argument("--scaleConstant",
-  type = "double", default = 1e6, required = FALSE,
+parser$add_argument(
+  "--scaleConstant",
+  type = "double",
+  default = 1e6,
+  required = FALSE,
   help = "scaling constant, typically 1e6.[default %(default)s]"
 )
-parser$add_argument("--outTable",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--outTable",
+  type = "character",
+  required = TRUE,
   help = "absolute path to output table TSV file."
 )
 
@@ -52,8 +61,11 @@ for (f in files) {
   df <- rbind(df, readinyaml)
 }
 df$scaling_factor <- scale_constant / df$dedup_nreads_spikein
-df$duplication_rate_genome <- (df$raw_nreads_genome - df$dedup_nreads_genome) / df$raw_nreads_genome
-df$duplication_rate_spikein <- (df$raw_nreads_spikein - df$dedup_nreads_spikein) / df$raw_nreads_spikein
+df$duplication_rate_genome <- (df$raw_nreads_genome - df$dedup_nreads_genome) /
+  df$raw_nreads_genome
+df$duplication_rate_spikein <- (df$raw_nreads_spikein -
+  df$dedup_nreads_spikein) /
+  df$raw_nreads_spikein
 column_order <- c(
   "sample_name",
   "nreads",
@@ -72,7 +84,8 @@ column_order <- c(
 df %>% rownames_to_column(var = "sample_name") -> df
 df <- df[, column_order]
 
-write.table(df,
+write.table(
+  df,
   file = out_table,
   quote = FALSE,
   sep = "\t",

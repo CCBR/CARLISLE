@@ -3,24 +3,34 @@ suppressPackageStartupMessages(library("argparse"))
 
 # create parser object
 parser <- ArgumentParser()
-parser$add_argument("--rmd",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--rmd",
+  type = "character",
+  required = TRUE,
   help = "path to rmd"
 )
-parser$add_argument("--carlisle_functions",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--carlisle_functions",
+  type = "character",
+  required = TRUE,
   help = "path to carlisle functions file"
 )
-parser$add_argument("--report",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--report",
+  type = "character",
+  required = TRUE,
   help = "HTML report"
 )
-parser$add_argument("--bam_list",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--bam_list",
+  type = "character",
+  required = TRUE,
   help = "list of .idxstats bam files"
 )
-parser$add_argument("--spikein_control",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--spikein_control",
+  type = "character",
+  required = TRUE,
   help = "spike in species type"
 )
 args <- parser$parse_args()
@@ -44,7 +54,4 @@ parameters <- list(
   spikein_control = spikein_control
 )
 
-rmarkdown::render(args$rmd,
-  params = parameters,
-  output_file = report
-)
+rmarkdown::render(args$rmd, params = parameters, output_file = report)

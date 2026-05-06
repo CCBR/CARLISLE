@@ -3,47 +3,71 @@ suppressPackageStartupMessages(library("argparse"))
 
 # create parser object
 parser <- ArgumentParser()
-parser$add_argument("--rmd",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--rmd",
+  type = "character",
+  required = TRUE,
   help = "path to rmd"
 )
-parser$add_argument("--carlisle_functions",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--carlisle_functions",
+  type = "character",
+  required = TRUE,
   help = "path to carlisle functions file"
 )
-parser$add_argument("--output_dir",
-  type = "character", required = FALSE,
+parser$add_argument(
+  "--output_dir",
+  type = "character",
+  required = FALSE,
   help = "output_dir"
 )
-parser$add_argument("--report",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--report",
+  type = "character",
+  required = TRUE,
   help = "HTML report"
 )
-parser$add_argument("--contrast_file",
-  type = "character", required = FALSE,
+parser$add_argument(
+  "--contrast_file",
+  type = "character",
+  required = FALSE,
   help = "TSV produced by create_contrast_peakcaller_files (contains replicate IDs + peak BED paths)"
 )
-parser$add_argument("--peak_list",
-  type = "character", required = FALSE,
+parser$add_argument(
+  "--peak_list",
+  type = "character",
+  required = FALSE,
   help = "DEPRECATED: xxx-delimited list of peak BED paths (kept for backward compatibility)"
 )
-parser$add_argument("--species",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--species",
+  type = "character",
+  required = TRUE,
   help = "species"
 )
-parser$add_argument("--geneset_id",
-  type = "character", required = FALSE, default = "GOBP",
+parser$add_argument(
+  "--geneset_id",
+  type = "character",
+  required = FALSE,
+  default = "GOBP",
   help = "geneset_id"
 )
-parser$add_argument("--dedup_status",
-  type = "character", required = FALSE, default = "dedup",
+parser$add_argument(
+  "--dedup_status",
+  type = "character",
+  required = FALSE,
+  default = "dedup",
   help = "deduplication status"
 )
-parser$add_argument("--n_cores",
-  type = "integer", required = FALSE, default = 1,
+parser$add_argument(
+  "--n_cores",
+  type = "integer",
+  required = FALSE,
+  default = 1,
   help = "Number of CPU cores to use inside chipenrich/polyonrich/broadenrich/hybridenrich where supported"
 )
-parser$add_argument("--skip_hybrid",
+parser$add_argument(
+  "--skip_hybrid",
   action = "store_true",
   help = "Skip the hybrid enrichment (peak_h / hybridenrich) step. Useful for quick testing."
 )
@@ -86,7 +110,4 @@ parameters <- list(
   skip_hybrid = skip_hybrid
 )
 
-rmarkdown::render(args$rmd,
-  params = parameters,
-  output_file = report
-)
+rmarkdown::render(args$rmd, params = parameters, output_file = report)

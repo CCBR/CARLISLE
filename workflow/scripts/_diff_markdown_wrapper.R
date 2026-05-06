@@ -8,88 +8,132 @@ debug <- FALSE
 
 # create parser object
 parser <- ArgumentParser()
-parser$add_argument("--rmd",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--rmd",
+  type = "character",
+  required = TRUE,
   help = "path to rmd"
 )
-parser$add_argument("--carlisle_functions",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--carlisle_functions",
+  type = "character",
+  required = TRUE,
   help = "path to carlisle functions file"
 )
-parser$add_argument("--spiked",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--spiked",
+  type = "character",
+  required = TRUE,
   help = "type of normalization used"
 )
-parser$add_argument("--rawcountsprescaled",
+parser$add_argument(
+  "--rawcountsprescaled",
   action = "store_true",
   help = "if counts are scaled by spike-in already ... Y (for AUC-based method) or N (for fragments-based method)"
 )
-parser$add_argument("--scalesfbymean",
+parser$add_argument(
+  "--scalesfbymean",
   action = "store_true",
   help = "DESeq2 scaling factors are around 1. To ensure that spike-in scaling factors are also around 1 divide each scaling factor by mean of all scaling factors."
 )
-parser$add_argument("--htsfilter",
+parser$add_argument(
+  "--htsfilter",
   action = "store_true",
   help = "Use HTSFilter"
 )
-parser$add_argument("--contrast_data",
-  type = "character", required = FALSE, default = NULL,
+parser$add_argument(
+  "--contrast_data",
+  type = "character",
+  required = FALSE,
+  default = NULL,
   help = "contrast_data inputs file"
 )
-parser$add_argument("--countsmatrix",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--countsmatrix",
+  type = "character",
+  required = TRUE,
   help = "countsmatrix as TSV"
 )
-parser$add_argument("--sampleinfo",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--sampleinfo",
+  type = "character",
+  required = TRUE,
   help = "sample info as TSV"
 )
-parser$add_argument("--dupstatus",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--dupstatus",
+  type = "character",
+  required = TRUE,
   help = "either dedup or no_dedup"
 )
-parser$add_argument("--fdr_cutoff",
-  type = "double", default = 0.05, required = FALSE,
+parser$add_argument(
+  "--fdr_cutoff",
+  type = "double",
+  default = 0.05,
+  required = FALSE,
   help = "FDR cutoff [default %(default)s]"
 )
-parser$add_argument("--log2fc_cutoff",
-  type = "double", default = 0.59, required = FALSE,
+parser$add_argument(
+  "--log2fc_cutoff",
+  type = "double",
+  default = 0.59,
+  required = FALSE,
   help = "log2foldchange cutoff [default %(default)s]"
 )
-parser$add_argument("--condition1",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--condition1",
+  type = "character",
+  required = TRUE,
   help = "condition1"
 )
-parser$add_argument("--condition2",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--condition2",
+  type = "character",
+  required = TRUE,
   help = "condition2"
 )
-parser$add_argument("--results",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--results",
+  type = "character",
+  required = TRUE,
   help = "path to results TSV"
 )
-parser$add_argument("--report",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--report",
+  type = "character",
+  required = TRUE,
   help = "HTML report"
 )
-parser$add_argument("--elbowlimits",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--elbowlimits",
+  type = "character",
+  required = TRUE,
   help = "YAML ELBOW limits"
 )
-parser$add_argument("--tmpdir",
-  type = "character", required = FALSE, default = "/tmp",
+parser$add_argument(
+  "--tmpdir",
+  type = "character",
+  required = FALSE,
+  default = "/tmp",
   help = "tmpdir"
 )
-parser$add_argument("--species",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--species",
+  type = "character",
+  required = TRUE,
   help = "species"
 )
-parser$add_argument("--gtf",
-  type = "character", required = FALSE,
+parser$add_argument(
+  "--gtf",
+  type = "character",
+  required = FALSE,
   help = "gtf path - needed for HS1"
 )
-parser$add_argument("--exclude",
-  type = "character", required = FALSE, default = NULL,
+parser$add_argument(
+  "--exclude",
+  type = "character",
+  required = FALSE,
+  default = NULL,
   help = "comma-separated samplename(s) to exclude from DESeq2"
 )
 args <- parser$parse_args()
@@ -161,19 +205,37 @@ if (debug) {
     # Read sampleinfo and filter out excluded samplenames
     sidf <- tryCatch(
       {
-        read.table(coldata, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+        read.table(
+          coldata,
+          sep = "\t",
+          header = TRUE,
+          stringsAsFactors = FALSE,
+          check.names = FALSE
+        )
       },
       error = function(e) {
         stop(paste("Failed to read sampleinfo:", coldata, e))
       }
     )
     sidf <- sidf[!(sidf$samplename %in% excl), , drop = FALSE]
-    write.table(sidf, file = filtered_si, sep = "\t", quote = FALSE, row.names = FALSE)
+    write.table(
+      sidf,
+      file = filtered_si,
+      sep = "\t",
+      quote = FALSE,
+      row.names = FALSE
+    )
 
     # Read counts matrix and drop excluded columns
     cmdf <- tryCatch(
       {
-        read.table(rawcountsmatrix, sep = "\t", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+        read.table(
+          rawcountsmatrix,
+          sep = "\t",
+          header = TRUE,
+          stringsAsFactors = FALSE,
+          check.names = FALSE
+        )
       },
       error = function(e) {
         stop(paste("Failed to read countsmatrix:", rawcountsmatrix, e))
@@ -181,7 +243,13 @@ if (debug) {
     )
     keep_cols <- setdiff(colnames(cmdf), excl)
     cmdf <- cmdf[, keep_cols, drop = FALSE]
-    write.table(cmdf, file = filtered_cm, sep = "\t", quote = FALSE, row.names = FALSE)
+    write.table(
+      cmdf,
+      file = filtered_cm,
+      sep = "\t",
+      quote = FALSE,
+      row.names = FALSE
+    )
 
     # Override paths to filtered versions
     rawcountsmatrix <- filtered_cm
@@ -210,7 +278,8 @@ parameters <- list(
   gtf = gtf
 )
 
-rmarkdown::render(args$rmd,
+rmarkdown::render(
+  args$rmd,
   params = parameters,
   output_file = report,
   intermediates_dir = paste(tmpdir, "intermediates_dir", sep = "/"),

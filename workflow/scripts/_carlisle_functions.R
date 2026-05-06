@@ -62,9 +62,13 @@ GENERATE_SPIKEIN_PLOT <- function(input_df, spike_type) {
     }
   }
 
-  p <- ggplot(data = spike_df, aes(x = sampleid, y = read_count, fill = groupid)) +
+  p <- ggplot(
+    data = spike_df,
+    aes(x = sampleid, y = read_count, fill = groupid)
+  ) +
     geom_bar(stat = "identity")
-  p_final <- p + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  p_final <- p +
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
     ggtitle(paste0("Spike-in control values\n", spike_type))
   print(p_final)
 
@@ -82,7 +86,11 @@ READ_PEAK_FILE <- function(peak_file_in) {
   }
   peak_file_in <- as.character(peak_file_in)[1]
 
-  peak_df <- read.csv(peak_file_in, sep = "\t", header = FALSE)[, c("V1", "V2", "V3")]
+  peak_df <- read.csv(peak_file_in, sep = "\t", header = FALSE)[, c(
+    "V1",
+    "V2",
+    "V3"
+  )]
   colnames(peak_df) <- c("chrom", "start", "end")
 
   return(peak_df)
@@ -123,17 +131,20 @@ PLOT_QC_FUNCTIONS <- function(function_in, rowid_in, l_id) {
   if (function_in == "polyenrich") {
     p <- plot_polyenrich_spline(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid_in]),
-      locusdef = l_id, genome = speciesID
+      locusdef = l_id,
+      genome = speciesID
     )
   } else if (function_in == "spline") {
     p <- plot_chipenrich_spline(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid_in]),
-      locusdef = l_id, genome = speciesID
+      locusdef = l_id,
+      genome = speciesID
     )
   } else if (function_in == "cov") {
     p <- plot_gene_coverage(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid_in]),
-      locusdef = l_id, genome = speciesID
+      locusdef = l_id,
+      genome = speciesID
     )
   } else {
     print(paste0("Missing function", function_in))
@@ -143,7 +154,11 @@ PLOT_QC_FUNCTIONS <- function(function_in, rowid_in, l_id) {
 
 PLOT_QC_MAIN <- function(function_in, rowid_in) {
   locusdf_list_str <- as.character(peak_df[["locusdf_list"]][1])[1]
-  locusdf_list <- c(base::strsplit(locusdf_list_str, ",")[[1]], "nearest_tss", "nearest_gene")
+  locusdf_list <- c(
+    base::strsplit(locusdf_list_str, ",")[[1]],
+    "nearest_tss",
+    "nearest_gene"
+  )
   locusdf_list <- locusdf_list[locusdf_list != "none"]
 
   # create plots, catching for errors
@@ -173,7 +188,14 @@ PLOT_QC_MAIN <- function(function_in, rowid_in) {
 
       # if true, this is a new row
       if (col_count == 1) {
-        legend_text <- paste0(legend_text, "Row ", row_count, ":  | Col 1 (", l_id, ")")
+        legend_text <- paste0(
+          legend_text,
+          "Row ",
+          row_count,
+          ":  | Col 1 (",
+          l_id,
+          ")"
+        )
         col_count <- 2
       } else if (col_count == 2 & row_count == 1) {
         legend_text <- paste0(legend_text, " | Col 2 (", l_id, ")\n")
@@ -233,42 +255,64 @@ GO_ANALYSIS_MAIN <- function(rowid, peak_enrichment) {
   if (peak_enrichment == "hybrid") {
     results <- hybridenrich(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      genome = speciesID, genesets = geneset_id,
-      locusdef = locus_def, qc_plots = F, # randomization = 'complete',
-      out_name = NULL, n_cores = n_cores_in, min_geneset_size = 10
+      genome = speciesID,
+      genesets = geneset_id,
+      locusdef = locus_def,
+      qc_plots = F, # randomization = 'complete',
+      out_name = NULL,
+      n_cores = n_cores_in,
+      min_geneset_size = 10
     )
   } else if (peak_enrichment == "broad") {
     results <- broadenrich(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      genome = speciesID, genesets = geneset_id,
-      locusdef = locus_def, qc_plots = FALSE, # randomization = 'complete',
-      out_name = NULL, n_cores = n_cores_in, min_geneset_size = 10
+      genome = speciesID,
+      genesets = geneset_id,
+      locusdef = locus_def,
+      qc_plots = FALSE, # randomization = 'complete',
+      out_name = NULL,
+      n_cores = n_cores_in,
+      min_geneset_size = 10
     )
   } else if (peak_enrichment == "enrich") {
     results <- chipenrich(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      genome = speciesID, genesets = geneset_id,
-      locusdef = locus_def, qc_plots = FALSE, # randomization = 'complete',
-      out_name = NULL, n_cores = n_cores_in
+      genome = speciesID,
+      genesets = geneset_id,
+      locusdef = locus_def,
+      qc_plots = FALSE, # randomization = 'complete',
+      out_name = NULL,
+      n_cores = n_cores_in
     )
   } else if (peak_enrichment == "poly") {
     results <- polyenrich(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      genome = speciesID, genesets = geneset_id,
-      method = "polyenrich", locusdef = locus_def,
-      qc_plots = FALSE, out_name = NULL, n_cores = n_cores_in
+      genome = speciesID,
+      genesets = geneset_id,
+      method = "polyenrich",
+      locusdef = locus_def,
+      qc_plots = FALSE,
+      out_name = NULL,
+      n_cores = n_cores_in
     )
   } else if (peak_enrichment == "poly_weighted") {
     results <- polyenrich(
       peaks = READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      genome = speciesID, genesets = geneset_id,
-      method = "polyenrich_weighted", locusdef = "enhancer_plus5kb",
-      qc_plots = FALSE, out_name = NULL, n_cores = n_cores_in
+      genome = speciesID,
+      genesets = geneset_id,
+      method = "polyenrich_weighted",
+      locusdef = "enhancer_plus5kb",
+      qc_plots = FALSE,
+      out_name = NULL,
+      n_cores = n_cores_in
     )
   } else if (peak_enrichment == "reglocation") {
-    results <- proxReg(READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
-      reglocation = "tss", genome = speciesID,
-      genesets = geneset_id, out_name = NULL
+    results <- proxReg(
+      READ_PEAK_FILE(peak_df[["peak_bed"]][rowid]),
+      reglocation = "tss",
+      genome = speciesID,
+      genesets = geneset_id,
+      out_name = NULL
     )
   }
 
@@ -278,6 +322,28 @@ GO_ANALYSIS_MAIN <- function(rowid, peak_enrichment) {
   print(paste0("--sig: ", alpha))
 
   # write out (TSV for consistency)
-  fpath <- paste0(output_dir, "/", sampleid, ".", peakcaller, ".", dedup_status, ".", peaktype, ".", peak_enrichment, "_", geneset_id, ".tsv")
-  write.table(result.out, file = fpath, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+  fpath <- paste0(
+    output_dir,
+    "/",
+    sampleid,
+    ".",
+    peakcaller,
+    ".",
+    dedup_status,
+    ".",
+    peaktype,
+    ".",
+    peak_enrichment,
+    "_",
+    geneset_id,
+    ".tsv"
+  )
+  write.table(
+    result.out,
+    file = fpath,
+    quote = FALSE,
+    sep = "\t",
+    row.names = FALSE,
+    col.names = TRUE
+  )
 }
