@@ -47,8 +47,7 @@ Advanced users can override these defaults with environment variables:
 ### 🧩 Preparation Commands
 
 - **`init` (required)** – Initializes the working directory by copying configuration, manifest, and Snakefiles into place. This step must be performed before any other pipeline action.
-
-  - Use the `-f` or `--force` flag to reinitialize an existing directory.
+    - Use the `-f` or `--force` flag to reinitialize an existing directory.
 
 - **`dryrun` (optional)** – Performs a non-executing validation of the Snakemake DAG, checking for syntax issues, missing files, or permission problems before a full run.
 
