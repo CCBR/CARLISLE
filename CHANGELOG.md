@@ -1,4 +1,6 @@
-## development version
+## CARLISLE development version
+
+## 2.7.6
 
 - **Scheduler-safe Snakemake defaults**: Replaced hardcoded `-j 500` with safer defaults (`-j 100`, `--max-jobs-per-second 1`, `--max-status-checks-per-second 0.1`) for cluster-friendly submission and status polling behavior. (#223, @kopardev)
 
