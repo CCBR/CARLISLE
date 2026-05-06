@@ -329,9 +329,9 @@ rule bam2bg:
 
         if [[ "{params.spikein}" == "NONE" ]];then
             echo "No spike-in scale was used"
-            spikein_scale=1
+            scaling_factor=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`
+            scaling_factor=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`
             echo "The spike-in is generated from the library size"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
@@ -341,10 +341,10 @@ rule bam2bg:
             spikein_percent=`echo "scale=6 ; $spikein_readcount / $total_count * 100" | bc`;\
 
             if [[ $spikein_percent < 0.001 ]]; then
-                echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The spikein_scale was set to 1."
-                spikein_scale=1
+                echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The scaling_factor was set to 1."
+                scaling_factor=1
             else
-                spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+                scaling_factor=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
             fi
         fi
 
@@ -358,13 +358,13 @@ rule bam2bg:
             LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
 
         # run bedtools
-        bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
+        bedtools genomecov -bg -scale $scaling_factor -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
 
         # create bigwig
         bedGraphToBigWig {output.bg} {input.genome_len} {output.bw}
 
         # add to YAML
-        echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
+        echo "scaling_factor=$scaling_factor" > {output.sf_yaml}
         """
 
 rule deeptools_bw:
