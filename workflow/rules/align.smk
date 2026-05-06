@@ -285,9 +285,10 @@ rule create_library_norm_scales:
 
 rule bam2bg:
     """
-    Converted filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
-    sf = Constant / [ Nreads aligning to spikein (deduped)] where Constant is defined as "spikein_scale" in config.yaml
-    The above sf (scaling factor) is used to scale the bedgraph file. Scaled bedgraph is then converted to bigwig.
+    Convert filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
+    A scaling factor is computed from spike-in reads, library size, or set to 1 (NONE mode).
+    The bedgraph is scaled by this factor via bedtools genomecov.
+    The bigwig is produced by bamCoverage --scaleFactor with 25bp bins and 75bp smoothing.
     """
     input:
         bam = rules.filter.output.bam,
