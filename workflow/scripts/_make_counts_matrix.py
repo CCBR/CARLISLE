@@ -6,7 +6,12 @@
 # sums to countsmatrix.tsv
 # sampleinfo.tsv is also created to be used as colData for downstream DESeq2 analysis
 
-import subprocess, argparse, sys, pandas, os, functools, uuid
+import subprocess
+import argparse
+import pandas
+import os
+import functools
+import uuid
 
 parser = argparse.ArgumentParser(description="create counts matrix")
 parser.add_argument(
@@ -91,7 +96,7 @@ for i, row in bedbedgraph.iterrows():
             continue
         peakID = l[4] + ":" + l[5] + "-" + l[6]
         score = (int(l[2]) - int(l[1])) * float(l[3])
-        if not peakID in peakCounts:
+        if peakID not in peakCounts:
             peakCounts[peakID] = 0.0
         peakCounts[peakID] += score
     counts[samplename] = pandas.DataFrame.from_dict(

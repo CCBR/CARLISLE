@@ -95,9 +95,10 @@ def filter_only_mode():
     i = 0  # reads considered
     kept = 0  # reads written
 
-    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, pysam.AlignmentFile(
-        args.bam_out, "wb", header=bam_in.header
-    ) as bam_out:
+    with (
+        pysam.AlignmentFile(args.bam_in, "rb") as bam_in,
+        pysam.AlignmentFile(args.bam_out, "wb", header=bam_in.header) as bam_out,
+    ):
         for r in bam_in.fetch(until_eof=True):
             if not is_primary_mapped(r):
                 continue
@@ -172,9 +173,10 @@ def dedup_mode():
 
     # Second pass: write all primary reads for the kept QNAMEs
     written_reads = 0
-    with pysam.AlignmentFile(args.bam_in, "rb") as bam_in, pysam.AlignmentFile(
-        args.bam_out, "wb", header=bam_in.header
-    ) as bam_out:
+    with (
+        pysam.AlignmentFile(args.bam_in, "rb") as bam_in,
+        pysam.AlignmentFile(args.bam_out, "wb", header=bam_in.header) as bam_out,
+    ):
         for r in bam_in.fetch(until_eof=True):
             if not is_primary_mapped(r):
                 continue
@@ -197,7 +199,7 @@ def main():
 
         report = []
         report.append("FILTER-ONLY METRICS (no linear deduplication)")
-        report.append(f"Mode\tfilter-only")
+        report.append("Mode\tfilter-only")
         report.append(f"Min MAPQ\t{args.minmapq}")
         report.append(f"Max fragment length (PE)\t{args.fraglen}")
         report.append(f"Reads passing filters\t{kept}")
@@ -214,7 +216,7 @@ def main():
 
         report = []
         report.append("LINEAR AMPLIFICATION DUPLICATION METRICS")
-        report.append(f"Mode\tlinear-dedup")
+        report.append("Mode\tlinear-dedup")
         report.append(f"Min MAPQ\t{args.minmapq}")
         report.append(f"Max fragment length (PE)\t{args.fraglen}")
         report.append(f"Reads before dedup (considered)\t{considered}")

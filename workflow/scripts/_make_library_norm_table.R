@@ -9,16 +9,22 @@ suppressPackageStartupMessages(library("tidyverse"))
 parser <- ArgumentParser()
 
 
-parser$add_argument("--yamlDir",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--yamlDir",
+  type = "character",
+  required = TRUE,
   help = "absolute path to location of yamls"
 )
-parser$add_argument("--excludeFromName",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--excludeFromName",
+  type = "character",
+  required = TRUE,
   help = "sample info as TSV"
 )
-parser$add_argument("--outTable",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--outTable",
+  type = "character",
+  required = TRUE,
   help = "absolute path to output table TSV file."
 )
 args <- parser$parse_args()
