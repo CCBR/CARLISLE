@@ -22,6 +22,7 @@
 - **Enhanced error messaging**: Improved error messages for file validation and control sample checks in init.smk for clearer troubleshooting.
 - **Version and module diagnostics**: Added print_versions() function to display Snakemake and Singularity versions and added module loading diagnostics to SBATCH scripts for better troubleshooting of cluster execution issues.
 - **ROSE container: truncated prep script in v1**: `Dockerfile.rose` used an incorrect `COPY` source path (`_prep_rose_input.py` at build-context root) instead of `workflow/scripts/_prep_rose_input.py`, resulting in an empty/truncated file being baked into the image. At runtime this caused a `SyntaxError: EOL while scanning string literal` in `/opt/ROSE/_prep_rose_input.py`, failing all ROSE jobs. Fixed in container `ccbr_rose:v2`.
+- **Peak count outputs overwritten between control/no-control runs**: `all.peaks.txt` and `Peak counts.xlsx` had fixed names, so running with `run_without_controls: true` after a `false` run (or vice versa) in the same results directory would silently overwrite the previous aggregated counts. Output filenames now encode the run mode: `all.peaks.with_control.txt` / `all.peaks.without_control.txt` and `Peak counts.with_control.xlsx` / `Peak counts.without_control.xlsx`. `_plot_peak_counts.R` updated to accept the xlsx filename as an optional 3rd argument.
 
 ## CARLISLE 2.7.6
 
