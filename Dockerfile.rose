@@ -38,7 +38,7 @@ RUN chmod 755 /opt/ROSE/_prep_rose_input.py
 
 # Rebuild font cache so matplotlib finds DejaVu/system fonts
 RUN fc-cache -fv && \
-    /opt/conda/envs/rose/bin/python -c "import matplotlib; matplotlib.font_manager._rebuild()"
+    /opt/conda/envs/rose/bin/python -c "from matplotlib.font_manager import FontManager; FontManager()"
 
 # Convenience wrappers
 RUN cat > /usr/local/bin/run-rose << 'EOF' && chmod +x /usr/local/bin/run-rose
