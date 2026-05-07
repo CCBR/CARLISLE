@@ -25,14 +25,14 @@ peaks <- cbind(peaks, colsplit(peaks$Comparison, "_vs_", c("Replicate", "Control
 peaks$Sample <- gsub("_[1-9]$", "", peaks$Replicate)
 
 outdir <- args[2]
-xlsx_name <- if (length(args) >= 3) args[3] else "Peak counts.xlsx"
+xlsx_path <- if (length(args) >= 3) args[3] else file.path(outdir, "Peak counts.xlsx")
 setwd(outdir)
 
 # Write out table
 print("Write table")
 peak_output <- dcast(peaks, Threshold + Duplication + Comparison ~ Caller, value.var = "Peaks")
 peak_output <- peak_output[order(peak_output$Threshold, peak_output$Duplication, peak_output$Comparison), ]
-write.xlsx(peak_output, file = xlsx_name)
+write.xlsx(peak_output, file = xlsx_path)
 
 # For each threshold, plot number of peaks
 for (threshold in unique(peaks$Threshold)) {

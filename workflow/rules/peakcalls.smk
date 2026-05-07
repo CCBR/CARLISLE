@@ -835,10 +835,9 @@ rule count_peaks:
     params:
         outdir=join(RESULTSDIR,"peaks"),
         rscript=join(SCRIPTSDIR,"_plot_peak_counts.R"),
-        xlsx_name="Peak counts.without_control.xlsx" if RUN_WITHOUT_CONTROLS else "Peak counts.with_control.xlsx",
     container: config['containers']['carlisle_r']
     shell:
         """
         wc -l {input.peaks} > {output.peak_count}
-        Rscript {params.rscript} {output.peak_count} {params.outdir} "{params.xlsx_name}"
+        Rscript {params.rscript} {output.peak_count} {params.outdir} {output.peak_table:q}
         """
