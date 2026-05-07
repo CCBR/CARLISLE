@@ -830,14 +830,15 @@ rule count_peaks:
     input:
         peaks=get_all_peak_files
     output:
-        peak_count=join(RESULTSDIR,"peaks","all.peaks.txt"),
-        peak_table=join(RESULTSDIR,"peaks","Peak counts.xlsx"),
+        peak_count=join(RESULTSDIR,"peaks","all.peaks.without_control.txt") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","all.peaks.with_control.txt"),
+        peak_table=join(RESULTSDIR,"peaks","Peak counts.without_control.xlsx") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","Peak counts.with_control.xlsx"),
     params:
         outdir=join(RESULTSDIR,"peaks"),
-        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R")
+        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R"),
+        xlsx_name="Peak counts.without_control.xlsx" if RUN_WITHOUT_CONTROLS else "Peak counts.with_control.xlsx",
     container: config['containers']['carlisle_r']
     shell:
         """
         wc -l {input.peaks} > {output.peak_count}
-        Rscript {params.rscript} {output.peak_count} {params.outdir}
+        Rscript {params.rscript} {output.peak_count} {params.outdir} "{params.xlsx_name}"
         """
