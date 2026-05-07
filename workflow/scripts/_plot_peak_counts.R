@@ -25,7 +25,7 @@ peaks <- cbind(peaks, colsplit(peaks$Comparison, "_vs_", c("Replicate", "Control
 peaks$Sample <- gsub("_[1-9]$", "", peaks$Replicate)
 
 outdir <- args[2]
-xlsx_path <- if (length(args) >= 3) args[3] else file.path(outdir, "Peak counts.xlsx")
+xlsx_path <- if (length(args) >= 3) args[3] else file.path(outdir, "Peak_counts.xlsx")
 setwd(outdir)
 
 # Write out table

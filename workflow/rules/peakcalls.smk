@@ -831,7 +831,7 @@ rule count_peaks:
         peaks=get_all_peak_files
     output:
         peak_count=join(RESULTSDIR,"peaks","all.peaks.without_control.txt") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","all.peaks.with_control.txt"),
-        peak_table=join(RESULTSDIR,"peaks","Peak counts.without_control.xlsx") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","Peak counts.with_control.xlsx"),
+        peak_table=join(RESULTSDIR,"peaks","Peak_counts.without_control.xlsx") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","Peak_counts.with_control.xlsx"),
     params:
         outdir=join(RESULTSDIR,"peaks"),
         rscript=join(SCRIPTSDIR,"_plot_peak_counts.R"),
