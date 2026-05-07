@@ -748,9 +748,11 @@ rule rose:
             cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
         fi
 
-        # Set control bam usage for ROSE based on MACS2 control mode
+        # Set control bam usage for ROSE based on MACS2 control mode and nocontrol sentinel
         control_arg=""
-        if [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
+        if [[ "${{control}}" == "nocontrol" ]]; then
+            echo "ROSE control BAM omitted for control-free run (nocontrol sentinel)"
+        elif [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
             echo "ROSE control BAM omitted for MACS2 with macs2_control=N"
         else
             control_arg="--control-bam ${{cntrl_bam}}"
