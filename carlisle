@@ -330,6 +330,7 @@ function run() {
       snakemake -s $SNAKEFILE \
       --report ${WORKDIR}/logs/runlocal_snakemake_report.html \
       --directory $WORKDIR \
+      --use-singularity \
       --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
@@ -413,6 +414,7 @@ function run() {
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
       --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
+      --use-singularity \
       --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
