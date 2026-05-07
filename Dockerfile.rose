@@ -3,9 +3,10 @@ FROM mambaorg/micromamba:1.5.10
 USER root
 SHELL ["/bin/bash", "-lc"]
 
-# Base utilities used by wrapper scripts
+# Base utilities used by wrapper scripts + fonts for matplotlib text rendering
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl ca-certificates bash coreutils findutils grep sed gawk \
+    fontconfig fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Single-runtime environment: Python 2.7 only (+ ROSE deps and required tools)
@@ -34,6 +35,10 @@ ENV PYTHONPATH="${ROSE_HOME}"
 # Include ROSE prep script in image
 COPY _prep_rose_input.py /opt/ROSE/_prep_rose_input.py
 RUN chmod 755 /opt/ROSE/_prep_rose_input.py
+
+# Rebuild font cache so matplotlib finds DejaVu/system fonts
+RUN fc-cache -fv && \
+    /opt/conda/envs/rose/bin/python -c "import matplotlib; matplotlib.font_manager._rebuild()"
 
 # Convenience wrappers
 RUN cat > /usr/local/bin/run-rose << 'EOF' && chmod +x /usr/local/bin/run-rose

@@ -233,7 +233,7 @@ containers:
   base: "docker://nciccbr/ccbr_ubuntu_base_20.04:v7"
   carlisle_r: "docker://nciccbr/carlisle_r:v5"
   go_enrichment: "docker://nciccbr/ccbr_chipenrich:v1"
-  rose: "docker://nciccbr/ccbr_rose:v2"
+  rose: "docker://nciccbr/ccbr_rose:v3"
 
 # Pipeline information
 pipeline: "CARLISLE"
