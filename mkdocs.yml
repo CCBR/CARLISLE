@@ -34,8 +34,8 @@ extra:
       link: https://github.com/CCBR
     - icon: fontawesome/brands/docker
       link: https://hub.docker.com/orgs/nciccbr/repositories
-  # version:
-  #   provider: mike
+  version:
+    provider: mike
 
 extra_css:
   - css/custom.css
