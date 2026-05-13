@@ -29,22 +29,23 @@ Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 | `--help, -h`      | Display the command-line help message.                                                                                                  |
 | `--version, -v`   | Print the current version of CARLISLE.                                                                                                  |
 | `--force, -f`     | Force re-execution of all Snakemake rules (overrides cache).                                                                            |
-| `--singcache, -c` | Define a custom **Singularity cache directory**. Defaults to `/data/${USER}/.singularity`, or `${WORKDIR}/.singularity` if unavailable. |
-Scheduler-safe defaults for cluster execution:
-- `-j 100`
-- `--max-jobs-per-second 1`
-- `--max-status-checks-per-second 0.1`
+| `--singcache, -c` | Override the Singularity cache directory. See [Singularity Cache Directory](preparing-files.md#singularity-cache-directory) in Preparing Files for the full fallback order. |
 
-Advanced users can override these defaults with environment variables:
-- `CARLISLE_MAX_JOBS`
-- `CARLISLE_MAX_JOBS_PER_SECOND`
-- `CARLISLE_MAX_STATUS_CHECKS_PER_SECOND`
+### Scheduler Defaults
+
+For cluster execution (`run`, `runtest`), CARLISLE uses scheduler-safe Snakemake defaults:
+
+| Setting | Default | Override env var |
+| ------- | ------- | ---------------- |
+| Max concurrent jobs | `-j 100` | `CARLISLE_MAX_JOBS` |
+| Max job submissions/sec | `--max-jobs-per-second 1` | `CARLISLE_MAX_JOBS_PER_SECOND` |
+| Max status checks/sec | `--max-status-checks-per-second 0.1` | `CARLISLE_MAX_STATUS_CHECKS_PER_SECOND` |
 
 ---
 
 ## Command Descriptions
 
-### 🧩 Preparation Commands
+### Preparation Commands
 
 - **`init` (required)** – Initializes the working directory by copying configuration, manifest, and Snakefiles into place. This step must be performed before any other pipeline action.
 
@@ -52,13 +53,13 @@ Advanced users can override these defaults with environment variables:
 
 - **`dryrun` (optional)** – Performs a non-executing validation of the Snakemake DAG, checking for syntax issues, missing files, or permission problems before a full run.
 
-### ⚙️ Processing Commands
+### Processing Commands
 
-- **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`).
+- **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`). A Snakemake HTML report (`report.html`) is generated in the working directory after a successful run.
 
-- **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion.
+- **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion. The Singularity module is loaded automatically before submission — no manual `module load singularity` is required. A Snakemake HTML report (`report.html`) is generated in the working directory after a successful run.
 
-### 🧰 Maintenance Commands
+### Maintenance Commands
 
 - **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted.
 

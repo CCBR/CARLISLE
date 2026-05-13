@@ -231,6 +231,8 @@ deeptools_bedtypes: "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels"
 
 Available options (comma-separated, no spaces):
 
+cCRE bedtypes (`pls`, `pels`, `dels`, `ca_ctcf`, `ca_h3k4me3`, `ca_tf`) are sourced from the [ENCODE SCREEN database](https://screen.encodeproject.org/).
+
 | Bedtype | Description |
 |---|---|
 | `geneinfo` | All genes: gene bodies, promoters, intergenic regions |
@@ -295,7 +297,7 @@ For each genome (hg38, hg19, hs1/T2T, mm10), the pipeline provides:
 
 - **Gene annotations**: TSS, gene bodies, promoters, intergenic regions (protein-coding and all genes)
 - **Blacklisted regions**: ENCODE DAC blacklists for artifact exclusion
-- **cCREs (candidate cis-Regulatory Elements)**: From ENCODE SCREEN database
+- **cCREs (candidate cis-Regulatory Elements)**: From the [ENCODE SCREEN database](https://screen.encodeproject.org/)
   - **PLS** – Promoter-like signatures
   - **pELS** – Proximal enhancer-like signatures
   - **dELS** – Distal enhancer-like signatures

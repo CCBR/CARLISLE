@@ -8,13 +8,13 @@ While CUT&Tag uses an engineered transposase to insert sequencing adapters direc
 
 Inspired by the **[nf-core/cutandrun](https://nf-co.re/cutandrun/3.2.2/)** pipeline, CARLISLE incorporates modular and reproducible analysis steps that emphasize transparency and scalability. It begins with raw **FASTQ** files, performing adapter trimming followed by alignment using **[Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)**. Linear deduplication is an important part of the process—especially for CUT&RUN and CUT&Tag data—to remove PCR artifacts and ensure accurate quantification of unique DNA fragments.
 
-Normalization is performed using either user-provided spike-in controls (e.g., _E. coli_) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
+Normalization is performed using either user-provided spike-in controls (e.g., _E. coli_) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://github.com/younglab/ROSE)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
 
 ---
 
 ## Setup Dependencies
 
-> **Note:** CARLISLE supports execution via **[Singularity/Apptainer](https://apptainer.org/)** containers on **[Biowulf HPC](https://hpc.nih.gov/)**. Most dependencies are loaded from environment modules; select R-based steps use container images. Provide a local Singularity cache directory at run time with the `--singcache` flag.
+> **Note:** CARLISLE supports execution via **[Singularity/Apptainer](https://apptainer.org/)** containers on **[Biowulf HPC](https://hpc.nih.gov/)**. Most dependencies are loaded from environment modules; R-based steps (DESeq2, GO enrichment) and ROSE run inside Singularity containers. Container images are pre-cached in the shared CCBR SIF cache and pulled automatically when `module load ccbrpipeliner` is used — no manual setup required.
 
 CARLISLE relies on several dependencies, most of which are pre-installed and auto-loaded on **Biowulf** via the `ccbrpipeliner` module.
 
@@ -38,7 +38,7 @@ CARLISLE relies on several dependencies, most of which are pre-installed and aut
 | picard       | `picard/2.27.3`                                           |
 | python       | `python/3.9`                                              |
 | R            | `R/4.3.2`                                                 |
-| rose         | `ROSE/1.3.1`                                              |
+| rose         | Singularity container (`nciccbr/ccbr_rose:v3`) — not a Biowulf module |
 | samtools     | `samtools/1.15`                                           |
 | seacr        | `SEACR/1.4-beta.2`                                        |
 | ucsc         | `ucsc/445`                                                |
@@ -81,11 +81,15 @@ Check which version is currently active:
 
 ```bash
 carlisle --version
-[+] Loading singularity  4.2.2  on cn0001
+[+] Loading singularity  X.Y.Z  on cn####
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6
-Version: 2.7.6
+Snakemake version: 7.32.4
+Singularity version: X.Y.Z
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z
+Version: X.Y.Z
 ```
+
+> The version output includes Snakemake and Singularity version diagnostics to help confirm the environment is loaded correctly before submitting jobs.
 
 ```
 carlisle --help
