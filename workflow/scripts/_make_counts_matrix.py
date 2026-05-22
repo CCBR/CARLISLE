@@ -45,10 +45,10 @@ if not os.path.exists(args.tmpdir):
     try:
         os.mkdir(args.tmpdir)
     except OSError as e:
-        raise OSError(args.tmpdir + ": Folder does not exist and cannot be created!") from e
+        raise OSError(f"{args.tmpdir}: Folder does not exist and cannot be created!") from e
 
 if not os.access(args.tmpdir, os.W_OK):
-    raise PermissionError(args.tmpdir + ": Folder is not writeable!")
+    raise PermissionError(f"{args.tmpdir}: Folder is not writeable!")
 
 bedbedgraph = pandas.read_csv(args.bedbedgraph, header=None, sep="\t")
 bedbedgraph.columns = [
