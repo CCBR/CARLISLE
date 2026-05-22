@@ -1,6 +1,6 @@
 # CARLISLE
 
-**C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E**
+**C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E** <!-- codespell:ignore nd -->
 
 [![GitHub releases](https://img.shields.io/github/release/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/releases)
 [![GitHub issues](https://img.shields.io/github/issues/CCBR/CARLISLE)](https://github.com/CCBR/CARLISLE/issues)

@@ -60,7 +60,7 @@ colnames(x) <- colnames(rawcounts)
 rownames(x) <- rownames(rawcounts)
 
 # if lib size is greater than max integer size allowed, handle samples
-# cant replace with the original value since max integer is 2147483647
+# can't replace with the original value since max integer is 2147483647
 # anything larger will be replaced with an NA
 x[is.na(x)] <- 2147483647
 
@@ -191,7 +191,7 @@ DESeq2::plotMA(results)
 
 ```{r pca,include=TRUE,echo=FALSE}
 # default for nsub is 1000, if there are less than 1000 rows with a mean > 5 this will error
-# If there are less than 1K check hether there are enough istances to use nsub value set to the n rows
+# If there are less than 1K check whether there are enough instances to use nsub value set to the n rows
 # if there are not then variancestablizing must be used
 if (sum(rowMeans(counts(dds, normalized = TRUE)) > 5) > 1000) {
   print("VST: Using standard method")
@@ -206,7 +206,7 @@ if (sum(rowMeans(counts(dds, normalized = TRUE)) > 5) > 1000) {
     print("VST: Using nrow as nsub")
     rld <- vst(dds, nsub = nrow(dds))
   } else if (grepl("Error", t, fixed = TRUE)) {
-    print("VST: Using variance Stablizing transformation")
+    print("VST: Using variance Stabilizing transformation")
     rld <- varianceStabilizingTransformation(dds)
   } else {
     print("VST: Using nrow as nsub")
