@@ -46,7 +46,7 @@ if not os.path.exists(args.tmpdir):
         os.mkdir(args.tmpdir)
     except OSError as e:
         raise OSError(
-            f"{args.tmpdir}: Folder does not exist and cannot be created!"
+            f"{args.tmpdir}: Folder does not exist and cannot be created! {e}"
         ) from e
 
 if not os.access(args.tmpdir, os.W_OK):
