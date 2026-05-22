@@ -108,7 +108,7 @@ SET_LOCUST_DEF <- function(locus_loc_in) {
     locus_loc_in <- "not applicable given distribution"
   }
 
-  print(paste0("The locust defintion is determined to be: ", locus_loc_in))
+  print(paste0("The locust definition is determined to be: ", locus_loc_in))
   return(locus_loc_in)
 }
 
