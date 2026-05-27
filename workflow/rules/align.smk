@@ -572,3 +572,50 @@ rule cov_correlation:
         # Plot heatmap and PCA (formatted)
         Rscript {params.rscript} {output.pearson_corr} {output.pca} {input.align_table} {params.dupstatus} {output.hc} {output.pca_format}
         """
+
+if CONTROLS:
+    rule cov_correlation_no_ctrl:
+        """
+        Create replicate correlation plots from treatment-only BAM files (IgG controls excluded).
+        Generates a Pearson correlation heatmap and PCA plot without control samples so that
+        treatment-to-treatment differences are not dominated by the IgG background signal.
+        """
+        input:
+            bams=expand(join(RESULTSDIR,"bam","{replicate}.{{dupstatus}}.bam"),replicate=TREATMENTS),
+            align_table=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+        output:
+            counts=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.readCounts.npz"),
+            pearson_corr=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonCorr.tab"),
+            pearson_plot=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonCorr.png"),
+            pca=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PCA.tab"),
+            hc=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.Pearson_heatmap.png"),
+            pca_format=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonPCA.png")
+        params:
+            rscript=join(SCRIPTSDIR,"_plot_correlation.R"),
+            dupstatus="{dupstatus}"
+        container: config['containers']['carlisle_r']
+        threads: getthreads("cov_correlation")
+        shell:
+            """
+            # Calculate genome-wide coverage (treatment samples only)
+            multiBamSummary bins \
+             --bamfiles {input.bams} \
+             --smartLabels \
+             -out {output.counts} \
+             -p {threads}
+
+            # Plot heatmap - Pearson
+            plotCorrelation \
+             -in {output.counts} \
+             --corMethod pearson --skipZeros \
+             --whatToPlot heatmap --plotNumbers \
+             -o {output.pearson_plot} \
+             --removeOutliers \
+             --outFileCorMatrix {output.pearson_corr}
+
+            # Plot PCA
+            plotPCA -in {output.counts}  --outFileNameData {output.pca}
+
+            # Plot heatmap and PCA (formatted)
+            Rscript {params.rscript} {output.pearson_corr} {output.pca} {input.align_table} {params.dupstatus} {output.hc} {output.pca_format}
+            """

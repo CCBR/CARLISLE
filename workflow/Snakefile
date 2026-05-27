@@ -470,11 +470,17 @@ rule all:
         # ALIGN / deeptools_heatmap
         unpack(run_deeptools_heatmap),
 
-        # ALIGN / deeptools_corr
+        # ALIGN / deeptools_corr (all samples, including controls)
         expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonCorr.tab"),dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PCA.tab"),dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.Pearson_heatmap.png"),dupstatus=DUPSTATUS),
         expand(join(RESULTSDIR,"deeptools","all.{dupstatus}.PearsonPCA.png"),dupstatus=DUPSTATUS),
+
+        # ALIGN / deeptools_corr (treatment samples only, IgG controls excluded)
+        expand(join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonCorr.tab"),dupstatus=DUPSTATUS) if CONTROLS else [],
+        expand(join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PCA.tab"),dupstatus=DUPSTATUS) if CONTROLS else [],
+        expand(join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.Pearson_heatmap.png"),dupstatus=DUPSTATUS) if CONTROLS else [],
+        expand(join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonPCA.png"),dupstatus=DUPSTATUS) if CONTROLS else [],
 
         # ALIGN / create_library_norm_scales
         unpack(run_library_norm),
