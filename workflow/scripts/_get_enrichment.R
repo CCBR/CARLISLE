@@ -2,39 +2,61 @@
 suppressPackageStartupMessages(library("argparse"))
 
 parser <- ArgumentParser()
-parser$add_argument("--peaks_bed",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--peaks_bed",
+  type = "character",
+  required = TRUE,
   help = "Path to peaks BED file"
 )
-parser$add_argument("--geneset_id",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--geneset_id",
+  type = "character",
+  required = TRUE,
   help = "GO geneset id(s), comma-separated (e.g., GOBP,GOCC,GOMF)"
 )
-parser$add_argument("--genome",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--genome",
+  type = "character",
+  required = TRUE,
   help = "Genome: hg19, hg38, or mm10"
 )
-parser$add_argument("--output_tsv",
-  type = "character", required = TRUE,
+parser$add_argument(
+  "--output_tsv",
+  type = "character",
+  required = TRUE,
   help = "TSV output path for enrichment results"
 )
-parser$add_argument("--locusdef",
-  type = "character", required = FALSE, default = "nearest_tss",
+parser$add_argument(
+  "--locusdef",
+  type = "character",
+  required = FALSE,
+  default = "nearest_tss",
   help = "Locus definition for chipenrich"
 )
-parser$add_argument("--methods",
-  type = "character", required = FALSE, default = "chipenrich",
+parser$add_argument(
+  "--methods",
+  type = "character",
+  required = FALSE,
+  default = "chipenrich",
   help = "Comma-separated methods: chipenrich,polyenrich,hybridenrich"
 )
-parser$add_argument("--n_cores",
-  type = "integer", required = FALSE, default = 1,
+parser$add_argument(
+  "--n_cores",
+  type = "integer",
+  required = FALSE,
+  default = 1,
   help = "Number of CPU cores to use where supported"
 )
 args <- parser$parse_args()
 
 allowed_genomes <- c("hg19", "hg38", "mm10")
 if (!(args$genome %in% allowed_genomes)) {
-  stop(paste0("Invalid genome: ", args$genome, ". Must be one of: ", paste(allowed_genomes, collapse = ", ")))
+  stop(paste0(
+    "Invalid genome: ",
+    args$genome,
+    ". Must be one of: ",
+    paste(allowed_genomes, collapse = ", ")
+  ))
 }
 
 suppressPackageStartupMessages({
@@ -52,7 +74,10 @@ if (!is.null(args$n_cores)) {
   options(mc.cores = as.integer(args$n_cores))
   if (requireNamespace("BiocParallel", quietly = TRUE)) {
     if (isTRUE(args$n_cores > 1)) {
-      BiocParallel::register(BiocParallel::MulticoreParam(workers = as.integer(args$n_cores)), default = TRUE)
+      BiocParallel::register(
+        BiocParallel::MulticoreParam(workers = as.integer(args$n_cores)),
+        default = TRUE
+      )
     } else {
       BiocParallel::register(BiocParallel::SerialParam(), default = TRUE)
     }
@@ -94,7 +119,13 @@ read_peak_file <- function(peak_file_in) {
       if (grepl("no lines available in input", e$message, fixed = TRUE)) {
         return(empty_peak_df())
       }
-      stop(paste0("Failed to read peak BED file: ", peak_file_in, " (", e$message, ")"))
+      stop(paste0(
+        "Failed to read peak BED file: ",
+        peak_file_in,
+        " (",
+        e$message,
+        ")"
+      ))
     }
   )
 
@@ -131,7 +162,12 @@ methods <- methods[nzchar(methods)]
 allowed_methods <- c("chipenrich", "polyenrich", "hybridenrich")
 if (!all(methods %in% allowed_methods)) {
   bad <- methods[!(methods %in% allowed_methods)]
-  stop(paste0("Invalid method(s): ", paste(bad, collapse = ", "), ". Allowed: ", paste(allowed_methods, collapse = ", ")))
+  stop(paste0(
+    "Invalid method(s): ",
+    paste(bad, collapse = ", "),
+    ". Allowed: ",
+    paste(allowed_methods, collapse = ", ")
+  ))
 }
 if (length(methods) == 0) {
   methods <- "chipenrich"
@@ -139,11 +175,23 @@ if (length(methods) == 0) {
 
 if (nrow(peaks_df) == 0) {
   empty_cols <- c(
-    "Geneset.Type", "Geneset.ID", "Description", "P.value", "FDR", "Effect",
-    "Odds.Ratio", "Status", "N.Geneset.Genes", "N.Geneset.Peak.Genes",
-    "Geneset.Avg.Gene.Length", "Geneset.Peak.Genes"
+    "Geneset.Type",
+    "Geneset.ID",
+    "Description",
+    "P.value",
+    "FDR",
+    "Effect",
+    "Odds.Ratio",
+    "Status",
+    "N.Geneset.Genes",
+    "N.Geneset.Peak.Genes",
+    "Geneset.Avg.Gene.Length",
+    "Geneset.Peak.Genes"
   )
-  empty_df <- as.data.frame(setNames(replicate(length(empty_cols), logical(0), simplify = FALSE), empty_cols))
+  empty_df <- as.data.frame(setNames(
+    replicate(length(empty_cols), logical(0), simplify = FALSE),
+    empty_cols
+  ))
   for (gs in geneset_ids) {
     gs_tag <- sanitize_tag(gs)
     for (m in methods) {
@@ -152,7 +200,14 @@ if (nrow(peaks_df) == 0) {
       if (!grepl("\\.tsv$", out_tsv)) {
         out_tsv <- paste0(out_tsv, ".", gs_tag, ".", m, ".tsv")
       }
-      write.table(empty_df, file = out_tsv, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+      write.table(
+        empty_df,
+        file = out_tsv,
+        quote = FALSE,
+        sep = "\t",
+        row.names = FALSE,
+        col.names = TRUE
+      )
     }
   }
   quit(status = 0)
@@ -197,20 +252,29 @@ for (gs in geneset_ids) {
     result_out <- results$results
 
     if ("Geneset.Peak.Genes" %in% names(result_out)) {
-      entrez_ids <- unique(unlist(strsplit(paste(result_out$Geneset.Peak.Genes, collapse = ","), ",")))
+      entrez_ids <- unique(unlist(strsplit(
+        paste(result_out$Geneset.Peak.Genes, collapse = ","),
+        ","
+      )))
       entrez_ids <- trimws(entrez_ids)
       entrez_ids <- entrez_ids[nzchar(entrez_ids)]
 
       if (length(entrez_ids) > 0) {
         if (args$genome %in% c("hg19", "hg38")) {
           suppressPackageStartupMessages(library(org.Hs.eg.db))
-          sym_map <- AnnotationDbi::select(org.Hs.eg.db,
-            keys = entrez_ids, keytype = "ENTREZID", columns = c("SYMBOL")
+          sym_map <- AnnotationDbi::select(
+            org.Hs.eg.db,
+            keys = entrez_ids,
+            keytype = "ENTREZID",
+            columns = c("SYMBOL")
           )
         } else {
           suppressPackageStartupMessages(library(org.Mm.eg.db))
-          sym_map <- AnnotationDbi::select(org.Mm.eg.db,
-            keys = entrez_ids, keytype = "ENTREZID", columns = c("SYMBOL")
+          sym_map <- AnnotationDbi::select(
+            org.Mm.eg.db,
+            keys = entrez_ids,
+            keytype = "ENTREZID",
+            columns = c("SYMBOL")
           )
         }
 
@@ -230,7 +294,11 @@ for (gs in geneset_ids) {
           paste(syms, collapse = ", ")
         }
 
-        result_out$Geneset.Peak.Genes <- vapply(result_out$Geneset.Peak.Genes, convert_ids, character(1))
+        result_out$Geneset.Peak.Genes <- vapply(
+          result_out$Geneset.Peak.Genes,
+          convert_ids,
+          character(1)
+        )
       }
     }
 
@@ -241,6 +309,13 @@ for (gs in geneset_ids) {
       out_tsv <- paste0(out_tsv, ".", gs_tag, ".", m, ".tsv")
     }
 
-    write.table(result_out, file = out_tsv, quote = FALSE, sep = "\t", row.names = FALSE, col.names = TRUE)
+    write.table(
+      result_out,
+      file = out_tsv,
+      quote = FALSE,
+      sep = "\t",
+      row.names = FALSE,
+      col.names = TRUE
+    )
   }
 }

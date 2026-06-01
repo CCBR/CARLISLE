@@ -22,7 +22,6 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
 
   - Subdirectories are organized by **quality thresholds** (e.g., `0.05`, `0.01`), representing the significance cutoffs applied during peak calling.
   - Each quality threshold directory includes:
-
     - **`contrasts/`** – Contains results of differential binding analyses defined in the contrast manifest, including:
       - Differential enrichment results from DESeq2 (AUC-based and fragment-based)
       - 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`)
@@ -32,12 +31,10 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
       - **`Peak_counts.with_control.xlsx`** / **`Peak_counts.without_control.xlsx`** – Excel peak count summaries (older versions used `Peak counts.xlsx` with a space — update any downstream scripts accordingly)
 
     - **`<peak_caller>/`** – Subdirectories for each peak caller (e.g., `macs2`, `seacr`, `gopeaks`). Each includes raw peak calls and annotated results.
-
       - **`peak_output/`** – Raw peak calls organized by control mode:
         - **`individual/`** – Peaks called using individual replicate controls (present for all analyses)
         - **`pooled/`** – Peaks called using merged high-depth controls (present when `pool_controls: true`)
       - **`annotation/`** – Contains enriched feature and pathway analyses, organized by control mode:
-
         - **`go_enrichment/`** – Results from **[ChIP-Enrich](https://chipenrich.med.umich.edu/)** gene set enrichment, generated when `run_go_enrichment: true` is enabled.
         - **`homer/`** – Output from **[HOMER](http://homer.ucsd.edu/homer/)** motif discovery and annotation.
         - **`rose/`** – Output from **[ROSE](https://github.com/younglab/ROSE)** super-enhancer analysis, generated when `run_rose: true` is specified.

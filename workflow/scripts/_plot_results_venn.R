@@ -22,28 +22,42 @@ if (debug) {
   # create parser object
   parser <- ArgumentParser()
 
-  parser$add_argument("--aucresults",
-    type = "character", required = TRUE,
+  parser$add_argument(
+    "--aucresults",
+    type = "character",
+    required = TRUE,
     help = "path to aucresults"
   )
-  parser$add_argument("--fragmentsresults",
-    type = "character", required = TRUE,
+  parser$add_argument(
+    "--fragmentsresults",
+    type = "character",
+    required = TRUE,
     help = "path to fragmentsresults"
   )
-  parser$add_argument("--pdf",
-    type = "character", required = TRUE,
+  parser$add_argument(
+    "--pdf",
+    type = "character",
+    required = TRUE,
     help = "output pdf file"
   )
-  parser$add_argument("--title",
-    type = "character", required = TRUE,
+  parser$add_argument(
+    "--title",
+    type = "character",
+    required = TRUE,
     help = "plot title in pdf"
   )
-  parser$add_argument("--fdr_cutoff",
-    type = "double", default = 0.05, required = FALSE,
+  parser$add_argument(
+    "--fdr_cutoff",
+    type = "double",
+    default = 0.05,
+    required = FALSE,
     help = "FDR cutoff [default %(default)s]"
   )
-  parser$add_argument("--log2fc_cutoff",
-    type = "double", default = 0.59, required = FALSE,
+  parser$add_argument(
+    "--log2fc_cutoff",
+    type = "double",
+    default = 0.59,
+    required = FALSE,
     help = "log2foldchange cutoff [default %(default)s]"
   )
 
@@ -53,7 +67,8 @@ if (debug) {
 }
 
 readandfilter <- function(resultsfile) {
-  df <- read.csv(resultsfile,
+  df <- read.csv(
+    resultsfile,
     header = TRUE,
     row.names = NULL,
     sep = "\t",
@@ -82,9 +97,15 @@ AUC_UP <- auc_df[auc_df$significance == "UP", ]$peakID
 AUC_DOWN <- auc_df[auc_df$significance == "DOWN", ]$peakID
 FRAG_UP <- frag_df[frag_df$significance == "UP", ]$peakID
 FRAG_DOWN <- frag_df[frag_df$significance == "DOWN", ]$peakID
-x <- list(AUC_UP = AUC_UP, AUC_DOWN = AUC_DOWN, FRAG_UP = FRAG_UP, FRAG_DOWN = FRAG_DOWN)
+x <- list(
+  AUC_UP = AUC_UP,
+  AUC_DOWN = AUC_DOWN,
+  FRAG_UP = FRAG_UP,
+  FRAG_DOWN = FRAG_DOWN
+)
 pdf(args$pdf)
-ggvenn(x,
+ggvenn(
+  x,
   stroke_size = 0.4,
   set_name_size = 3,
   fill_color = c("#0073C2FF", "#EFC000FF", "#868686FF", "#CD534CFF")

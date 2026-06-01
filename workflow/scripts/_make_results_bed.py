@@ -50,9 +50,12 @@ Note:
     - The temporary file is automatically cleaned up after processing
 """
 
-import argparse, pandas, os, yaml, subprocess, uuid
-from operator import index
-from email import header
+import argparse
+import pandas
+import os
+import yaml
+import subprocess
+import uuid
 
 randbed = str(uuid.uuid4()) + ".bed"
 

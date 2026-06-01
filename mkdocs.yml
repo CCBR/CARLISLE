@@ -2,7 +2,7 @@
 site_name: CARLISLE
 site_author: CCBR
 site_description: >-
-  **C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E**
+  **C**ut **A**nd **R**un ana**L**ys**IS** pipe**L**in**E** <!-- codespell:ignore nd -->
 # Repository
 repo_name: CCBR/CARLISLE
 repo_url: https://github.com/CCBR/CARLISLE

@@ -275,9 +275,11 @@ w = args.promoter_window
 # For building intergenic: chrom -> list of (start, end) for genebody
 genebody_intervals = {chrom: [] for chrom in genome_sizes.keys()}
 
-with open(args.promoter_bed, "w") as promoter_out, open(
-    args.tss_bed, "w"
-) as tss_out, open(args.genebody_bed, "w") as genebody_out:
+with (
+    open(args.promoter_bed, "w") as promoter_out,
+    open(args.tss_bed, "w") as tss_out,
+    open(args.genebody_bed, "w") as genebody_out,
+):
     for gene_id, info in genes.items():
         chrom = info["chrom"]
         strand = info["strand"]

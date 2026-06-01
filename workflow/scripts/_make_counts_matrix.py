@@ -6,7 +6,12 @@
 # sums to countsmatrix.tsv
 # sampleinfo.tsv is also created to be used as colData for downstream DESeq2 analysis
 
-import subprocess, argparse, sys, pandas, os, functools, uuid
+import subprocess
+import argparse
+import pandas
+import os
+import functools
+import uuid
 
 parser = argparse.ArgumentParser(description="create counts matrix")
 parser.add_argument(
@@ -39,11 +44,13 @@ randstr = str(uuid.uuid4())
 if not os.path.exists(args.tmpdir):
     try:
         os.mkdir(args.tmpdir)
-    except:
-        exit(args.tmpdir + ": Folder doesnt exist and cannot be created!")
+    except OSError as e:
+        raise OSError(
+            f"{args.tmpdir}: Folder does not exist and cannot be created! {e}"
+        ) from e
 
 if not os.access(args.tmpdir, os.W_OK):
-    exit(args.tmpdir + ": Folder is not writeable!")
+    raise PermissionError(f"{args.tmpdir}: Folder is not writeable!")
 
 bedbedgraph = pandas.read_csv(args.bedbedgraph, header=None, sep="\t")
 bedbedgraph.columns = [
@@ -85,13 +92,13 @@ for i, row in bedbedgraph.iterrows():
     print("Now running: %s" % (cmd))
     bt = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
     peakCounts = dict()
-    for l in bt.stdout.split("\n"):
-        l = l.strip().split("\t")
-        if len(l) != 7:
+    for line in bt.stdout.split("\n"):
+        fields = line.strip().split("\t")
+        if len(fields) != 7:
             continue
-        peakID = l[4] + ":" + l[5] + "-" + l[6]
-        score = (int(l[2]) - int(l[1])) * float(l[3])
-        if not peakID in peakCounts:
+        peakID = fields[4] + ":" + fields[5] + "-" + fields[6]
+        score = (int(fields[2]) - int(fields[1])) * float(fields[3])
+        if peakID not in peakCounts:
             peakCounts[peakID] = 0.0
         peakCounts[peakID] += score
     counts[samplename] = pandas.DataFrame.from_dict(
@@ -101,11 +108,11 @@ for i, row in bedbedgraph.iterrows():
     print("Now running %s" % (cmd))
     bo = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
     fPeakCounts = dict()
-    for l in bo.stdout.split("\n"):
-        l = l.strip().split("|")
-        if len(l) != 2:
+    for line in bo.stdout.split("\n"):
+        fields = line.strip().split("|")
+        if len(fields) != 2:
             continue
-        fPeakCounts[l[0]] = l[1]
+        fPeakCounts[fields[0]] = fields[1]
     fcounts[samplename] = pandas.DataFrame.from_dict(
         fPeakCounts, orient="index", columns=[samplename]
     )
