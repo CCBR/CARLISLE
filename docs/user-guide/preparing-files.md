@@ -34,6 +34,16 @@ The main configuration file (`config.yaml`) contains parameters grouped into log
 
 ## User Parameters
 
+### Run Contrasts
+
+**`run_contrasts`**: Set to `true` to enable DESeq2 differential analysis between conditions defined in the contrasts manifest. Set to `false` to skip differential analysis and only produce peaks, QC, and annotation outputs.
+
+```yaml
+run_contrasts: true
+```
+
+> ℹ️ **Note:** Differential analysis requires at least two biological replicates per condition in the contrasts manifest. If you have only one replicate per condition, set `run_contrasts: false`.
+
 ### Spike-in Controls
 
 CARLISLE supports spike-in normalization using reference genomes such as _E. coli_ or _Drosophila melanogaster_. The parameter `spikein_genome` defines the spike-in species, and `spikein_reference` provides the corresponding FASTA path.
@@ -77,6 +87,8 @@ If spike-ins are unavailable or insufficient, normalization can alternatively be
 3. Change `norm_method` to `library` in your `config.yaml`.
 4. Re-run CARLISLE — pooled control outputs are automatically regenerated when `norm_method` changes.
 
+> ℹ️ **Don’t have spike-in samples?** That is fine — spike-in normalization is optional. If your experiment did not include spike-in DNA (e.g., _E. coli_ or _Drosophila_ chromatin), simply set `norm_method: "library"` from the start and omit the `spikein_genome` and `spikein_reference` parameters entirely. Library-size normalization is a valid and commonly used alternative.
+
 > ℹ️ **Normalization change behavior:** Pooled control fragment and bedgraph filenames encode the normalization method (e.g., `*.spikein.bedgraph`). Changing `norm_method` in an existing results directory causes Snakemake to detect stale targets and regenerate them automatically — **no manual deletion of intermediate files is required**.
 
 > ℹ️ **Note:** `alignment_stats.tsv` is generated automatically by the pipeline and does not need to be specified in your configuration.
@@ -103,10 +115,21 @@ CARLISLE supports three major peak callers, configurable via the `peaktype` para
 
 > ✅ **Recommendation:** Use GoPeaks for its superior signal detection in sparse chromatin accessibility datasets.
 
-Example configuration:
+All valid `peaktype` values:
+
+| Value | Description |
+|---|---|
+| `macs2_narrow` | MACS2 narrow peaks (recommended for TFs and sharp histone marks like H3K4me3) |
+| `macs2_broad` | MACS2 broad peaks (H3K27me3, H3K9me3). Note: DESeq2 differential analysis often fails on broad peaks due to excessive peak counts |
+| `seacr_stringent` | SEACR stringent threshold (lower sensitivity, higher specificity) |
+| `seacr_relaxed` | SEACR relaxed threshold (higher sensitivity) |
+| `gopeaks_narrow` | GoPeaks narrow peaks (TFs, sharp marks) |
+| `gopeaks_broad` | GoPeaks broad peaks (broad histone marks) |
+
+You can run any combination in a single pipeline execution by listing them comma-separated:
 
 ```yaml
-peaktype: "macs2_narrow, gopeaks_narrow"
+peaktype: "macs2_narrow, gopeaks_narrow, seacr_stringent"
 ```
 
 ### MACS2 Control Option
@@ -218,6 +241,13 @@ When enabled:
 - **SEACR** uses the numeric `seacr_threshold` value instead of a control bedgraph. The value represents the fraction of the signal distribution used as the peak-calling threshold (e.g., `0.01` = top 1%).
 - **GoPeaks** runs without the `-c` control BAM flag.
 - The sample manifest **does not** require `controlName` or `controlReplicateNumber` columns to be filled in.
+
+Example manifest for control-free mode (all samples are treatments; no control rows):
+
+| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1 | path_to_R2 |
+|---|---|---|---|---|---|---|
+| H3K4me3_treated | 1 | N | | | /path/to/H3K4me3_rep1.R1.fastq.gz | /path/to/H3K4me3_rep1.R2.fastq.gz |
+| H3K4me3_treated | 2 | N | | | /path/to/H3K4me3_rep2.R1.fastq.gz | /path/to/H3K4me3_rep2.R2.fastq.gz |
 
 > ⚠️ **Caution:** Control-free peak calling will yield higher false-positive rates. Results should be interpreted with care and ideally validated by comparing to matched control experiments.
 
@@ -341,6 +371,22 @@ CARLISLE uses two manifests:
 
 Defines sample-level metadata, including sample names, controls, and FASTQ paths.
 
+> 📄 **File format:** The sample manifest is a **tab-separated values (TSV)** file. Do not use commas or spaces as delimiters. The header row is required and column names must match exactly.
+
+> ⚠️ **Paired-end only:** CARLISLE requires paired-end sequencing data. Single-end data is not supported. Both `path_to_R1` and `path_to_R2` must point to valid FASTQ files.
+
+**Column descriptions:**
+
+| Column | Description |
+|---|---|
+| `sampleName` | Unique name for the sample (shared across replicates). Must not be a substring of another `sampleName`. |
+| `replicateNumber` | Positive integer (starting from 1) identifying each replicate within a `sampleName`. Must be unique per `sampleName`. Sequential numbering recommended. |
+| `isControl` | `Y` if this row is a control sample (e.g., IgG), `N` for treatment samples. |
+| `controlName` | For treatment rows (`isControl: N`): the `sampleName` of the paired control. Must be an **exact string match** to a `sampleName` where `isControl: Y`. Leave blank for control rows. |
+| `controlReplicateNumber` | The `replicateNumber` of the control replicate to pair with this treatment. Leave blank for control rows. |
+| `path_to_R1` | Absolute path to the R1 (forward) FASTQ file. |
+| `path_to_R2` | Absolute path to the R2 (reverse) FASTQ file. |
+
 | sampleName                      | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                              | path_to_R2                                              |
 | ------------------------------- | --------------- | --------- | ------------------------------- | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
 | 53_H3K4me3                      | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz                      | <path_to>/53_H3K4me3_1.R2.fastq.gz                      |
@@ -348,6 +394,8 @@ Defines sample-level metadata, including sample names, controls, and FASTQ paths
 | HN6_IgG_rabbit_negative_control | 1               | Y         |                                 |                        | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
 
 > ℹ️ **Note:** `controlName` and `controlReplicateNumber` are **required** for non-control samples in normal mode. In control-free mode (`run_without_controls: true`), leave these columns blank for all samples and omit control rows entirely.
+
+> ⚠️ **Exact match required:** The `controlName` value must exactly match a `sampleName` in the same manifest where `isControl: Y`. Spelling differences, extra spaces, or case mismatches will cause the pipeline to fail.
 
 > ⚠️ **Sample name uniqueness:** Sample names must not be substrings of each other (e.g., having both `H3K4me3` and `H3K4me3_rep1` as `sampleName` values will cause incorrect sample matching). Use fully distinct names for all samples.
 
@@ -360,3 +408,16 @@ Specifies conditions for differential analysis:
 | MOC1_siSmyd3_2m_25_HCHO | MOC1_siNC_2m_25_HCHO |
 
 > 📊 **Requirement:** Each condition must have at least two biological replicates to perform DESeq2-based differential analysis.
+
+> ℹ️ **How conditions map to samples:**
+> - Values in `condition1` and `condition2` must exactly match `sampleName` values in the sample manifest.
+> - All replicates with that `sampleName` are included automatically — do not list individual replicates.
+> - `condition2` is the **reference group** (denominator). A positive `log2FoldChange` in results means higher enrichment in `condition1`. If unsure, put the control or untreated condition in `condition2`.
+
+> ℹ️ **Multiple contrasts:** You can include multiple rows to test several comparisons in one run. Each row is an independent DESeq2 comparison:
+>
+> | condition1 | condition2 |
+> |---|---|
+> | treated_H3K4me3 | untreated_H3K4me3 |
+> | treated_H3K27me3 | untreated_H3K27me3 |
+> | treated_H3K4me3 | treated_H3K27me3 |

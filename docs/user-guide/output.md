@@ -42,6 +42,21 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
         - **`homer/`** – Output from **[HOMER](http://homer.ucsd.edu/homer/)** motif discovery and annotation.
         - **`rose/`** – Output from **[ROSE](https://github.com/younglab/ROSE)** super-enhancer analysis, generated when `run_rose: true` is specified.
 
+- **`deeptools/`** – Genome-wide sample correlation and PCA outputs, generated from 10 kb bin read counts across all samples. Two sets of files are produced:
+
+  - **`all.{dupstatus}.*`** – Includes **all samples** (treatments + IgG controls). Files:
+    - `all.{dupstatus}.readCounts.npz` – Compressed read count matrix (deepTools format)
+    - `all.{dupstatus}.PearsonCorr.tab` – Pairwise Pearson correlation matrix
+    - `all.{dupstatus}.Pearson_heatmap.png` – Hierarchically clustered Pearson correlation heatmap
+    - `all.{dupstatus}.PCA.tab` – PCA coordinates table
+    - `all.{dupstatus}.PearsonPCA.png` – Formatted PCA plot with sample labels and explained variance
+
+  - **`treatments_only.{dupstatus}.*`** – Includes **treatment samples only** (IgG controls excluded). Generated only when control samples are present (`run_without_controls: false`). Same file set as above with `treatments_only` prefix. This plot reveals treatment-to-treatment differences that are often masked when IgG controls dominate a principal component.
+
+  > ℹ️ **Why two PCA plots?** IgG controls have very low signal and distinctive read distributions. In the all-samples PCA, IgG samples often drive separation along PC2, making it hard to see differences between treatment conditions. The treatments-only PCA removes this effect and is typically more informative for assessing replicate consistency and condition separation.
+
+  > ℹ️ `{dupstatus}` is either `dedup` (after linear deduplication) or `no_dedup` (without deduplication), matching the `dupstatus` config parameter.
+
 - **`qc/`** – Centralized quality control directory containing:
   - **`fastqc_raw/`** – Per-sample [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) reports on raw reads
   - **`fqscreen_raw/`** – [FastQ Screen](https://www.bioinformatics.babraham.ac.uk/projects/fastq_screen/) contamination reports
@@ -62,6 +77,11 @@ results/
 ├── bedgraph/
 │   └── pooled_controls/           # Pooled control bedgraphs (when pool_controls: true)
 ├── bigwig/
+├── deeptools/
+│   ├── all.dedup.PearsonPCA.png           # PCA plot: all samples (dedup)
+│   ├── all.dedup.Pearson_heatmap.png      # Correlation heatmap: all samples
+│   ├── treatments_only.dedup.PearsonPCA.png    # PCA plot: treatments only (when controls present)
+│   └── treatments_only.dedup.Pearson_heatmap.png
 ├── fragments/
 │   └── pooled_controls/           # Pooled control fragments (when pool_controls: true)
 ├── peaks/

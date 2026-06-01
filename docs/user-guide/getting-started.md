@@ -93,15 +93,15 @@ Version: X.Y.Z
 
 ```
 carlisle --help
-[+] Loading singularity  4.2.2  on cn0001
+[+] Loading singularity  X.Y.Z  on cn####
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z
 /spin1/home/linux/kopardevn/carlisle
   --> run CARLISLE
   Cut And Run anaLysIS pipeLinE
 
   USAGE:
-    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
   Required Arguments:
   1.  RUNMODE: [Type: String] Valid options:
       *) init : initialize workdir

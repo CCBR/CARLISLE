@@ -61,7 +61,9 @@ For cluster execution (`run`, `runtest`), CARLISLE uses scheduler-safe Snakemake
 
 ### Maintenance Commands
 
-- **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted.
+- **`unlock`** – Unlocks the working directory if Snakemake terminates unexpectedly or a previous job is interrupted. **Use this when you see a "Directory is locked" error.** It is safe to run — it does not delete any files.
+
+- **`reset`** – ⚠️ **Destructive.** Deletes the entire working directory and reinitializes it from scratch. All results, logs, and intermediate files are permanently lost. Only use this if you want to start completely over.
 
 - **`runtest`** – Executes a small, bundled test dataset to verify installation and configuration integrity.
 
@@ -90,11 +92,40 @@ A standard execution sequence on the Biowulf cluster would include the following
 ```bash
 # Step 1: Initialize working directory
 carlisle --runmode=init --workdir=/path/to/output/dir
+```
 
-# Step 2: Perform a dry run to validate the workflow
+**Step 2: Edit your configuration files** — this is required before running:
+
+| File | What to edit |
+|---|---|
+| `config/config.yaml` | Set `genome`, `norm_method`, `peaktype`, `run_contrasts`, and other parameters |
+| `config/samples.tsv` | Fill in your sample names, replicate numbers, and FASTQ paths |
+| `config/contrasts.tsv` | Fill in condition pairs (only needed if `run_contrasts: true`) |
+
+```bash
+# Step 3: Perform a dry run to validate before submitting
 carlisle --runmode=dryrun --workdir=/path/to/output/dir
+```
 
-# Step 3: Submit the full workflow to the cluster
+A successful dry run ends with a job summary table like this:
+
+```
+Job stats:
+job                count
+-----------------  -----
+align              9
+bam2bg             9
+cov_correlation    1
+...
+total              NNN
+
+This was a dry-run (flag -n). The order of jobs does not reflect the order of execution.
+```
+
+If you see `Nothing to be done` it means all outputs already exist (re-run with `--force` to recompute). Any line starting with `MissingInputException` or `WorkflowError` indicates a configuration problem to fix before submitting.
+
+```bash
+# Step 4: Submit the full workflow to the cluster
 carlisle --runmode=run --workdir=/path/to/output/dir
 ```
 
@@ -134,3 +165,28 @@ carlisle --runmode=run --workdir=/path/to/output/dir
 ```
 
 > ⚠️ **Caution:** Control-free peak calling has higher false-positive rates. Validate results carefully, especially for SEACR where the numeric threshold is the sole background model.
+
+---
+
+## Monitoring a Running Job
+
+After submitting with `run`, CARLISLE itself exits immediately — the pipeline runs as a background SLURM job. To monitor progress:
+
+```bash
+# Check your active SLURM jobs
+squeue -u $USER
+
+# Watch job status in real time (refreshes every 30 seconds)
+watch -n 30 squeue -u $USER
+
+# View the Snakemake master job log (replace JOBID with the number from squeue)
+cat /path/to/output/dir/logs/snakemake.log
+```
+
+Email notifications are automatically sent to your NIH HPC account email (`$USER@nih.gov`) for:
+
+- **Job start** — confirms the pipeline was accepted by SLURM
+- **Job error** — sent if any rule fails; check the log file above for details
+- **Job completion** — confirms all rules finished successfully
+
+After a successful run, a `report.html` file is generated in your working directory — open it in a browser for an interactive summary of all pipeline steps and outputs.
