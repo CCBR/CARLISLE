@@ -101,10 +101,10 @@ seacr_threshold: 0.01
 
 You also need a simplified sample manifest that omits control entries. Edit `config/samples.tsv` so that all rows have `isControl: N` and leave `controlName` and `controlReplicateNumber` blank:
 
-| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1 | path_to_R2 |
-| --- | --- | --- | --- | --- | --- | --- |
-| 53_H3K4me3 | 1 | N | | | `<path>/53_H3K4me3_1.R1.fastq.gz` | `<path>/53_H3K4me3_1.R2.fastq.gz` |
-| 53_H3K4me3 | 2 | N | | | `<path>/53_H3K4me3_2.R1.fastq.gz` | `<path>/53_H3K4me3_2.R2.fastq.gz` |
+| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1                        | path_to_R2                        |
+| ---------- | --------------- | --------- | ----------- | ---------------------- | --------------------------------- | --------------------------------- |
+| 53_H3K4me3 | 1               | N         |             |                        | `<path>/53_H3K4me3_1.R1.fastq.gz` | `<path>/53_H3K4me3_1.R2.fastq.gz` |
+| 53_H3K4me3 | 2               | N         |             |                        | `<path>/53_H3K4me3_2.R1.fastq.gz` | `<path>/53_H3K4me3_2.R2.fastq.gz` |
 
 Then dryrun to confirm the DAG resolves cleanly:
 

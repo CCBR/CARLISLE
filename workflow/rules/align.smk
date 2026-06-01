@@ -408,7 +408,7 @@ rule deeptools_prep:
     run:
         # Use the appropriate treatment-control list based on mode
         treatment_control_list_to_use = TREATMENT_WITHOUTCONTROL_LIST if RUN_WITHOUT_CONTROLS else TREATMENT_CONTROL_LIST
-        
+
         for dupstatus in DUPSTATUS:
             for item in treatment_control_list_to_use:
                 labels = item.split('_vs_')

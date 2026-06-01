@@ -22,7 +22,9 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
 
   - Subdirectories are organized by **quality thresholds** (e.g., `0.05`, `0.01`), representing the significance cutoffs applied during peak calling.
   - Each quality threshold directory includes:
+
     - **`contrasts/`** – Contains results of differential binding analyses defined in the contrast manifest, including:
+
       - Differential enrichment results from DESeq2 (AUC-based and fragment-based)
       - 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`)
       - **`homer_deg/`** – HOMER motif enrichment analysis for differentially enriched peaks (when `run_motif_enrichment_deg_peaks: true`)
@@ -42,6 +44,7 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
 - **`deeptools/`** – Genome-wide sample correlation and PCA outputs, generated from 10 kb bin read counts across all samples. Two sets of files are produced:
 
   - **`all.{dupstatus}.*`** – Includes **all samples** (treatments + IgG controls). Files:
+
     - `all.{dupstatus}.readCounts.npz` – Compressed read count matrix (deepTools format)
     - `all.{dupstatus}.PearsonCorr.tab` – Pairwise Pearson correlation matrix
     - `all.{dupstatus}.Pearson_heatmap.png` – Hierarchically clustered Pearson correlation heatmap
@@ -169,13 +172,13 @@ results/
 
 **Peak caller selection:**
 
-| Caller | Best for | Output type | Notes |
-|---|---|---|---|
-| GoPeaks (narrow) | TFs, sharp histone marks (H3K4me3) | narrowPeak | Recommended for most CUT&RUN; explicitly optimized for low-background assays |
-| GoPeaks (broad) | Broad histone marks (H3K27me3, H3K9me3) | broadPeak | — |
-| MACS2 (narrow) | TFs, sharp marks | narrowPeak | Use when comparing to ChIP-seq datasets; widely adopted |
-| MACS2 (broad) | Broad marks | broadPeak | DESeq2 differential analysis often fails on broadPeak due to excessive peak counts |
-| SEACR (stringent/relaxed) | CUT&RUN-specific | bedGraph-derived | Uses AUC signal thresholding; no model fitting; less sensitive but very specific |
+| Caller                    | Best for                                | Output type      | Notes                                                                              |
+| ------------------------- | --------------------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
+| GoPeaks (narrow)          | TFs, sharp histone marks (H3K4me3)      | narrowPeak       | Recommended for most CUT&RUN; explicitly optimized for low-background assays       |
+| GoPeaks (broad)           | Broad histone marks (H3K27me3, H3K9me3) | broadPeak        | —                                                                                  |
+| MACS2 (narrow)            | TFs, sharp marks                        | narrowPeak       | Use when comparing to ChIP-seq datasets; widely adopted                            |
+| MACS2 (broad)             | Broad marks                             | broadPeak        | DESeq2 differential analysis often fails on broadPeak due to excessive peak counts |
+| SEACR (stringent/relaxed) | CUT&RUN-specific                        | bedGraph-derived | Uses AUC signal thresholding; no model fitting; less sensitive but very specific   |
 
 **Quality thresholds:** Peaks are called at each threshold in `quality_thresholds` independently. For discovery analyses, start with `q=0.05`. Tighten to `q=0.01` for high-confidence sets used in motif enrichment or validation. Do not use a single threshold for all downstream analyses — cross-threshold consistency is itself a signal of peak robustness.
 
@@ -196,11 +199,11 @@ DESeq2 tests for differential AUC (area under the coverage curve) or fragment co
 
 Key columns to interpret:
 
-| Column | Interpretation |
-|---|---|
+| Column           | Interpretation                                                                        |
+| ---------------- | ------------------------------------------------------------------------------------- |
 | `log2FoldChange` | Direction and magnitude; filtered at `contrasts_lfc_cutoff` (default 0.59 ≈ 1.5-fold) |
-| `padj` | BH-adjusted p-value; filtered at `contrasts_fdr_cutoff` (default 0.05) |
-| `baseMean` | Mean normalized signal across all samples; very low baseMean peaks are often noise |
+| `padj`           | BH-adjusted p-value; filtered at `contrasts_fdr_cutoff` (default 0.05)                |
+| `baseMean`       | Mean normalized signal across all samples; very low baseMean peaks are often noise    |
 
 > Peaks with `baseMean < 5` that pass FDR are suspect — flag them before reporting. DESeq2 can return significant p-values for very low-count features under low dispersion estimates.
 
@@ -239,4 +242,3 @@ Key columns to interpret:
 - **`*_SuperEnhancers.bed`**: the final super-enhancer calls. Overlap with known oncogenes or lineage TFs to nominate driver regulatory elements.
 - **`*_Enhancers_withSuper.bed`**: all stitched enhancers ranked by signal; use this to inspect the inflection point and evaluate whether the cutoff is biologically reasonable.
 - ROSE is only meaningful for **active chromatin marks** (H3K27ac, H3K4me1). Running it on H3K27me3 or TF datasets is not informative.
-

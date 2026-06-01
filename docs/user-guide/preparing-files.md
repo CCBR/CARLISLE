@@ -117,14 +117,14 @@ CARLISLE supports three major peak callers, configurable via the `peaktype` para
 
 All valid `peaktype` values:
 
-| Value | Description |
-|---|---|
-| `macs2_narrow` | MACS2 narrow peaks (recommended for TFs and sharp histone marks like H3K4me3) |
-| `macs2_broad` | MACS2 broad peaks (H3K27me3, H3K9me3). Note: DESeq2 differential analysis often fails on broad peaks due to excessive peak counts |
-| `seacr_stringent` | SEACR stringent threshold (lower sensitivity, higher specificity) |
-| `seacr_relaxed` | SEACR relaxed threshold (higher sensitivity) |
-| `gopeaks_narrow` | GoPeaks narrow peaks (TFs, sharp marks) |
-| `gopeaks_broad` | GoPeaks broad peaks (broad histone marks) |
+| Value             | Description                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `macs2_narrow`    | MACS2 narrow peaks (recommended for TFs and sharp histone marks like H3K4me3)                                                     |
+| `macs2_broad`     | MACS2 broad peaks (H3K27me3, H3K9me3). Note: DESeq2 differential analysis often fails on broad peaks due to excessive peak counts |
+| `seacr_stringent` | SEACR stringent threshold (lower sensitivity, higher specificity)                                                                 |
+| `seacr_relaxed`   | SEACR relaxed threshold (higher sensitivity)                                                                                      |
+| `gopeaks_narrow`  | GoPeaks narrow peaks (TFs, sharp marks)                                                                                           |
+| `gopeaks_broad`   | GoPeaks broad peaks (broad histone marks)                                                                                         |
 
 You can run any combination in a single pipeline execution by listing them comma-separated:
 
@@ -145,10 +145,10 @@ macs2_control: "Y"
 Control execution of computationally intensive annotation steps:
 
 ```yaml
-run_rose: false                          # ROSE super-enhancer analysis (set to true to enable)
-run_go_enrichment: false                 # ChIP-Enrich GO enrichment (set to true to enable)
+run_rose: false # ROSE super-enhancer analysis (set to true to enable)
+run_go_enrichment: false # ChIP-Enrich GO enrichment (set to true to enable)
 run_motif_enrichment_called_peaks: false # HOMER motif discovery on all called peaks
-run_motif_enrichment_deg_peaks: false    # HOMER + AME motif enrichment on DEG peaks only
+run_motif_enrichment_deg_peaks: false # HOMER + AME motif enrichment on DEG peaks only
 ```
 
 > ⏱️ **Performance Note:** ROSE, GO enrichment, and motif enrichment are disabled by default due to their computational requirements. Enable them when you need super-enhancer identification, pathway enrichment, or motif discovery.
@@ -159,7 +159,7 @@ run_motif_enrichment_deg_peaks: false    # HOMER + AME motif enrichment on DEG p
 When `run_go_enrichment: true`, additional parameters control the enrichment methods and gene sets used:
 
 ```yaml
-go_enrichment_methods: "chipenrich"  # options: chipenrich, polyenrich, hybridenrich
+go_enrichment_methods: "chipenrich" # options: chipenrich, polyenrich, hybridenrich
 geneset_id: "GOBP,GOCC,GOMF,kegg_pathway,reactome"
 ```
 
@@ -220,6 +220,7 @@ By default, **CARLISLE requires a control sample** (e.g., IgG, input DNA) paired
 If you do not have control samples, **control-free mode is supported** — see [Control-Free Mode](#control-free-mode) below.
 
 > 💡 **No controls?** Options include:
+>
 > - Using publicly available IgG controls from similar cell types ([GEO](https://www.ncbi.nlm.nih.gov/geo/), [ENCODE](https://www.encodeproject.org/))
 > - Using input DNA as a proxy control
 > - Enabling `run_without_controls: true` (see next section)
@@ -230,7 +231,7 @@ When no IgG or antibody control samples are available, set `run_without_controls
 
 ```yaml
 run_without_controls: true
-seacr_threshold: 0.01  # numeric FDR threshold used by SEACR in control-free mode
+seacr_threshold: 0.01 # numeric FDR threshold used by SEACR in control-free mode
 ```
 
 When enabled:
@@ -244,10 +245,10 @@ When enabled:
 
 Example manifest for control-free mode (all samples are treatments; no control rows):
 
-| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1 | path_to_R2 |
-|---|---|---|---|---|---|---|
-| H3K4me3_treated | 1 | N | | | /path/to/H3K4me3_rep1.R1.fastq.gz | /path/to/H3K4me3_rep1.R2.fastq.gz |
-| H3K4me3_treated | 2 | N | | | /path/to/H3K4me3_rep2.R1.fastq.gz | /path/to/H3K4me3_rep2.R2.fastq.gz |
+| sampleName      | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1                        | path_to_R2                        |
+| --------------- | --------------- | --------- | ----------- | ---------------------- | --------------------------------- | --------------------------------- |
+| H3K4me3_treated | 1               | N         |             |                        | /path/to/H3K4me3_rep1.R1.fastq.gz | /path/to/H3K4me3_rep1.R2.fastq.gz |
+| H3K4me3_treated | 2               | N         |             |                        | /path/to/H3K4me3_rep2.R1.fastq.gz | /path/to/H3K4me3_rep2.R2.fastq.gz |
 
 > ⚠️ **Caution:** Control-free peak calling will yield higher false-positive rates. Results should be interpreted with care and ideally validated by comparing to matched control experiments.
 
@@ -263,16 +264,16 @@ Available options (comma-separated, no spaces):
 
 cCRE bedtypes (`pls`, `pels`, `dels`, `ca_ctcf`, `ca_h3k4me3`, `ca_tf`) are sourced from the [ENCODE SCREEN database](https://screen.encodeproject.org/).
 
-| Bedtype | Description |
-|---|---|
-| `geneinfo` | All genes: gene bodies, promoters, intergenic regions |
-| `protein_coding` | Protein-coding genes only |
-| `pls` | ENCODE SCREEN promoter-like signatures |
-| `pels` | ENCODE SCREEN proximal enhancer-like signatures |
-| `dels` | ENCODE SCREEN distal enhancer-like signatures |
-| `ca_ctcf` | CTCF-bound chromatin accessibility regions (ENCODE SCREEN) |
-| `ca_h3k4me3` | H3K4me3-marked chromatin accessibility / active promoters (ENCODE SCREEN) |
-| `ca_tf` | Transcription factor-bound chromatin accessibility (ENCODE SCREEN) |
+| Bedtype          | Description                                                               |
+| ---------------- | ------------------------------------------------------------------------- |
+| `geneinfo`       | All genes: gene bodies, promoters, intergenic regions                     |
+| `protein_coding` | Protein-coding genes only                                                 |
+| `pls`            | ENCODE SCREEN promoter-like signatures                                    |
+| `pels`           | ENCODE SCREEN proximal enhancer-like signatures                           |
+| `dels`           | ENCODE SCREEN distal enhancer-like signatures                             |
+| `ca_ctcf`        | CTCF-bound chromatin accessibility regions (ENCODE SCREEN)                |
+| `ca_h3k4me3`     | H3K4me3-marked chromatin accessibility / active promoters (ENCODE SCREEN) |
+| `ca_tf`          | Transcription factor-bound chromatin accessibility (ENCODE SCREEN)        |
 
 > ⚠️ **Memory Warning:** The `dels` BED file (ENCODE dELS) is very large. Including `dels` in `deeptools_bedtypes` requires `>=240g` memory for the `deeptools_mat` and `deeptools_heatmap` rules. Update the corresponding entries in `cluster.yaml` before enabling it.
 
@@ -309,8 +310,8 @@ This maps to the `--broad-cutoff` MACS2 argument and controls the significance c
 DESeq2 significance cutoffs for contrast-based differential enrichment:
 
 ```yaml
-contrasts_fdr_cutoff: 0.05   # Benjamini-Hochberg adjusted p-value (FDR) threshold
-contrasts_lfc_cutoff: 0.59   # log2 fold-change threshold (~1.5-fold change)
+contrasts_fdr_cutoff: 0.05 # Benjamini-Hochberg adjusted p-value (FDR) threshold
+contrasts_lfc_cutoff: 0.59 # log2 fold-change threshold (~1.5-fold change)
 ```
 
 Both thresholds are applied simultaneously: a peak is considered differentially enriched only if it passes both FDR and log2FC filters. Adjust `contrasts_lfc_cutoff` to `1.0` (2-fold) for more conservative enrichment calls, or lower both thresholds if the experiment has high biological variability.
@@ -377,15 +378,15 @@ Defines sample-level metadata, including sample names, controls, and FASTQ paths
 
 **Column descriptions:**
 
-| Column | Description |
-|---|---|
-| `sampleName` | Unique name for the sample (shared across replicates). Must not be a substring of another `sampleName`. |
-| `replicateNumber` | Positive integer (starting from 1) identifying each replicate within a `sampleName`. Must be unique per `sampleName`. Sequential numbering recommended. |
-| `isControl` | `Y` if this row is a control sample (e.g., IgG), `N` for treatment samples. |
-| `controlName` | For treatment rows (`isControl: N`): the `sampleName` of the paired control. Must be an **exact string match** to a `sampleName` where `isControl: Y`. Leave blank for control rows. |
-| `controlReplicateNumber` | The `replicateNumber` of the control replicate to pair with this treatment. Leave blank for control rows. |
-| `path_to_R1` | Absolute path to the R1 (forward) FASTQ file. |
-| `path_to_R2` | Absolute path to the R2 (reverse) FASTQ file. |
+| Column                   | Description                                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sampleName`             | Unique name for the sample (shared across replicates). Must not be a substring of another `sampleName`.                                                                              |
+| `replicateNumber`        | Positive integer (starting from 1) identifying each replicate within a `sampleName`. Must be unique per `sampleName`. Sequential numbering recommended.                              |
+| `isControl`              | `Y` if this row is a control sample (e.g., IgG), `N` for treatment samples.                                                                                                          |
+| `controlName`            | For treatment rows (`isControl: N`): the `sampleName` of the paired control. Must be an **exact string match** to a `sampleName` where `isControl: Y`. Leave blank for control rows. |
+| `controlReplicateNumber` | The `replicateNumber` of the control replicate to pair with this treatment. Leave blank for control rows.                                                                            |
+| `path_to_R1`             | Absolute path to the R1 (forward) FASTQ file.                                                                                                                                        |
+| `path_to_R2`             | Absolute path to the R2 (reverse) FASTQ file.                                                                                                                                        |
 
 | sampleName                      | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                              | path_to_R2                                              |
 | ------------------------------- | --------------- | --------- | ------------------------------- | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
@@ -410,14 +411,15 @@ Specifies conditions for differential analysis:
 > 📊 **Requirement:** Each condition must have at least two biological replicates to perform DESeq2-based differential analysis.
 
 > ℹ️ **How conditions map to samples:**
+>
 > - Values in `condition1` and `condition2` must exactly match `sampleName` values in the sample manifest.
 > - All replicates with that `sampleName` are included automatically — do not list individual replicates.
 > - `condition2` is the **reference group** (denominator). A positive `log2FoldChange` in results means higher enrichment in `condition1`. If unsure, put the control or untreated condition in `condition2`.
 
 > ℹ️ **Multiple contrasts:** You can include multiple rows to test several comparisons in one run. Each row is an independent DESeq2 comparison:
 >
-> | condition1 | condition2 |
-> |---|---|
-> | treated_H3K4me3 | untreated_H3K4me3 |
+> | condition1       | condition2         |
+> | ---------------- | ------------------ |
+> | treated_H3K4me3  | untreated_H3K4me3  |
 > | treated_H3K27me3 | untreated_H3K27me3 |
-> | treated_H3K4me3 | treated_H3K27me3 |
+> | treated_H3K4me3  | treated_H3K27me3   |

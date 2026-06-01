@@ -30,7 +30,7 @@ def parse_args():
         "--sample_pattern",
         required=True,
         help="Regex pattern to match control replicate sample_name values "
-             "(e.g. '^HN6_IgG_rabbit_negative_control_[0-9]+$')",
+        "(e.g. '^HN6_IgG_rabbit_negative_control_[0-9]+$')",
     )
     parser.add_argument(
         "--norm_method",

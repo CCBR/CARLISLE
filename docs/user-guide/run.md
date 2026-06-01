@@ -24,22 +24,22 @@ Usage: carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
 
 ### Optional Arguments
 
-| Flag              | Description                                                                                                                             |
-| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `--help, -h`      | Display the command-line help message.                                                                                                  |
-| `--version, -v`   | Print the current version of CARLISLE.                                                                                                  |
-| `--force, -f`     | Force re-execution of all Snakemake rules (overrides cache).                                                                            |
+| Flag              | Description                                                                                                                                                                 |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--help, -h`      | Display the command-line help message.                                                                                                                                      |
+| `--version, -v`   | Print the current version of CARLISLE.                                                                                                                                      |
+| `--force, -f`     | Force re-execution of all Snakemake rules (overrides cache).                                                                                                                |
 | `--singcache, -c` | Override the Singularity cache directory. See [Singularity Cache Directory](preparing-files.md#singularity-cache-directory) in Preparing Files for the full fallback order. |
 
 ### Scheduler Defaults
 
 For cluster execution (`run`, `runtest`), CARLISLE uses scheduler-safe Snakemake defaults:
 
-| Setting | Default | Override env var |
-| ------- | ------- | ---------------- |
-| Max concurrent jobs | `-j 100` | `CARLISLE_MAX_JOBS` |
-| Max job submissions/sec | `--max-jobs-per-second 1` | `CARLISLE_MAX_JOBS_PER_SECOND` |
-| Max status checks/sec | `--max-status-checks-per-second 0.1` | `CARLISLE_MAX_STATUS_CHECKS_PER_SECOND` |
+| Setting                 | Default                              | Override env var                        |
+| ----------------------- | ------------------------------------ | --------------------------------------- |
+| Max concurrent jobs     | `-j 100`                             | `CARLISLE_MAX_JOBS`                     |
+| Max job submissions/sec | `--max-jobs-per-second 1`            | `CARLISLE_MAX_JOBS_PER_SECOND`          |
+| Max status checks/sec   | `--max-status-checks-per-second 0.1` | `CARLISLE_MAX_STATUS_CHECKS_PER_SECOND` |
 
 ---
 
@@ -96,11 +96,11 @@ carlisle --runmode=init --workdir=/path/to/output/dir
 
 **Step 2: Edit your configuration files** — this is required before running:
 
-| File | What to edit |
-|---|---|
-| `config/config.yaml` | Set `genome`, `norm_method`, `peaktype`, `run_contrasts`, and other parameters |
-| `config/samples.tsv` | Fill in your sample names, replicate numbers, and FASTQ paths |
-| `config/contrasts.tsv` | Fill in condition pairs (only needed if `run_contrasts: true`) |
+| File                   | What to edit                                                                   |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `config/config.yaml`   | Set `genome`, `norm_method`, `peaktype`, `run_contrasts`, and other parameters |
+| `config/samples.tsv`   | Fill in your sample names, replicate numbers, and FASTQ paths                  |
+| `config/contrasts.tsv` | Fill in condition pairs (only needed if `run_contrasts: true`)                 |
 
 ```bash
 # Step 3: Perform a dry run to validate before submitting
