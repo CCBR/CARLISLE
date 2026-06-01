@@ -22,7 +22,7 @@
 - **User guide: job monitoring section added**: New section in `run.md` explaining how to monitor a running job with `squeue -u $USER`, watch the Snakemake log, and what email notifications to expect (sent to `$USER@nih.gov`).
 - **User guide: `deeptools/` output directory documented**: Added a section in `output.md` describing both output sets — `all.{dupstatus}.*` (all samples) and `treatments_only.{dupstatus}.*` (controls excluded) — with explanations of each file, when `treatments_only` is generated, and why two PCA plots are produced. Added `deeptools/` to the example directory tree. (#241)
 - **User guide: fixed stale version in `--help` example**: Replaced hardcoded `v2.7.6` path references in the `getting-started.md` `--help` output block with version-neutral `X.Y.Z` placeholders, consistent with the `--version` block above it.
-- **`mkdocs.yml`: removed `edit_uri: ""`**: Removed the empty `edit_uri` key that was suppressing the per-page GitHub edit link in the rendered documentation site.
+- **`mkdocs.yml`: suppress per-page edit button**: Restored `edit_uri: ""` to suppress the per-page "Edit on GitHub" button in the rendered documentation site. An empty string is the MkDocs convention for disabling this link.
 
 ### Bug Fixes
 

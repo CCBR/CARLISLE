@@ -37,7 +37,7 @@ def check_readaccess(filename, context=""):
 def check_writeaccess(filename):
   check_existence(filename)
   if not os.access(filename,os.W_OK):
-    sys.stderr.write("# File: %s exists, but cannot be read!\n"%(filename))
+    sys.stderr.write("ERROR: File exists but cannot be written: %s\n"%(filename))
     sys.exit(1)
   return True
 

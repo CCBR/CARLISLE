@@ -115,7 +115,7 @@ rule create_pooled_control_bedgraph:
         set -exo pipefail
 
         # Compute scaling factor using named columns from alignment_stats.tsv
-        scale=$(python {params.pyscript} \
+        scale=$(python3 {params.pyscript} \
             --align_stats {input.align_stats} \
             --sample_pattern "^{params.control_sample}_[0-9]+$" \
             --norm_method {params.norm_method} \

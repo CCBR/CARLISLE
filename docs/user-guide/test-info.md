@@ -86,7 +86,7 @@ trim                                    9             56             56
 total                                 478              1             56
 ```
 
-> 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestratio
+> 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestration.
 
 ---
 

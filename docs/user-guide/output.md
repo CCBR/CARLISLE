@@ -20,6 +20,9 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
 
 - **`peaks/`** – The core results directory containing called peaks, differential comparisons, and annotations.
 
+  - **`all.peaks.with_control.txt`** / **`all.peaks.without_control.txt`** – Aggregate peak count tables written at the top of `peaks/` (not inside a threshold subdirectory). Filename encodes the `run_without_controls` setting; older versions used `all.peaks.txt`.
+  - **`Peak_counts.with_control.xlsx`** / **`Peak_counts.without_control.xlsx`** – Excel peak count summaries, also at the top of `peaks/`. Older versions used `Peak counts.xlsx` with a space — update any downstream scripts accordingly.
+
   - Subdirectories are organized by **quality thresholds** (e.g., `0.05`, `0.01`), representing the significance cutoffs applied during peak calling.
   - Each quality threshold directory includes:
 
@@ -29,8 +32,6 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
       - 3-column BED files for up-regulated peaks in each group (`up_group1.bed`, `up_group2.bed`)
       - **`homer_deg/`** – HOMER motif enrichment analysis for differentially enriched peaks (when `run_motif_enrichment_deg_peaks: true`)
       - **`ame_deg/`** – AME (Analysis of Motif Enrichment) results for differentially enriched peaks using [HOCOMOCO v14 CORE](https://hocomoco11.autosome.org/) motifs (when `run_motif_enrichment_deg_peaks: true`)
-      - **`all.peaks.with_control.txt`** / **`all.peaks.without_control.txt`** – Aggregate peak count tables (filename encodes `run_without_controls` setting; older versions used `all.peaks.txt`)
-      - **`Peak_counts.with_control.xlsx`** / **`Peak_counts.without_control.xlsx`** – Excel peak count summaries (older versions used `Peak counts.xlsx` with a space — update any downstream scripts accordingly)
 
     - **`<peak_caller>/`** – Subdirectories for each peak caller (e.g., `macs2`, `seacr`, `gopeaks`). Each includes raw peak calls and annotated results.
       - **`peak_output/`** – Raw peak calls organized by control mode:
@@ -85,14 +86,16 @@ results/
 ├── fragments/
 │   └── pooled_controls/           # Pooled control fragments (when pool_controls: true)
 ├── peaks/
+│   ├── all.peaks.with_control.txt              # aggregate peak counts (with controls)
+│   ├── all.peaks.without_control.txt           # aggregate peak counts (control-free runs)
+│   ├── Peak_counts.with_control.xlsx           # Excel peak counts (with controls)
+│   ├── Peak_counts.without_control.xlsx        # Excel peak counts (control-free runs)
 │   ├── 0.05/
 │   │   ├── contrasts/
 │   │   │   ├── homer_deg/                          # DEG motif enrichment (HOMER)
 │   │   │   ├── ame_deg/                            # DEG motif enrichment (AME/HOCOMOCO)
 │   │   │   ├── up_group1.bed                       # 3-column BED for group1 up-regulated peaks
-│   │   │   ├── up_group2.bed                       # 3-column BED for group2 up-regulated peaks
-│   │   │   ├── all.peaks.with_control.txt          # aggregate peak counts (with controls)
-│   │   │   └── Peak_counts.with_control.xlsx       # Excel peak counts (with controls)
+│   │   │   └── up_group2.bed                       # 3-column BED for group2 up-regulated peaks
 │   │   ├── gopeaks/
 │   │   │   ├── peak_output/
 │   │   │   │   ├── individual/    # Peaks with individual controls

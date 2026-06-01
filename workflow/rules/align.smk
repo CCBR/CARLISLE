@@ -341,11 +341,11 @@ rule bam2bg:
             total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
             spikein_percent=`echo "scale=6 ; $spikein_readcount / $total_count * 100" | bc`;\
 
-            if [[ $spikein_percent < 0.001 ]]; then
+            if awk "BEGIN {{exit !($spikein_percent < 0.001)}}"; then
                 echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The scaling_factor was set to 1."
                 scaling_factor=1
             else
-                scaling_factor=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+                scaling_factor=$(awk "BEGIN {{print {params.spikein_scale} / $spikein_readcount}}")
             fi
         fi
 

@@ -47,15 +47,9 @@ setwd(outdir)
 
 # Write out table
 print("Write table")
-peak_output <- dcast(
-  peaks,
-  Threshold + Duplication + Comparison ~ Caller,
-  value.var = "Peaks"
-)
-peak_output <- peak_output[
-  order(peak_output$Threshold, peak_output$Duplication, peak_output$Comparison),
-]
-write.xlsx(peak_output, file = xlsx_path)
+peak_output <- dcast(peaks, Threshold + Duplication + Comparison ~ Caller, value.var = "Peaks")
+peak_output <- peak_output[order(peak_output$Threshold, peak_output$Duplication, peak_output$Comparison), ]
+write.xlsx(peak_output, file = basename(xlsx_path))
 
 # For each threshold, plot number of peaks
 for (threshold in unique(peaks$Threshold)) {

@@ -7,9 +7,9 @@ CONFIG_FILE="mkdocs.yml"
 usage() {
   cat <<'EOF'
 Usage:
-  ./depoly_docs_to_ghpages.sh bootstrap <release-version>
-  ./depoly_docs_to_ghpages.sh dev
-  ./depoly_docs_to_ghpages.sh release <release-version>
+  ./deploy_docs_to_ghpages.sh bootstrap <release-version>
+  ./deploy_docs_to_ghpages.sh dev
+  ./deploy_docs_to_ghpages.sh release <release-version>
 
 Commands:
   bootstrap <release-version>
@@ -27,9 +27,9 @@ Commands:
     Does not change dev.
 
 Examples:
-  ./depoly_docs_to_ghpages.sh bootstrap 2.7.6
-  ./depoly_docs_to_ghpages.sh dev
-  ./depoly_docs_to_ghpages.sh release 2.7.7
+  ./deploy_docs_to_ghpages.sh bootstrap 2.7.6
+  ./deploy_docs_to_ghpages.sh dev
+  ./deploy_docs_to_ghpages.sh release 2.7.7
 EOF
 }
 
@@ -52,7 +52,7 @@ deploy_release() {
 }
 
 set_default_latest() {
-  mike set-default latest --push
+  mike set-default latest --push --config-file "$CONFIG_FILE"
 }
 
 main() {
