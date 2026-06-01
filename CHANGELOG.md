@@ -1,4 +1,4 @@
-## CARLISLE development version
+## CARLISLE 2.8.0
 
 ### New Features
 
@@ -7,6 +7,22 @@
 - **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true` config flag with `seacr_threshold` parameter for SEACR numeric threshold specification. (#224, #225, #226)
 - **Documentation versioning**: Added mike plugin for version-specific documentation selector with dropdown menu on ReadTheDocs. Automatically injects version selector into all documentation pages.
 - **Singularity cache configuration**: Explicit `SIFCACHE` environment variable support throughout wrapper script and Snakemake configuration for flexible container storage location management.
+
+### Documentation Improvements
+
+- **User guide: complete `peaktype` reference**: Added a table of all six valid `peaktype` values (`macs2_narrow`, `macs2_broad`, `seacr_stringent`, `seacr_relaxed`, `gopeaks_narrow`, `gopeaks_broad`) with descriptions and caller-selection guidance. Clarified that any combination may be listed comma-separated in a single run.
+- **User guide: `run_contrasts` parameter documented**: Added a dedicated subsection explaining what `run_contrasts: true/false` controls and when differential analysis can be skipped.
+- **User guide: `norm_method: library` as a valid starting point**: Added explicit guidance that spike-in normalization is optional. Users without spike-in DNA can set `norm_method: "library"` from the start without any spike-in config blocks.
+- **User guide: sample manifest format and column descriptions**: Added TSV format note, paired-end-only warning, and a full column-by-column description table covering `sampleName`, `replicateNumber`, `isControl`, `controlName`, `controlReplicateNumber`, `path_to_R1`, `path_to_R2`. Added explicit note that `controlName` must be an exact string match to a `sampleName`.
+- **User guide: control-free manifest example**: Added a sample manifest table showing what a control-free (`run_without_controls: true`) manifest looks like, since the text previously only described it without showing it.
+- **User guide: multiple contrasts example**: Added a multi-row example to the contrast manifest section showing that multiple A-vs-B comparisons can coexist in one `contrasts.tsv` file.
+- **User guide: workflow now includes required edit step**: The standard run workflow in `run.md` was missing the critical step of editing `config/config.yaml`, `config/samples.tsv`, and `config/contrasts.tsv` after `init`. This step is now explicit, with a table of what to edit in each file.
+- **User guide: dryrun expected output documented**: Added an example of what a passing dry run looks like (job stats table) and what `MissingInputException` / `WorkflowError` lines indicate, so users can distinguish success from failure.
+- **User guide: `reset` vs `unlock` clearly differentiated**: `reset` is now labeled ⚠️ Destructive (deletes all results) and `unlock` is labeled safe/non-destructive, preventing users from accidentally running `reset` when they only need `unlock`.
+- **User guide: job monitoring section added**: New section in `run.md` explaining how to monitor a running job with `squeue -u $USER`, watch the Snakemake log, and what email notifications to expect (sent to `$USER@nih.gov`).
+- **User guide: `deeptools/` output directory documented**: Added a section in `output.md` describing both output sets — `all.{dupstatus}.*` (all samples) and `treatments_only.{dupstatus}.*` (controls excluded) — with explanations of each file, when `treatments_only` is generated, and why two PCA plots are produced. Added `deeptools/` to the example directory tree. (#241)
+- **User guide: fixed stale version in `--help` example**: Replaced hardcoded `v2.7.6` path references in the `getting-started.md` `--help` output block with version-neutral `X.Y.Z` placeholders, consistent with the `--version` block above it.
+- **`mkdocs.yml`: removed `edit_uri: ""`**: Removed the empty `edit_uri` key that was suppressing the per-page GitHub edit link in the rendered documentation site.
 
 ### Bug Fixes
 
