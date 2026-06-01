@@ -84,7 +84,8 @@ rule create_pooled_control_fragments:
 
 rule create_pooled_control_bedgraph:
     """
-    Create bedgraph file from pooled control fragments for SEACR and GoPeaks.
+    Create bedgraph file from pooled control fragments for SEACR.
+    Note: GoPeaks uses pooled BAMs directly, not this bedgraph.
 
     Scaling factor is computed by _get_pooled_scale.py using named columns from
     alignment_stats.tsv (column-position agnostic):

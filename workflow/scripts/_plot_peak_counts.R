@@ -39,7 +39,7 @@ peaks$Sample <- gsub("_[1-9]$", "", peaks$Replicate)
 
 outdir <- args[2]
 xlsx_path <- if (length(args) >= 3) {
-  args[3]
+  normalizePath(args[3], mustWork = FALSE) # resolve to absolute path before setwd()
 } else {
   file.path(outdir, "Peak_counts.xlsx")
 }
@@ -55,7 +55,7 @@ peak_output <- dcast(
 peak_output <- peak_output[
   order(peak_output$Threshold, peak_output$Duplication, peak_output$Comparison),
 ]
-write.xlsx(peak_output, file = basename(xlsx_path))
+write.xlsx(peak_output, file = xlsx_path)
 
 # For each threshold, plot number of peaks
 for (threshold in unique(peaks$Threshold)) {

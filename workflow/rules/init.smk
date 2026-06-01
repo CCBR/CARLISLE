@@ -300,7 +300,7 @@ for pt in PEAKTYPE:
     elif pt == "seacr_stringent" or pt == "seacr_relaxed":
         s_set.append(pt)
     else:
-        sys.stderr.write("A peak type combination was used that is non-compatiable\n")
+        sys.stderr.write("A peak type combination was used that is incompatible\n")
         sys.stderr.write(str(pt) + "\n")
         sys.exit(1)
 PEAKTYPE_M=list(set(macs_set))

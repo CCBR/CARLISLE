@@ -89,7 +89,7 @@ If spike-ins are unavailable or insufficient, normalization can alternatively be
 
 > ℹ️ **Don’t have spike-in samples?** That is fine — spike-in normalization is optional. If your experiment did not include spike-in DNA (e.g., _E. coli_ or _Drosophila_ chromatin), simply set `norm_method: "library"` from the start and omit the `spikein_genome` and `spikein_reference` parameters entirely. Library-size normalization is a valid and commonly used alternative.
 
-> ℹ️ **Normalization change behavior:** Pooled control fragment and bedgraph filenames encode the normalization method (e.g., `*.spikein.bedgraph`). Changing `norm_method` in an existing results directory causes Snakemake to detect stale targets and regenerate them automatically — **no manual deletion of intermediate files is required**.
+> ℹ️ **Normalization change behavior:** Pooled control fragment and bedgraph filenames encode the normalization method (e.g., `*.SPIKEIN.bedgraph`). Changing `norm_method` in an existing results directory causes Snakemake to detect stale targets and regenerate them automatically — **no manual deletion of intermediate files is required**.
 
 > ℹ️ **Note:** `alignment_stats.tsv` is generated automatically by the pipeline and does not need to be specified in your configuration.
 
