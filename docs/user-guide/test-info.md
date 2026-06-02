@@ -96,7 +96,7 @@ To validate the control-free code path, you can run the test dataset without con
 
 ```yaml
 run_without_controls: true
-seacr_threshold: 0.01
+quality_thresholds: "0.01"
 ```
 
 You also need a simplified sample manifest that omits control entries. Edit `config/samples.tsv` so that all rows have `isControl: N` and leave `controlName` and `controlReplicateNumber` blank:

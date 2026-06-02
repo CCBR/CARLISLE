@@ -231,7 +231,7 @@ When no IgG or antibody control samples are available, set `run_without_controls
 
 ```yaml
 run_without_controls: true
-seacr_threshold: 0.01 # numeric FDR threshold used by SEACR in control-free mode
+quality_thresholds: "0.01" # SEACR uses these numeric threshold value(s) in control-free mode
 ```
 
 When enabled:
@@ -239,7 +239,7 @@ When enabled:
 - **All treatment samples** are called as peaks against no background control.
 - `macs2_control` is automatically forced to `"N"` (no-control MACS2 mode).
 - `pool_controls` is automatically forced to `false`.
-- **SEACR** uses the numeric `seacr_threshold` value instead of a control bedgraph. The value represents the fraction of the signal distribution used as the peak-calling threshold (e.g., `0.01` = top 1%).
+- **SEACR** uses each `quality_thresholds` value instead of a control bedgraph. Each value represents the fraction of the signal distribution used as the peak-calling threshold (e.g., `0.01` = top 1%).
 - **GoPeaks** runs without the `-c` control BAM flag.
 - The sample manifest **does not** require `controlName` or `controlReplicateNumber` columns to be filled in.
 

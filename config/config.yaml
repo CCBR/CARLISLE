@@ -97,18 +97,12 @@ macs2_control: "Y"
 ## NOTE: this is automatically set to false when run_without_controls is true
 pool_controls: true
 
-# SEACR numeric threshold for control-free mode
-## only used when run_without_controls: true
-## value must be between 0 and 1; returns the top N fraction of peaks by total AUC signal
-## recommended range for CUT&RUN: 0.01-0.05
-seacr_threshold: 0.01
-
 # qvalues
 ## thresholds to be used for peak callers
 ## must be a list of comma separated values. minimum of numeric value required.
 ### default MACS2 qvalue is 0.05 https://manpages.ubuntu.com/manpages/xenial/man1/macs2_callpeak.1.html
 ### default GOPEAKS qvalue is 0.05 https://github.com/maxsonBraunLab/gopeaks/blob/main/README.md; [link to issue]
-### default SEACR FDR threshold 1 https://github.com/FredHutch/SEACR/blob/master/README.md
+### in control-free mode, SEACR uses these values as its numeric threshold(s)
 # quality_thresholds: "0.1, 0.05"
 quality_thresholds: "0.05"
 

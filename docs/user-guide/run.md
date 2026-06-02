@@ -139,14 +139,14 @@ If your experiment has no IgG or antibody control samples, enable control-free m
 
 ```yaml
 run_without_controls: true
-seacr_threshold: 0.01
+quality_thresholds: "0.01"
 ```
 
 With this set:
 
 - The sample manifest **does not** need `controlName` or `controlReplicateNumber` filled in — leave those columns blank for all treatment samples.
 - `macs2_control` and `pool_controls` are automatically overridden by the pipeline; you do not need to set them manually.
-- SEACR will use the numeric `seacr_threshold` (fraction of the signal distribution) instead of a control bedgraph.
+- SEACR will use each value in `quality_thresholds` as the numeric threshold (fraction of the signal distribution) instead of a control bedgraph.
 - GoPeaks and MACS2 will run without a control BAM/fragment file.
 
 The rest of the workflow is identical:

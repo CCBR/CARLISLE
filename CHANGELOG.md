@@ -4,7 +4,7 @@
 
 - **Treatment-only PCA and correlation plots**: When control samples (IgG) are present, CARLISLE now generates a second set of genome-wide Pearson correlation heatmap and PCA plots (`treatments_only.{dupstatus}.*`) that exclude all control replicates. The existing all-sample plots are unchanged. This prevents the large IgG background signal from dominating PC2 and makes treatment-to-treatment differences visible. (#241)
 - **New helper script `_get_pooled_scale.py`**: Computes pooled control scaling factors using named column access from `alignment_stats.tsv`, replacing fragile positional awk column references in `create_pooled_control_bedgraph`. (#230)
-- **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true` config flag with `seacr_threshold` parameter for SEACR numeric threshold specification. (#224, #225, #226)
+- **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true`; in this mode SEACR uses `quality_thresholds` values as numeric thresholds. (#224, #225, #226)
 - **Documentation versioning**: Added mike plugin for version-specific documentation selector with dropdown menu on ReadTheDocs. Automatically injects version selector into all documentation pages.
 - **Singularity cache configuration**: Explicit `SIFCACHE` environment variable support throughout wrapper script and Snakemake configuration for flexible container storage location management.
 

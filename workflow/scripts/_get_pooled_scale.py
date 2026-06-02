@@ -72,11 +72,6 @@ def _lib_factor(median_reads: float) -> float:
     the 1e2 bucket, not 1e3). Clamps to 1e1 for medians <= 100. Caps at 1e8
     for very large libraries, matching the R script's highest tier.
     """
-    if median_reads <= 0:
-        sys.exit(
-            "ERROR: median read count across all samples is zero or negative; "
-            "cannot compute lib_factor for LIBRARY normalization"
-        )
     if median_reads > 1e8:
         return 1e8
     elif median_reads > 1e7:

@@ -457,8 +457,7 @@ rule seacr_stringent:
         dupstatus= "{dupstatus}",
         memG = getmemG("seacr_stringent"),
         norm_method = NORM_METHOD,
-        pool_controls = config.get("pool_controls", False),
-        seacr_threshold = config.get("seacr_threshold", 0.01)
+        pool_controls = config.get("pool_controls", False)
     threads: getthreads("seacr_stringent")
     envmodules:
         TOOLS["seacr"],
@@ -569,8 +568,7 @@ rule seacr_relaxed:
         dupstatus= "{dupstatus}",
         memG = getmemG("seacr_relaxed"),
         norm_method = NORM_METHOD,
-        pool_controls = config.get("pool_controls", False),
-        seacr_threshold = config.get("seacr_threshold", 0.01)
+        pool_controls = config.get("pool_controls", False)
     threads: getthreads("seacr_relaxed")
     envmodules:
         TOOLS["seacr"],
