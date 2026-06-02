@@ -151,8 +151,7 @@ def main():
 
     if ctrl_count == 0:
         sys.exit(
-            f"ERROR: no rows matched pattern '{pattern_text}' "
-            f"in {args.align_stats}"
+            f"ERROR: no rows matched pattern '{pattern_text}' in {args.align_stats}"
         )
 
     if ctrl_total == 0:
