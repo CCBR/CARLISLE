@@ -3,9 +3,14 @@
 Compute the scaling factor for a pooled control bedgraph by summing read counts
 across matching control replicates from alignment_stats.tsv.
 
-Column logic:
-  LIBRARY  -> sum of dedup_nreads_genome across matching replicates
-  SPIKEIN  -> sum of no_dedup_nreads_spikein across matching replicates
+Column and scale logic:
+  LIBRARY  -> lib_factor / sum(nreads_genome) across matching replicates
+               nreads_genome is dedup_nreads_genome (dupstatus=dedup) or
+               no_dedup_nreads_genome (dupstatus=no_dedup).
+               lib_factor = largest power of 10 <= median(nreads_genome) across ALL
+               samples — mirrors _make_library_norm_table.R exactly, so pooled-control
+               bedgraphs land on the same normalisation scale as individual replicates.
+  SPIKEIN  -> spikein_scale / sum(no_dedup_nreads_spikein) across matching replicates
                (fragment-length + mapq filtered, duplicates intentionally NOT removed;
                 matches the spike-in counts used in the individual-replicate bam2bg rule)
   NONE     -> scale = 1
@@ -15,7 +20,9 @@ Output: a single floating-point scaling factor printed to stdout.
 
 import argparse
 import csv
+import math
 import re
+import statistics
 import sys
 
 
@@ -39,12 +46,38 @@ def parse_args():
         help="Normalization method",
     )
     parser.add_argument(
+        "--dupstatus",
+        required=False,
+        default="dedup",
+        choices=["dedup", "no_dedup"],
+        help=(
+            "Duplication status of the pooled bedgraph being scaled. "
+            "Used only for LIBRARY normalization to select the correct read-count column "
+            "(dedup_nreads_genome vs no_dedup_nreads_genome). Default: dedup"
+        ),
+    )
+    parser.add_argument(
         "--spikein_scale",
         type=float,
         default=1.0,
-        help="Scaling constant (numerator). Default: 1.0",
+        help="Scaling constant (numerator) for SPIKEIN mode. Ignored for LIBRARY mode. Default: 1.0",
     )
     return parser.parse_args()
+
+
+def _lib_factor(median_reads: float) -> float:
+    """Return the largest power of 10 <= median_reads.
+
+    Mirrors the tiered if/else logic in _make_library_norm_table.R so that
+    LIBRARY-mode pooled-control bedgraphs are normalised to the same reference
+    library size as individual-replicate bedgraphs.
+    """
+    if median_reads <= 0:
+        sys.exit(
+            "ERROR: median read count across all samples is zero or negative; "
+            "cannot compute lib_factor for LIBRARY normalization"
+        )
+    return 10.0 ** int(math.floor(math.log10(median_reads)))
 
 
 def main():
@@ -54,14 +87,23 @@ def main():
         print(1)
         return
 
-    column = {
-        "LIBRARY": "dedup_nreads_genome",
-        "SPIKEIN": "no_dedup_nreads_spikein",
-    }[args.norm_method]
+    # Choose read-count column
+    if args.norm_method == "LIBRARY":
+        # dupstatus determines which read-count column to use, matching
+        # _make_library_norm_table.R which runs once per dedup_type
+        column = (
+            "dedup_nreads_genome"
+            if args.dupstatus == "dedup"
+            else "no_dedup_nreads_genome"
+        )
+    else:
+        # SPIKEIN: always use no_dedup spike-in counts (duplicates not removed)
+        column = "no_dedup_nreads_spikein"
 
     pattern = re.compile(args.sample_pattern)
-    total = 0.0
-    count = 0
+    all_values: list = []  # all samples — used to compute lib_factor median (LIBRARY only)
+    ctrl_total = 0.0
+    ctrl_count = 0
 
     with open(args.align_stats, newline="") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
@@ -74,26 +116,36 @@ def main():
                 f"Available columns: {fieldnames}"
             )
         for row in reader:
+            try:
+                val = float(row[column])
+            except (ValueError, KeyError) as e:
+                sys.exit(f"ERROR: could not parse column '{column}' in row {row}: {e}")
+            if args.norm_method == "LIBRARY":
+                all_values.append(val)  # collect every sample for median
             if pattern.search(row["sample_name"]):
-                try:
-                    total += float(row[column])
-                    count += 1
-                except (ValueError, KeyError) as e:
-                    sys.exit(f"ERROR: could not parse value in row {row}: {e}")
+                ctrl_total += val
+                ctrl_count += 1
 
-    if count == 0:
+    if ctrl_count == 0:
         sys.exit(
             f"ERROR: no rows matched sample_pattern '{args.sample_pattern}' "
             f"in {args.align_stats}"
         )
 
-    if total == 0:
+    if ctrl_total == 0:
         sys.exit(
             f"ERROR: sum of '{column}' across matched replicates is zero. "
             "Cannot compute scaling factor."
         )
 
-    print(args.spikein_scale / total)
+    if args.norm_method == "LIBRARY":
+        if not all_values:
+            sys.exit(f"ERROR: {args.align_stats} has no data rows")
+        factor = _lib_factor(statistics.median(all_values))
+        print(factor / ctrl_total)
+    else:
+        # SPIKEIN
+        print(args.spikein_scale / ctrl_total)
 
 
 if __name__ == "__main__":

@@ -89,7 +89,11 @@ rule create_pooled_control_bedgraph:
 
     Scaling factor is computed by _get_pooled_scale.py using named columns from
     alignment_stats.tsv (column-position agnostic):
-      LIBRARY  -> spikein_scale / sum(dedup_nreads_genome)  across matching replicates
+      LIBRARY  -> lib_factor / sum(nreads_genome) across matching replicates
+                  where nreads_genome is dedup_nreads_genome (dedup) or
+                  no_dedup_nreads_genome (no_dedup), and lib_factor is the largest
+                  power of 10 <= median(nreads_genome) across ALL samples — same
+                  reference as _make_library_norm_table.R individual-replicate logic.
       SPIKEIN  -> spikein_scale / sum(no_dedup_nreads_spikein) across matching replicates
                   (fragment-length+mapq filtered, duplicates not removed; matches bam2bg individual logic)
       NONE     -> scale = 1
@@ -105,6 +109,7 @@ rule create_pooled_control_bedgraph:
     params:
         norm_method = NORM_METHOD,
         spikein_scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else 1,
+        dupstatus = "{dupstatus}",
         control_sample = "{control_sample}",
         pyscript = join(SCRIPTSDIR,"_get_pooled_scale.py"),
     threads: 1
@@ -120,6 +125,7 @@ rule create_pooled_control_bedgraph:
             --align_stats {input.align_stats} \
             --sample_pattern "^{params.control_sample}_[0-9]+$" \
             --norm_method {params.norm_method} \
+            --dupstatus {params.dupstatus} \
             --spikein_scale {params.spikein_scale})
 
         # Create bedgraph with scaling
