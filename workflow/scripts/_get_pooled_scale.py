@@ -7,7 +7,7 @@ Column and scale logic:
   LIBRARY  -> lib_factor / sum(nreads_genome) across matching replicates
                nreads_genome is dedup_nreads_genome (dupstatus=dedup) or
                no_dedup_nreads_genome (dupstatus=no_dedup).
-               lib_factor = largest power of 10 <= median(nreads_genome) across ALL
+               lib_factor = tiered power-of-10 constant derived from median(nreads_genome) across ALL
                samples — mirrors _make_library_norm_table.R exactly, so pooled-control
                bedgraphs land on the same normalisation scale as individual replicates.
   SPIKEIN  -> spikein_scale / sum(no_dedup_nreads_spikein) across matching replicates
@@ -20,7 +20,6 @@ Output: a single floating-point scaling factor printed to stdout.
 
 import argparse
 import csv
-import math
 import re
 import statistics
 import sys
@@ -66,18 +65,34 @@ def parse_args():
 
 
 def _lib_factor(median_reads: float) -> float:
-    """Return the largest power of 10 <= median_reads.
+    """Return the library size factor, mirroring the tiered if/else logic in
+    _make_library_norm_table.R.
 
-    Mirrors the tiered if/else logic in _make_library_norm_table.R so that
-    LIBRARY-mode pooled-control bedgraphs are normalised to the same reference
-    library size as individual-replicate bedgraphs.
+    Uses strict > comparisons identical to R (e.g. median == 1000 falls into
+    the 1e2 bucket, not 1e3). Clamps to 1e1 for medians <= 100. Caps at 1e8
+    for very large libraries, matching the R script's highest tier.
     """
     if median_reads <= 0:
         sys.exit(
             "ERROR: median read count across all samples is zero or negative; "
             "cannot compute lib_factor for LIBRARY normalization"
         )
-    return 10.0 ** int(math.floor(math.log10(median_reads)))
+    if median_reads > 1e8:
+        return 1e8
+    elif median_reads > 1e7:
+        return 1e7
+    elif median_reads > 1e6:
+        return 1e6
+    elif median_reads > 1e5:
+        return 1e5
+    elif median_reads > 1e4:
+        return 1e4
+    elif median_reads > 1e3:
+        return 1e3
+    elif median_reads > 1e2:
+        return 1e2
+    else:
+        return 1e1
 
 
 def main():

@@ -504,9 +504,11 @@ rule seacr_stringent:
         treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
 
         if [[ "$control" == "nocontrol" ]]; then
-            # Control-free mode: use numeric threshold instead of control bedgraph
+            # Control-free mode: use the {qthresholds} wildcard value as the
+            # numeric SEACR threshold so that each output directory name
+            # reflects the threshold that was actually applied.
             SEACR.sh --bedgraph ${{treat_bed}} \\
-                --control {params.seacr_threshold} \\
+                --control {params.qthresholds} \\
                 --normalize non \\
                 --mode stringent \\
                 --output non
@@ -614,9 +616,11 @@ rule seacr_relaxed:
             treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
 
             if [[ "$control" == "nocontrol" ]]; then
-                # Control-free mode: use numeric threshold instead of control bedgraph
+                # Control-free mode: use the {qthresholds} wildcard value as the
+                # numeric SEACR threshold so that each output directory name
+                # reflects the threshold that was actually applied.
                 SEACR.sh --bedgraph ${{treat_bed}} \\
-                    --control {params.seacr_threshold} \\
+                    --control {params.qthresholds} \\
                     --normalize non \\
                     --mode relaxed \\
                     --output non
