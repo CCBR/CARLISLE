@@ -5,6 +5,10 @@ def _control_has_replicate(pair: str) -> bool:
     if len(parts) != 2:
         return False
     ctrl = parts[1]
+    # nocontrol sentinel is treated as having a replicate (for control-free mode filtering)
+    # This ensures control-free pairs like "sample_vs_nocontrol" are included in individual mode
+    if ctrl == "nocontrol":
+        return True
     return re.search(r"_[0-9]+$", ctrl) is not None
 
 def _filter_tc_list(base_list, control_mode):

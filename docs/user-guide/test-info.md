@@ -61,7 +61,7 @@ DESeq                                  24              1              1
 align                                   9             56             56
 alignstats                              9              2              2
 all                                     1              1              1
-bam2bg                                  9              4              4
+bam2bg                                  9             32             32
 create_contrast_data_files             24              1              1
 create_contrast_peakcaller_files       12              1              1
 create_reference                        1             32             32
@@ -86,4 +86,30 @@ trim                                    9             56             56
 total                                 478              1             56
 ```
 
-> 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestratio
+> 💡 **Tip:** This job summary confirms successful rule execution, resource allocation, and workflow orchestration.
+
+---
+
+## Running the Test in Control-Free Mode
+
+To validate the control-free code path, you can run the test dataset without controls by editing `config/config.yaml` in your working directory after `init`:
+
+```yaml
+run_without_controls: true
+quality_thresholds: "0.01"
+```
+
+You also need a simplified sample manifest that omits control entries. Edit `config/samples.tsv` so that all rows have `isControl: N` and leave `controlName` and `controlReplicateNumber` blank:
+
+| sampleName | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1                        | path_to_R2                        |
+| ---------- | --------------- | --------- | ----------- | ---------------------- | --------------------------------- | --------------------------------- |
+| 53_H3K4me3 | 1               | N         |             |                        | `<path>/53_H3K4me3_1.R1.fastq.gz` | `<path>/53_H3K4me3_1.R2.fastq.gz` |
+| 53_H3K4me3 | 2               | N         |             |                        | `<path>/53_H3K4me3_2.R1.fastq.gz` | `<path>/53_H3K4me3_2.R2.fastq.gz` |
+
+Then dryrun to confirm the DAG resolves cleanly:
+
+```bash
+carlisle --runmode=dryrun --workdir=/path/to/output/dir
+```
+
+In control-free mode the job count will be lower (no pooled-controls rules, no control-paired peak calls), but all three peak callers (MACS2, SEACR, GoPeaks) will run against each treatment replicate using their no-control execution paths.

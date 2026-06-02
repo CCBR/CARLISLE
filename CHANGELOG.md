@@ -1,8 +1,55 @@
-## CARLISLE development version
+## CARLISLE 2.8.0
 
-## 2.7.6
+### New Features
 
-- **Scheduler-safe Snakemake defaults**: Replaced hardcoded `-j 500` with safer defaults (`-j 100`, `--max-jobs-per-second 1`, `--max-status-checks-per-second 0.1`) for cluster-friendly submission and status polling behavior. (#223, @kopardev)
+- **Treatment-only PCA and correlation plots**: When control samples (IgG) are present, CARLISLE now generates a second set of genome-wide Pearson correlation heatmap and PCA plots (`treatments_only.{dupstatus}.*`) that exclude all control replicates. The existing all-sample plots are unchanged. This prevents the large IgG background signal from dominating PC2 and makes treatment-to-treatment differences visible. (#241)
+- **New helper script `_get_pooled_scale.py`**: Computes pooled control scaling factors using named column access from `alignment_stats.tsv`, replacing fragile positional awk column references in `create_pooled_control_bedgraph`. (#230)
+- **Control-free analysis mode**: Support for running peak calling analysis without control samples for MACS2, SEACR, and GoPeaks. Enabled via `run_without_controls: true`; in this mode SEACR uses `quality_thresholds` values as numeric thresholds. (#224, #225, #226)
+- **Documentation versioning**: Added mike plugin for version-specific documentation selector with dropdown menu on ReadTheDocs. Automatically injects version selector into all documentation pages.
+- **Singularity cache configuration**: Explicit `SIFCACHE` environment variable support throughout wrapper script and Snakemake configuration for flexible container storage location management.
+
+### Documentation Improvements
+
+- **User guide: complete `peaktype` reference**: Added a table of all six valid `peaktype` values (`macs2_narrow`, `macs2_broad`, `seacr_stringent`, `seacr_relaxed`, `gopeaks_narrow`, `gopeaks_broad`) with descriptions and caller-selection guidance. Clarified that any combination may be listed comma-separated in a single run.
+- **User guide: `run_contrasts` parameter documented**: Added a dedicated subsection explaining what `run_contrasts: true/false` controls and when differential analysis can be skipped.
+- **User guide: `norm_method: library` as a valid starting point**: Added explicit guidance that spike-in normalization is optional. Users without spike-in DNA can set `norm_method: "library"` from the start without any spike-in config blocks.
+- **User guide: sample manifest format and column descriptions**: Added TSV format note, paired-end-only warning, and a full column-by-column description table covering `sampleName`, `replicateNumber`, `isControl`, `controlName`, `controlReplicateNumber`, `path_to_R1`, `path_to_R2`. Added explicit note that `controlName` must be an exact string match to a `sampleName`.
+- **User guide: control-free manifest example**: Added a sample manifest table showing what a control-free (`run_without_controls: true`) manifest looks like, since the text previously only described it without showing it.
+- **User guide: multiple contrasts example**: Added a multi-row example to the contrast manifest section showing that multiple A-vs-B comparisons can coexist in one `contrasts.tsv` file.
+- **User guide: workflow now includes required edit step**: The standard run workflow in `run.md` was missing the critical step of editing `config/config.yaml`, `config/samples.tsv`, and `config/contrasts.tsv` after `init`. This step is now explicit, with a table of what to edit in each file.
+- **User guide: dryrun expected output documented**: Added an example of what a passing dry run looks like (job stats table) and what `MissingInputException` / `WorkflowError` lines indicate, so users can distinguish success from failure.
+- **User guide: `reset` vs `unlock` clearly differentiated**: `reset` is now labeled ⚠️ Destructive (deletes all results) and `unlock` is labeled safe/non-destructive, preventing users from accidentally running `reset` when they only need `unlock`.
+- **User guide: job monitoring section added**: New section in `run.md` explaining how to monitor a running job with `squeue -u $USER`, watch the Snakemake log, and what email notifications to expect (sent to `$USER@nih.gov`).
+- **User guide: `deeptools/` output directory documented**: Added a section in `output.md` describing both output sets — `all.{dupstatus}.*` (all samples) and `treatments_only.{dupstatus}.*` (controls excluded) — with explanations of each file, when `treatments_only` is generated, and why two PCA plots are produced. Added `deeptools/` to the example directory tree. (#241)
+- **User guide: fixed stale version in `--help` example**: Replaced hardcoded `v2.7.6` path references in the `getting-started.md` `--help` output block with version-neutral `X.Y.Z` placeholders, consistent with the `--version` block above it.
+- **`mkdocs.yml`: suppress per-page edit button**: Restored `edit_uri: ""` to suppress the per-page "Edit on GitHub" button in the rendered documentation site. An empty string is the MkDocs convention for disabling this link.
+
+### Bug Fixes
+
+- **Pooled control bedgraph: reversed scaling factor columns**: `create_pooled_control_bedgraph` used `$NF` (col 11, `dedup_nreads_spikein`) for LIBRARY and `$(NF-1)` (col 10, `dedup_nreads_genome`) for SPIKEIN — exactly swapped. Fixed with named column access via `_get_pooled_scale.py`. (#230)
+- **Pooled control bedgraph: SPIKEIN used pre-filter read counts**: Corrected to `no_dedup_nreads_spikein` (fragment-length + mapq filtered, not deduplicated) to match the individual-replicate `bam2bg` rule. (#230)
+- **Pooled control bedgraph: averaged instead of summed read counts**: The merged pooled BAM contains reads from all replicates; its total depth equals the sum of individual counts, not their average. Fixed aggregation. (#230)
+- **Pooled control bedgraph: spurious dupstatus filter**: Old awk filtered `$2 == "{dupstatus}"` on a non-existent column, silently dropping all rows. `alignment_stats.tsv` has one row per replicate. Filter removed. (#230)
+- **Pooled control outputs stale on norm_method change**: Fragment and bedgraph output paths for pooled controls contained no reference to the normalization method, causing Snakemake to silently skip regeneration when `norm_method` changed in an existing results directory. SEACR received a control bedgraph from the previous normalization run with no warning. Fixed by embedding `NORM_METHOD` in filenames for `create_pooled_control_fragments`, `create_pooled_control_bedgraph`, and all downstream consumers (`macs2_narrow`, `macs2_broad`, `seacr_stringent`, `seacr_relaxed`). GoPeaks rules are unaffected as they consume merged BAM directly. (#232)
+- **Unified bigwig generation via `bamCoverage --scaleFactor`**: Replaced `bedGraphToBigWig` in `bam2bg` and removed the separate `deeptools_bw` rule (which used RPGC normalization). Both browser-track bigwigs and deeptools heatmap/profile inputs now come from a single `bamCoverage --scaleFactor` call, ensuring heatmaps/profiles reflect the same spike-in/library normalization as genome browser tracks. `deeptools_prep` and `deeptools_mat` updated to reference `bigwig/` instead of `deeptools/temp/`. (#231)
+- **deeptools_prep control-free handling**: Fixed rule to use `TREATMENT_WITHOUTCONTROL_LIST` in control-free mode instead of empty `TREATMENT_CONTROL_LIST`, preventing MissingOutputException. Properly excludes 'nocontrol' sentinel from bigwig file lists.
+- **Differential analysis with nocontrol pairs**: Fixed `_control_has_replicate()` function in diff.smk to properly handle control-free sentinel values, ensuring control-free pairs are included in individual mode analysis.
+- **Singularity module availability on login node**: Fixed runslurm() to load Singularity module before dryrun execution, preventing WorkflowError when submitting to cluster scheduler.
+- **Singularity prefix configuration consistency**: Added explicit `--singularity-prefix` to all Snakemake invocations to respect SIFCACHE environment variable settings across all execution modes.
+- **Enhanced error messaging**: Improved error messages for file validation and control sample checks in init.smk for clearer troubleshooting.
+- **Version and module diagnostics**: Added print_versions() function to display Snakemake and Singularity versions and added module loading diagnostics to SBATCH scripts for better troubleshooting of cluster execution issues.
+- **ROSE container: truncated prep script in v1**: `Dockerfile.rose` used an incorrect `COPY` source path (`_prep_rose_input.py` at build-context root) instead of `workflow/scripts/_prep_rose_input.py`, resulting in an empty/truncated file being baked into the image. At runtime this caused a `SyntaxError: EOL while scanning string literal` in `/opt/ROSE/_prep_rose_input.py`, failing all ROSE jobs. Fixed in container `ccbr_rose:v2`.
+- **Peak count outputs overwritten between control/no-control runs**: `all.peaks.txt` and `Peak_counts.xlsx` had fixed names, so running with `run_without_controls: true` after a `false` run (or vice versa) in the same results directory would silently overwrite the previous aggregated counts. Output filenames now encode the run mode: `all.peaks.with_control.txt` / `all.peaks.without_control.txt` and `Peak_counts.with_control.xlsx` / `Peak_counts.without_control.xlsx`. `_plot_peak_counts.R` updated to accept the xlsx path as an optional 3rd argument.
+- **ROSE control BAM passed for nocontrol sentinel**: In control-free mode (`run_without_controls: true`), the `rose` rule incorrectly constructed `--control-bam nocontrol.dedup.bam` for the `run-prep-rose` call, causing an immediate failure (`[ERROR] control does not exist`). Added an explicit check for the `nocontrol` sentinel so ROSE runs without `-c` in control-free mode.
+- **ROSE plot text renders as empty boxes (tofu glyphs)**: All text in `rose_input_Plot_points.png` (axis labels, tick marks, title, legend) rendered as empty boxes in `ccbr_rose:v1` and `ccbr_rose:v2` because the container had no font packages installed. Added `fontconfig` and `fonts-dejavu-core` to `Dockerfile.rose` and rebuilt the font cache at image build time so matplotlib can find DejaVu glyphs at runtime. Also fixed the font-cache rebuild call to use `FontManager()` (compatible with Python 2.7 / `matplotlib<3`) rather than `_rebuild()` which only exists in `matplotlib≥3`. Fixed in `ccbr_rose:v3`. (#237)
+- **Spaces removed from all pipeline output filenames**: Output filenames containing spaces (e.g. `Peak counts.xlsx`) caused argument-splitting failures when passed through Singularity shell layers. All output filenames now use underscores instead of spaces (`Peak_counts.with_control.xlsx`, `Peak_counts.without_control.xlsx`).
+- **Snakemake report generation failed after successful run**: The post-run `snakemake --report` invocation in both `runlocal` and `runslurm` passed `--singularity-prefix` without `--use-singularity`, causing Snakemake 7 to immediately error with `Error: --use_singularity must be set if --singularity-prefix is set`. The report was never generated and the error appeared in the SLURM output even on otherwise successful runs. Fixed by adding `--use-singularity` to both report-only calls.
+
+## CARLISLE 2.7.6
+
+### Improvements
+
+- **Scheduler-safe Snakemake defaults**: Replaced hardcoded `-j 500` with safer defaults (`-j 100`, `--max-jobs-per-second 1`, `--max-status-checks-per-second 0.1`) for cluster-friendly submission and status polling behavior. (@kopardev)
 
 ## CARLISLE 2.7.5
 

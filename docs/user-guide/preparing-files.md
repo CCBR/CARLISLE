@@ -1,10 +1,6 @@
 # Preparing Files
 
-The CARLISLE pipeline is configured and controlled through a set of editable configuration and manifest files. Upon initialization, default templates for these files are automatically generated under the `/WORKDIR/config` and `/WORKDIR/manifest` directories.
-
-> ⚙️ **Technical Note:** CARLISLE follows a Snakemake-driven workflow architecture where all configuration parameters are read dynamically at runtime. Users are encouraged to version-control configuration files (e.g., via Git) to ensure reproducibility across runs.
-
-> 🚀 **Future Development:** While dependencies are currently module-loaded on the **[Biowulf HPC environment](https://hpc.nih.gov/)**, future releases will adopt containerization using **[Singularity/Apptainer](https://apptainer.org/)** and **[Docker](https://www.docker.com/)**. This shift will provide complete environment encapsulation, allowing consistent execution across HPC and cloud environments.
+The CARLISLE pipeline is configured and controlled through a set of editable configuration and manifest files. After running `carlisle --runmode=init --workdir=/path/to/workdir` (see [Running the Pipeline](run.md)), default templates for these files are automatically generated under `WORKDIR/config/`.
 
 ---
 
@@ -38,6 +34,16 @@ The main configuration file (`config.yaml`) contains parameters grouped into log
 
 ## User Parameters
 
+### Run Contrasts
+
+**`run_contrasts`**: Set to `true` to enable DESeq2 differential analysis between conditions defined in the contrasts manifest. Set to `false` to skip differential analysis and only produce peaks, QC, and annotation outputs.
+
+```yaml
+run_contrasts: true
+```
+
+> ℹ️ **Note:** Differential analysis requires at least two biological replicates per condition in the contrasts manifest. If you have only one replicate per condition, set `run_contrasts: false`.
+
 ### Spike-in Controls
 
 CARLISLE supports spike-in normalization using reference genomes such as _E. coli_ or _Drosophila melanogaster_. The parameter `spikein_genome` defines the spike-in species, and `spikein_reference` provides the corresponding FASTA path.
@@ -64,12 +70,28 @@ spikein_reference:
     fa: "/fdb/igenomes/Drosophila_melanogaster/UCSC/dm6/Sequence/WholeGenomeFasta/genome.fa"
 ```
 
+Example for _Saccharomyces cerevisiae_ spike-in:
+
+```yaml
+norm_method: "spikein"
+spikein_genome: "saccharomyces"
+spikein_reference:
+  saccharomyces:
+    fa: "$PIPELINE_HOME/resources/spikein/S_cer_S288C_R64.fna"
+```
+
 If spike-ins are unavailable or insufficient, normalization can alternatively be performed based on library size. Recommended workflow:
 
 1. Run CARLISLE with `norm_method: spikein` for an initial QC assessment.
-2. Evaluate spike-in alignment statistics.
-3. Add `alignment_stats` to your configuration.
-4. Re-run CARLISLE using library-size normalization.
+2. Evaluate spike-in alignment statistics (found in `alignment_stats/alignment_stats.tsv` in your results directory).
+3. Change `norm_method` to `library` in your `config.yaml`.
+4. Re-run CARLISLE — pooled control outputs are automatically regenerated when `norm_method` changes.
+
+> ℹ️ **Don’t have spike-in samples?** That is fine — spike-in normalization is optional. If your experiment did not include spike-in DNA (e.g., _E. coli_ or _Drosophila_ chromatin), simply set `norm_method: "library"` from the start and omit the `spikein_genome` and `spikein_reference` parameters entirely. Library-size normalization is a valid and commonly used alternative.
+
+> ℹ️ **Normalization change behavior:** Pooled control fragment and bedgraph filenames encode the normalization method (e.g., `*.SPIKEIN.bedgraph`). Changing `norm_method` in an existing results directory causes Snakemake to detect stale targets and regenerate them automatically — **no manual deletion of intermediate files is required**.
+
+> ℹ️ **Note:** `alignment_stats.tsv` is generated automatically by the pipeline and does not need to be specified in your configuration.
 
 ### Duplication Status
 
@@ -93,10 +115,21 @@ CARLISLE supports three major peak callers, configurable via the `peaktype` para
 
 > ✅ **Recommendation:** Use GoPeaks for its superior signal detection in sparse chromatin accessibility datasets.
 
-Example configuration:
+All valid `peaktype` values:
+
+| Value             | Description                                                                                                                       |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `macs2_narrow`    | MACS2 narrow peaks (recommended for TFs and sharp histone marks like H3K4me3)                                                     |
+| `macs2_broad`     | MACS2 broad peaks (H3K27me3, H3K9me3). Note: DESeq2 differential analysis often fails on broad peaks due to excessive peak counts |
+| `seacr_stringent` | SEACR stringent threshold (lower sensitivity, higher specificity)                                                                 |
+| `seacr_relaxed`   | SEACR relaxed threshold (higher sensitivity)                                                                                      |
+| `gopeaks_narrow`  | GoPeaks narrow peaks (TFs, sharp marks)                                                                                           |
+| `gopeaks_broad`   | GoPeaks broad peaks (broad histone marks)                                                                                         |
+
+You can run any combination in a single pipeline execution by listing them comma-separated:
 
 ```yaml
-peaktype: "macs2_narrow, gopeaks_narrow"
+peaktype: "macs2_narrow, gopeaks_narrow, seacr_stringent"
 ```
 
 ### MACS2 Control Option
@@ -114,9 +147,25 @@ Control execution of computationally intensive annotation steps:
 ```yaml
 run_rose: false # ROSE super-enhancer analysis (set to true to enable)
 run_go_enrichment: false # ChIP-Enrich GO enrichment (set to true to enable)
+run_motif_enrichment_called_peaks: false # HOMER motif discovery on all called peaks
+run_motif_enrichment_deg_peaks: false # HOMER + AME motif enrichment on DEG peaks only
 ```
 
-> ⏱️ **Performance Note:** ROSE and GO enrichment are disabled by default due to their computational requirements. Enable them when you need super-enhancer identification or pathway enrichment analysis.
+> ⏱️ **Performance Note:** ROSE, GO enrichment, and motif enrichment are disabled by default due to their computational requirements. Enable them when you need super-enhancer identification, pathway enrichment, or motif discovery.
+
+- **`run_motif_enrichment_called_peaks`**: When `true`, runs HOMER `findMotif` on the full set of called peaks for each sample/condition.
+- **`run_motif_enrichment_deg_peaks`**: When `true`, runs both HOMER motif discovery **and** AME (Analysis of Motif Enrichment) against the [HOCOMOCO v14 CORE](https://hocomoco11.autosome.org/) motif database on up-regulated peak BED files (`up_group1.bed`, `up_group2.bed`) from each contrast. Both tools must be enabled together for full DEG motif enrichment output.
+
+When `run_go_enrichment: true`, additional parameters control the enrichment methods and gene sets used:
+
+```yaml
+go_enrichment_methods: "chipenrich" # options: chipenrich, polyenrich, hybridenrich
+geneset_id: "GOBP,GOCC,GOMF,kegg_pathway,reactome"
+```
+
+Available `geneset_id` values include: `biocarta_pathway`, `ctd`, `cytoband`, `drug_bank`, `GOBP`, `GOCC`, `GOMF`, `hallmark`, `immunologic`, `kegg_pathway`, `mesh`, `metabolite`, `microrna`, `oncogenic`, `panther_pathway`, `pfam`, `protein_interaction_biogrid`, `reactome`, `transcription_factors`.
+
+> ⚠️ **Performance:** `hybridenrich` is significantly slower than `chipenrich` or `polyenrich`. Only add it when its model is specifically required. GO enrichment is only supported for `hg19` and `hg38` samples.
 
 ### Pooled Controls
 
@@ -137,6 +186,99 @@ This dual-mode analysis enables comparison of replicate-specific vs merged contr
 
 > ⚠️ **Note:** If controls have no replicates to pool (each control has only 1 replicate), pooling will have no effect. Consider setting `pool_controls: false` in such cases.
 
+### Singularity Cache Directory
+
+CARLISLE uses Singularity/Apptainer containers for R-based steps (DESeq2, GO enrichment, ROSE). **Most users do not need to configure this.** Loading the `ccbrpipeliner` module automatically sets `SIFCACHE` to the shared CCBR container cache, so pre-pulled images are used immediately:
+
+```bash
+module load ccbrpipeliner
+# SIFCACHE is now set to the shared cache — no further action required
+```
+
+If you need to override the cache location (e.g., for a custom or updated image), you can do so in two ways:
+
+```bash
+# Option 1: Pass at runtime (takes precedence over everything)
+carlisle --runmode=run --workdir=/path/to/workdir --singcache=/path/to/sif/cache
+
+# Option 2: Set as an environment variable before running
+export SIFCACHE=/path/to/sif/cache
+carlisle --runmode=run --workdir=/path/to/workdir
+```
+
+If neither `--singcache` nor `$SIFCACHE` is set, CARLISLE resolves the cache directory in the following order:
+
+1. `/data/${USER}/.singularity` — if `/data/${USER}/` exists on the filesystem (standard on Biowulf)
+2. `${WORKDIR}/.singularity` — fallback when `/data/${USER}/` is not available
+
+> ⚠️ **Warning:** Pointing to a cache directory that does not already contain the required `.sif` files will cause Singularity to pull all container images from Docker Hub. This can take **significant time** (depending on network conditions) and **consume several gigabytes of disk space**. Use the shared CCBR cache whenever possible.
+
+### Control Sample Requirements
+
+By default, **CARLISLE requires a control sample** (e.g., IgG, input DNA) paired with every treatment sample. Each non-control row in the sample manifest must have `controlName` and `controlReplicateNumber` filled in.
+
+If you do not have control samples, **control-free mode is supported** — see [Control-Free Mode](#control-free-mode) below.
+
+> 💡 **No controls?** Options include:
+>
+> - Using publicly available IgG controls from similar cell types ([GEO](https://www.ncbi.nlm.nih.gov/geo/), [ENCODE](https://www.encodeproject.org/))
+> - Using input DNA as a proxy control
+> - Enabling `run_without_controls: true` (see next section)
+
+### Control-Free Mode
+
+When no IgG or antibody control samples are available, set `run_without_controls: true` to run all peak callers without a control:
+
+```yaml
+run_without_controls: true
+quality_thresholds: "0.01" # SEACR uses these numeric threshold value(s) in control-free mode
+```
+
+When enabled:
+
+- **All treatment samples** are called as peaks against no background control.
+- `macs2_control` is automatically forced to `"N"` (no-control MACS2 mode).
+- `pool_controls` is automatically forced to `false`.
+- **SEACR** uses each `quality_thresholds` value instead of a control bedgraph. Each value represents the fraction of the signal distribution used as the peak-calling threshold (e.g., `0.01` = top 1%).
+- **GoPeaks** runs without the `-c` control BAM flag.
+- The sample manifest **does not** require `controlName` or `controlReplicateNumber` columns to be filled in.
+
+Example manifest for control-free mode (all samples are treatments; no control rows):
+
+| sampleName      | replicateNumber | isControl | controlName | controlReplicateNumber | path_to_R1                        | path_to_R2                        |
+| --------------- | --------------- | --------- | ----------- | ---------------------- | --------------------------------- | --------------------------------- |
+| H3K4me3_treated | 1               | N         |             |                        | /path/to/H3K4me3_rep1.R1.fastq.gz | /path/to/H3K4me3_rep1.R2.fastq.gz |
+| H3K4me3_treated | 2               | N         |             |                        | /path/to/H3K4me3_rep2.R1.fastq.gz | /path/to/H3K4me3_rep2.R2.fastq.gz |
+
+> ⚠️ **Caution:** Control-free peak calling will yield higher false-positive rates. Results should be interpreted with care and ideally validated by comparing to matched control experiments.
+
+### deepTools Annotation Tracks
+
+Control which annotation BED files are used to build deepTools coverage heatmaps and profiles:
+
+```yaml
+deeptools_bedtypes: "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels"
+```
+
+Available options (comma-separated, no spaces):
+
+cCRE bedtypes (`pls`, `pels`, `dels`, `ca_ctcf`, `ca_h3k4me3`, `ca_tf`) are sourced from the [ENCODE SCREEN database](https://screen.encodeproject.org/).
+
+| Bedtype          | Description                                                               |
+| ---------------- | ------------------------------------------------------------------------- |
+| `geneinfo`       | All genes: gene bodies, promoters, intergenic regions                     |
+| `protein_coding` | Protein-coding genes only                                                 |
+| `pls`            | ENCODE SCREEN promoter-like signatures                                    |
+| `pels`           | ENCODE SCREEN proximal enhancer-like signatures                           |
+| `dels`           | ENCODE SCREEN distal enhancer-like signatures                             |
+| `ca_ctcf`        | CTCF-bound chromatin accessibility regions (ENCODE SCREEN)                |
+| `ca_h3k4me3`     | H3K4me3-marked chromatin accessibility / active promoters (ENCODE SCREEN) |
+| `ca_tf`          | Transcription factor-bound chromatin accessibility (ENCODE SCREEN)        |
+
+> ⚠️ **Memory Warning:** The `dels` BED file (ENCODE dELS) is very large. Including `dels` in `deeptools_bedtypes` requires `>=240g` memory for the `deeptools_mat` and `deeptools_heatmap` rules. Update the corresponding entries in `cluster.yaml` before enabling it.
+
+---
+
 ### Quality Thresholds
 
 Set peak-calling quality thresholds using the `quality_thresholds` parameter:
@@ -151,6 +293,29 @@ Refer to tool-specific defaults:
 - GoPeaks p-value: [0.05](https://github.com/maxsonBraunLab/gopeaks#usage)
 - SEACR FDR threshold: [1.0](https://github.com/FredHutch/SEACR#usage)
 
+### MACS2 Broad Peak Threshold
+
+For MACS2 broad peak calling (`macs2_broad`), an additional p-value threshold is applied independently of the global `quality_thresholds`:
+
+```yaml
+macs2_broad_peak_threshold: "0.01"
+```
+
+This maps to the `--broad-cutoff` MACS2 argument and controls the significance cutoff for the broad-region merging step. The default of `0.01` is generally appropriate; however, reduce it (e.g., `0.001`) if broad peaks are excessively numerous or fragmented.
+
+> ℹ️ **Note:** DESeq2 differential analysis frequently fails for broadPeak outputs due to excessive peak counts. For differential analysis, `macs2_narrow` or `gopeaks_narrow` are recommended.
+
+### Differential Analysis Thresholds
+
+DESeq2 significance cutoffs for contrast-based differential enrichment:
+
+```yaml
+contrasts_fdr_cutoff: 0.05 # Benjamini-Hochberg adjusted p-value (FDR) threshold
+contrasts_lfc_cutoff: 0.59 # log2 fold-change threshold (~1.5-fold change)
+```
+
+Both thresholds are applied simultaneously: a peak is considered differentially enriched only if it passes both FDR and log2FC filters. Adjust `contrasts_lfc_cutoff` to `1.0` (2-fold) for more conservative enrichment calls, or lower both thresholds if the experiment has high biological variability.
+
 ---
 
 ## Reference Files
@@ -163,7 +328,7 @@ For each genome (hg38, hg19, hs1/T2T, mm10), the pipeline provides:
 
 - **Gene annotations**: TSS, gene bodies, promoters, intergenic regions (protein-coding and all genes)
 - **Blacklisted regions**: ENCODE DAC blacklists for artifact exclusion
-- **cCREs (candidate cis-Regulatory Elements)**: From ENCODE SCREEN database
+- **cCREs (candidate cis-Regulatory Elements)**: From the [ENCODE SCREEN database](https://screen.encodeproject.org/)
   - **PLS** – Promoter-like signatures
   - **pELS** – Proximal enhancer-like signatures
   - **dELS** – Distal enhancer-like signatures
@@ -207,11 +372,33 @@ CARLISLE uses two manifests:
 
 Defines sample-level metadata, including sample names, controls, and FASTQ paths.
 
+> 📄 **File format:** The sample manifest is a **tab-separated values (TSV)** file. Do not use commas or spaces as delimiters. The header row is required and column names must match exactly.
+
+> ⚠️ **Paired-end only:** CARLISLE requires paired-end sequencing data. Single-end data is not supported. Both `path_to_R1` and `path_to_R2` must point to valid FASTQ files.
+
+**Column descriptions:**
+
+| Column                   | Description                                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sampleName`             | Unique name for the sample (shared across replicates). Must not be a substring of another `sampleName`.                                                                              |
+| `replicateNumber`        | Positive integer (starting from 1) identifying each replicate within a `sampleName`. Must be unique per `sampleName`. Sequential numbering recommended.                              |
+| `isControl`              | `Y` if this row is a control sample (e.g., IgG), `N` for treatment samples.                                                                                                          |
+| `controlName`            | For treatment rows (`isControl: N`): the `sampleName` of the paired control. Must be an **exact string match** to a `sampleName` where `isControl: Y`. Leave blank for control rows. |
+| `controlReplicateNumber` | The `replicateNumber` of the control replicate to pair with this treatment. Leave blank for control rows.                                                                            |
+| `path_to_R1`             | Absolute path to the R1 (forward) FASTQ file.                                                                                                                                        |
+| `path_to_R2`             | Absolute path to the R2 (reverse) FASTQ file.                                                                                                                                        |
+
 | sampleName                      | replicateNumber | isControl | controlName                     | controlReplicateNumber | path_to_R1                                              | path_to_R2                                              |
 | ------------------------------- | --------------- | --------- | ------------------------------- | ---------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
 | 53_H3K4me3                      | 1               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/53_H3K4me3_1.R1.fastq.gz                      | <path_to>/53_H3K4me3_1.R2.fastq.gz                      |
 | 54_H3K4me3                      | 2               | N         | HN6_IgG_rabbit_negative_control | 1                      | <path_to>/54_H3K4me3_1.R1.fastq.gz                      | <path_to>/54_H3K4me3_1.R2.fastq.gz                      |
 | HN6_IgG_rabbit_negative_control | 1               | Y         |                                 |                        | <path_to>/HN6_IgG_rabbit_negative_control_1.R1.fastq.gz | <path_to>/HN6_IgG_rabbit_negative_control_2.R2.fastq.gz |
+
+> ℹ️ **Note:** `controlName` and `controlReplicateNumber` are **required** for non-control samples in normal mode. In control-free mode (`run_without_controls: true`), leave these columns blank for all samples and omit control rows entirely.
+
+> ⚠️ **Exact match required:** The `controlName` value must exactly match a `sampleName` in the same manifest where `isControl: Y`. Spelling differences, extra spaces, or case mismatches will cause the pipeline to fail.
+
+> ⚠️ **Sample name uniqueness:** Sample names must not be substrings of each other (e.g., having both `H3K4me3` and `H3K4me3_rep1` as `sampleName` values will cause incorrect sample matching). Use fully distinct names for all samples.
 
 ### Contrast Manifest (Optional)
 
@@ -222,3 +409,17 @@ Specifies conditions for differential analysis:
 | MOC1_siSmyd3_2m_25_HCHO | MOC1_siNC_2m_25_HCHO |
 
 > 📊 **Requirement:** Each condition must have at least two biological replicates to perform DESeq2-based differential analysis.
+
+> ℹ️ **How conditions map to samples:**
+>
+> - Values in `condition1` and `condition2` must exactly match `sampleName` values in the sample manifest.
+> - All replicates with that `sampleName` are included automatically — do not list individual replicates.
+> - `condition2` is the **reference group** (denominator). A positive `log2FoldChange` in results means higher enrichment in `condition1`. If unsure, put the control or untreated condition in `condition2`.
+
+> ℹ️ **Multiple contrasts:** You can include multiple rows to test several comparisons in one run. Each row is an independent DESeq2 comparison:
+>
+> | condition1       | condition2         |
+> | ---------------- | ------------------ |
+> | treated_H3K4me3  | untreated_H3K4me3  |
+> | treated_H3K27me3 | untreated_H3K27me3 |
+> | treated_H3K4me3  | treated_H3K27me3   |

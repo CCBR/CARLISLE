@@ -285,9 +285,10 @@ rule create_library_norm_scales:
 
 rule bam2bg:
     """
-    Converted filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
-    sf = Constant / [ Nreads aligning to spikein (deduped)] where Constant is defined as "spikein_scale" in config.yaml
-    The above sf (scaling factor) is used to scale the bedgraph file. Scaled bedgraph is then converted to bigwig.
+    Convert filtered BAM files to bedgraph and bigwig formats. SEACR needs bedgraph files as input.
+    A scaling factor is computed from spike-in reads, library size, or set to 1 (NONE mode).
+    The bedgraph is scaled by this factor via bedtools genomecov.
+    The bigwig is produced by bamCoverage --scaleFactor with 25bp bins and 75bp smoothing.
     """
     input:
         bam = rules.filter.output.bam,
@@ -315,7 +316,7 @@ rule bam2bg:
     envmodules:
         TOOLS["bedtools"],
         TOOLS["samtools"],
-        TOOLS["ucsc"]
+        TOOLS["deeptools"]
     shell:
         """
         set -exo pipefail
@@ -329,9 +330,9 @@ rule bam2bg:
 
         if [[ "{params.spikein}" == "NONE" ]];then
             echo "No spike-in scale was used"
-            spikein_scale=1
+            scaling_factor=1
         elif [[ "{params.spikein}" == "LIBRARY" ]];then
-            spikein_scale=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`
+            scaling_factor=`cat {input.library_file} | grep {params.replicate} | grep {params.dupstatus} | cut -f2 -d" " | head -n1`
             echo "The spike-in is generated from the library size"
         else
             spikein_readcount=$(while read a b;do awk -v a=$a '{{if ($1==a) {{print $3}}}}' {input.bamidxstats};done < {input.spikein_len} | awk '{{sum=sum+$1}}END{{print sum}}')
@@ -340,11 +341,11 @@ rule bam2bg:
             total_count=$(awk '{{sum+=$3; sum+=$4;}}END{{print sum;}}' {input.bamidxstats})
             spikein_percent=`echo "scale=6 ; $spikein_readcount / $total_count * 100" | bc`;\
 
-            if [[ $spikein_percent < 0.001 ]]; then
-                echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The spikein_scale was set to 1."
-                spikein_scale=1
+            if awk "BEGIN {{exit !($spikein_percent < 0.001)}}"; then
+                echo "The spikein percentage of {input.bam} was below the threshold (0.001%) at $spikein_percent%. The scaling_factor was set to 1."
+                scaling_factor=1
             else
-                spikein_scale=$(echo "{params.spikein_scale} / $spikein_readcount" | bc -l)
+                scaling_factor=$(awk "BEGIN {{print {params.spikein_scale} / $spikein_readcount}}")
             fi
         fi
 
@@ -358,57 +359,19 @@ rule bam2bg:
             LC_ALL=C sort --buffer-size={params.memG} --parallel={threads} --temporary-directory=$TMPDIR -k1,1 -k2,2n -k3,3n > {output.fragments_bed}
 
         # run bedtools
-        bedtools genomecov -bg -scale $spikein_scale -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
+        bedtools genomecov -bg -scale $scaling_factor -i {output.fragments_bed} -g {input.genome_len} > {output.bg}
 
-        # create bigwig
-        bedGraphToBigWig {output.bg} {input.genome_len} {output.bw}
+        # create bigwig using computed scaling factor
+        bamCoverage --bam {input.bam} \
+            -o {output.bw} \
+            --scaleFactor $scaling_factor \
+            --binSize 25 \
+            --smoothLength 75 \
+            --numberOfProcessors {threads} \
+            --centerReads
 
         # add to YAML
-        echo "spikein_scaling_factor=$spikein_scale" > {output.sf_yaml}
-        """
-
-rule deeptools_bw:
-    """
-    Generate bigwig coverage files from filtered BAM files using deeptools bamCoverage.
-
-    This rule converts filtered alignment BAM files into bigwig format with RPGC normalization
-    (Reads Per Genome Coverage). The bigwig files are normalized by effective genome size and
-    centered on reads, enabling visualization and quantitative analysis of chromatin accessibility
-    or ChIP-seq signal across the genome.
-
-    Inputs:
-        bam: Filtered BAM file (after deduplication and quality filtering)
-        bai: BAM index file for efficient random access
-        genome_len: File containing chromosome names and sizes (from bowtie2 index)
-
-    Outputs:
-        bw: Bigwig file with RPGC-normalized coverage values stored in temp directory
-
-    Parameters:
-        binSize: 25 bp bins for coverage calculation
-        smoothLength: 75 bp smoothing window
-        normalizeUsing: RPGC (Reads Per Genome Coverage) normalization method
-        effectiveGenomeSize: Total effective genome size used for normalization
-        centerReads: Center each read at its 5' end before coverage calculation
-
-    Tool: deeptools bamCoverage (https://deeptools.readthedocs.io/)
-    """
-    input:
-        bam = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam"),
-        bai = join(RESULTSDIR,"bam","{replicate}.{dupstatus}.bam.bai"),
-        genome_len = join(BOWTIE2_INDEX,"genome.len")
-    output:
-        bw = join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"),
-    wildcard_constraints:
-        replicate="[^/]+"  # Exclude paths with slashes to avoid matching pooled_controls/sample_name
-    envmodules:
-        TOOLS["samtools"],
-        TOOLS["deeptools"],
-    threads: getthreads("deeptools_bw")
-    shell:
-        """
-        genome_size=`cat {input.genome_len} | awk '{{ sum+=$2 }} END{{ print sum }}'`
-        bamCoverage --bam {input.bam} -o {output.bw} --binSize 25 --smoothLength 75 --numberOfProcessors {threads} --normalizeUsing RPGC --effectiveGenomeSize $genome_size --centerReads
+        echo "scaling_factor=$scaling_factor" > {output.sf_yaml}
         """
 
 rule deeptools_prep:
@@ -425,7 +388,7 @@ rule deeptools_prep:
         duplication status.
 
     Inputs:
-        bw: All normalized bigwig files generated by deeptools_bw rule
+        bw: Spike-in/library normalized bigwig files generated by bam2bg rule
 
     Outputs:
         deeptools_prep: Configuration files for each group (treatment pair or all_samples)
@@ -439,27 +402,40 @@ rule deeptools_prep:
                        all_samples.{dupstatus}.deeptools_prep
     """
     input:
-        bw = expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+        bw = expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
         deeptools_prep = expand(join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.deeptools_prep"),group=TREATMENTS+["all_samples"],dupstatus=DUPSTATUS),
     run:
+        # Use the appropriate treatment-control list based on mode
+        treatment_control_list_to_use = TREATMENT_WITHOUTCONTROL_LIST if RUN_WITHOUT_CONTROLS else TREATMENT_CONTROL_LIST
+
         for dupstatus in DUPSTATUS:
-            for item in TREATMENT_CONTROL_LIST:
+            for item in treatment_control_list_to_use:
                 labels = item.split('_vs_')
                 treatment, control = labels
-                bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                # In control-free mode, only include treatment bigwig (control is "nocontrol" sentinel, not a real file)
+                if RUN_WITHOUT_CONTROLS and control == "nocontrol":
+                    bws = [join(RESULTSDIR,"bigwig","{}.{}.bigwig".format(treatment, dupstatus))]
+                    labels_for_prep = [treatment]
+                else:
+                    bws = [join(RESULTSDIR,"bigwig","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                    labels_for_prep = labels
                 f=open(join(RESULTSDIR,"deeptools","temp","{}.{}.deeptools_prep".format(treatment, dupstatus) ),'w')
                 f.write("{}\n".format(dupstatus))
                 f.write("{}\n".format(" ".join(bws)))
-                f.write("{}\n".format(" ".join(labels)))
+                f.write("{}\n".format(" ".join(labels_for_prep)))
                 f.close()
 
         for dupstatus in DUPSTATUS:
             labels = []
             for c in CONTROL_to_TREAT_DICT:
-                labels += CONTROL_to_TREAT_DICT[c]
-                labels.append(c)
-            bws = [join(RESULTSDIR,"deeptools","temp","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
+                # In control-free mode, skip the "nocontrol" sentinel value (it's not a real replicate)
+                if RUN_WITHOUT_CONTROLS and c == "nocontrol":
+                    labels += CONTROL_to_TREAT_DICT[c]
+                elif not RUN_WITHOUT_CONTROLS:
+                    labels += CONTROL_to_TREAT_DICT[c]
+                    labels.append(c)
+            bws = [join(RESULTSDIR,"bigwig","{}.{}.bigwig".format(item, dupstatus)) for item in labels]
 
             f_all=open(join(RESULTSDIR,"deeptools","temp","all_samples.{}.deeptools_prep".format(dupstatus)),'w')
             f_all.write("all_samples\n")
@@ -471,7 +447,7 @@ rule deeptools_mat:
     """Compute deeptools matrices using one prep file across multiple region BEDs."""
     input:
         deeptools_prep = join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.deeptools_prep"),
-        bw = expand(join(RESULTSDIR,"deeptools","temp","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
+        bw = expand(join(RESULTSDIR,"bigwig","{replicate}.{dupstatus}.bigwig"), replicate=REPLICATES,dupstatus=DUPSTATUS),
     output:
         metamat=join(RESULTSDIR,"deeptools","temp", "{group}.{dupstatus}.{bedtype}.metagene.mat.gz"),
         TSSmat=join(RESULTSDIR,"deeptools","temp","{group}.{dupstatus}.{bedtype}.TSS.mat.gz"),
@@ -596,3 +572,50 @@ rule cov_correlation:
         # Plot heatmap and PCA (formatted)
         Rscript {params.rscript} {output.pearson_corr} {output.pca} {input.align_table} {params.dupstatus} {output.hc} {output.pca_format}
         """
+
+if CONTROLS:
+    rule cov_correlation_no_ctrl:
+        """
+        Create replicate correlation plots from treatment-only BAM files (IgG controls excluded).
+        Generates a Pearson correlation heatmap and PCA plot without control samples so that
+        treatment-to-treatment differences are not dominated by the IgG background signal.
+        """
+        input:
+            bams=expand(join(RESULTSDIR,"bam","{replicate}.{{dupstatus}}.bam"),replicate=TREATMENTS),
+            align_table=join(RESULTSDIR,"alignment_stats","alignment_stats.tsv")
+        output:
+            counts=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.readCounts.npz"),
+            pearson_corr=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonCorr.tab"),
+            pearson_plot=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonCorr.png"),
+            pca=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PCA.tab"),
+            hc=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.Pearson_heatmap.png"),
+            pca_format=join(RESULTSDIR,"deeptools","treatments_only.{dupstatus}.PearsonPCA.png")
+        params:
+            rscript=join(SCRIPTSDIR,"_plot_correlation.R"),
+            dupstatus="{dupstatus}"
+        container: config['containers']['carlisle_r']
+        threads: getthreads("cov_correlation")
+        shell:
+            """
+            # Calculate genome-wide coverage (treatment samples only)
+            multiBamSummary bins \
+             --bamfiles {input.bams} \
+             --smartLabels \
+             -out {output.counts} \
+             -p {threads}
+
+            # Plot heatmap - Pearson
+            plotCorrelation \
+             -in {output.counts} \
+             --corMethod pearson --skipZeros \
+             --whatToPlot heatmap --plotNumbers \
+             -o {output.pearson_plot} \
+             --removeOutliers \
+             --outFileCorMatrix {output.pearson_corr}
+
+            # Plot PCA
+            plotPCA -in {output.counts}  --outFileNameData {output.pca}
+
+            # Plot heatmap and PCA (formatted)
+            Rscript {params.rscript} {output.pearson_corr} {output.pca} {input.align_table} {params.dupstatus} {output.hc} {output.pca_format}
+            """

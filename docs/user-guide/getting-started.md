@@ -8,37 +8,40 @@ While CUT&Tag uses an engineered transposase to insert sequencing adapters direc
 
 Inspired by the **[nf-core/cutandrun](https://nf-co.re/cutandrun/3.2.2/)** pipeline, CARLISLE incorporates modular and reproducible analysis steps that emphasize transparency and scalability. It begins with raw **FASTQ** files, performing adapter trimming followed by alignment using **[Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)**. Linear deduplication is an important part of the process—especially for CUT&RUN and CUT&Tag data—to remove PCR artifacts and ensure accurate quantification of unique DNA fragments.
 
-Normalization is performed using either user-provided spike-in controls (e.g., _E. coli_) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://bitbucket.org/young_computation/rose/src/master/)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
+Normalization is performed using either user-provided spike-in controls (e.g., _E. coli_) or library size-based scaling. Peak calling is then executed using **[MACS2](https://github.com/macs3-project/MACS)**, **[SEACR](https://seacr.fredhutch.org/)**, and **[GoPeaks](https://github.com/maxsonBraunLab/gopeaks)**—with **GoPeaks** recommended for its robust performance on CUT&RUN data. Following peak calling, CARLISLE annotates results and summarizes them into detailed reports, with optional differential analysis handled via **[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html)**. Quality control metrics are generated using **[FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)** and **[MultiQC](https://multiqc.info/)**, while enrichment and annotation are supported through **[HOMER](http://homer.ucsd.edu/homer/)**, **[ROSE](https://github.com/younglab/ROSE)**, and **[ChIP-Enrich](https://chipenrich.med.umich.edu/)**.
 
 ---
 
 ## Setup Dependencies
 
-> **Note:** All dependencies are currently module-loaded from the **[Biowulf HPC environment](https://hpc.nih.gov/)**. However, future versions of the CARLISLE pipeline will transition to a fully containerized setup using **[Singularity/Apptainer](https://apptainer.org/)** or **[Docker](https://www.docker.com/)** for improved reproducibility and portability.
+> **Note:** CARLISLE supports execution via **[Singularity/Apptainer](https://apptainer.org/)** containers on **[Biowulf HPC](https://hpc.nih.gov/)**. Most dependencies are loaded from environment modules; R-based steps (DESeq2, GO enrichment) and ROSE run inside Singularity containers. Container images are pre-cached in the shared CCBR SIF cache and pulled automatically when `module load ccbrpipeliner` is used — no manual setup required.
 
 CARLISLE relies on several dependencies, most of which are pre-installed and auto-loaded on **Biowulf** via the `ccbrpipeliner` module.
 
-| Tool         | Module / Version                                      |
-| ------------ | ----------------------------------------------------- |
-| bedtools     | `bedtools/2.30.0`                                     |
-| bedops       | `bedops/2.4.40`                                       |
-| bowtie2      | `bowtie/2-2.4.2`                                      |
-| cutadapt     | `cutadapt/1.18`                                       |
-| fastqc       | `fastqc/0.11.9`                                       |
-| fastq_screen | `fastq_screen/0.15.2`                                 |
-| fastq_val    | `/data/CCBR_Pipeliner/iCLIP/bin/fastQValidator`       |
-| fastxtoolkit | `fastxtoolkit/0.0.14`                                 |
-| gopeaks      | `git clone https://github.com/maxsonBraunLab/gopeaks` |
-| macs2        | `macs/2.2.7.1`                                        |
-| multiqc      | `multiqc/1.9`                                         |
-| perl         | `perl/5.34.0`                                         |
-| picard       | `picard/2.26.9`                                       |
-| python       | `python/3.7`                                          |
-| R            | `R/4.2.2`                                             |
-| rose         | `ROSE/1.3.1`                                          |
-| samtools     | `samtools/1.15`                                       |
-| seacr        | `seacr/1.4-beta.2`                                    |
-| ucsc         | `ucsc/407`                                            |
+| Tool         | Module / Version                                                      |
+| ------------ | --------------------------------------------------------------------- |
+| bedtools     | `bedtools/2.30.0`                                                     |
+| bedops       | `bedops/2.4.41`                                                       |
+| bowtie2      | `bowtie/2-2.4.5`                                                      |
+| cutadapt     | `cutadapt/4.0`                                                        |
+| deeptools    | `deeptools/3.5.1`                                                     |
+| fastqc       | `fastqc/0.11.9`                                                       |
+| fastq_screen | `fastq_screen/0.15.2`                                                 |
+| fastq_val    | `/data/CCBR_Pipeliner/bin/fastQValidator`                             |
+| fastxtoolkit | `fastxtoolkit/0.0.14`                                                 |
+| gopeaks      | `/data/CCBR_Pipeliner/bin/GoPeaks/gopeaks`                            |
+| homer        | `homer/4.11.1`                                                        |
+| macs2        | `macs/2.2.7.1`                                                        |
+| meme         | `meme/5.5.5`                                                          |
+| multiqc      | `multiqc/1.14`                                                        |
+| perl         | `perl/5.34`                                                           |
+| picard       | `picard/2.27.3`                                                       |
+| python       | `python/3.9`                                                          |
+| R            | `R/4.3.2`                                                             |
+| rose         | Singularity container (`nciccbr/ccbr_rose:v3`) — not a Biowulf module |
+| samtools     | `samtools/1.15`                                                       |
+| seacr        | `SEACR/1.4-beta.2`                                                    |
+| ucsc         | `ucsc/445`                                                            |
 
 ---
 
@@ -78,23 +81,27 @@ Check which version is currently active:
 
 ```bash
 carlisle --version
-[+] Loading singularity  4.2.2  on cn0001
+[+] Loading singularity  X.Y.Z  on cn####
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6
-Version: 2.7.6
+Snakemake version: 7.32.4
+Singularity version: X.Y.Z
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z
+Version: X.Y.Z
 ```
+
+> The version output includes Snakemake and Singularity version diagnostics to help confirm the environment is loaded correctly before submitting jobs.
 
 ```
 carlisle --help
-[+] Loading singularity  4.2.2  on cn0001
+[+] Loading singularity  X.Y.Z  on cn####
 [+] Loading snakemake  7.32.4
-Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6
+Pipeline Dir: /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z
 /spin1/home/linux/kopardevn/carlisle
   --> run CARLISLE
   Cut And Run anaLysIS pipeLinE
 
   USAGE:
-    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.v2.7.6/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
+    bash /vf/users/CCBR_Pipeliner/Pipelines/CARLISLE/.vX.Y.Z/carlisle -m/--runmode=<RUNMODE> -w/--workdir=<WORKDIR>
   Required Arguments:
   1.  RUNMODE: [Type: String] Valid options:
       *) init : initialize workdir

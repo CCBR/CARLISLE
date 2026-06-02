@@ -50,7 +50,7 @@ rule create_pooled_control_fragments:
     input:
         merged_bam = join(RESULTSDIR,"bam","pooled_controls","{control_sample}.{dupstatus}.merged.bam")
     output:
-        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed")
+        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed")
     params:
         fragment_len = config["fragment_len_filter"],
         mapping_quality = config["mapping_quality"],
@@ -84,37 +84,49 @@ rule create_pooled_control_fragments:
 
 rule create_pooled_control_bedgraph:
     """
-    Create bedgraph file from pooled control fragments for SEACR and GoPeaks
+    Create bedgraph file from pooled control fragments for SEACR.
+    Note: GoPeaks uses pooled BAMs directly, not this bedgraph.
+
+    Scaling factor is computed by _get_pooled_scale.py using named columns from
+    alignment_stats.tsv (column-position agnostic):
+      LIBRARY  -> lib_factor / sum(nreads_genome) across matching replicates
+                  where nreads_genome is dedup_nreads_genome (dedup) or
+                  no_dedup_nreads_genome (no_dedup), and lib_factor is the largest
+                  power of 10 <= median(nreads_genome) across ALL samples — same
+                  reference as _make_library_norm_table.R individual-replicate logic.
+      SPIKEIN  -> spikein_scale / sum(no_dedup_nreads_spikein) across matching replicates
+                  (fragment-length+mapq filtered, duplicates not removed; matches bam2bg individual logic)
+      NONE     -> scale = 1
+    Summing (not averaging) is correct because the pooled BAM merges all replicates,
+    so its total read depth equals the sum of individual replicate counts.
     """
     input:
-        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        fragments = join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
     output:
-        bedgraph = join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph")
+        bedgraph = join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph")
     params:
         norm_method = NORM_METHOD,
-        scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else None,
+        spikein_scale = config["spikein_scale"] if NORM_METHOD == "SPIKEIN" else 1,
+        dupstatus = "{dupstatus}",
         control_sample = "{control_sample}",
-        dupstatus = "{dupstatus}"
+        pyscript = join(SCRIPTSDIR,"_get_pooled_scale.py"),
     threads: 1
     envmodules:
-        TOOLS["bedtools"]
+        TOOLS["bedtools"],
+        TOOLS["python3"]
     shell:
         """
         set -exo pipefail
 
-        # Get scaling factor from alignment stats
-        # For pooled controls, use average of all control replicate scaling factors
-        if [[ {params.norm_method} == "LIBRARY" ]]; then
-            # Calculate average library scaling factor across control replicates
-            scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$NF; count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
-        elif [[ {params.norm_method} == "SPIKEIN" ]]; then
-            # Calculate average spikein scaling factor across control replicates
-            scale=$(awk -F'\\t' '$1 ~ /^{params.control_sample}_[0-9]+$/ && $2 == "{params.dupstatus}" {{sum+=$(NF-1); count++}} END {{if(count>0) print sum/count; else print 1}}' {input.align_stats})
-        else
-            scale=1
-        fi
+        # Compute scaling factor using named columns from alignment_stats.tsv
+        scale=$(python3 {params.pyscript} \
+            --align_stats {input.align_stats} \
+            --control_sample "{params.control_sample}" \
+            --norm_method {params.norm_method} \
+            --dupstatus {params.dupstatus} \
+            --spikein_scale {params.spikein_scale})
 
         # Create bedgraph with scaling
         bedtools genomecov -bg -scale $scale -i {input.fragments} -g {input.genome_len} | \
@@ -130,6 +142,9 @@ def get_all_peak_files(wildcards):
         if len(parts) != 2:
             return False
         ctrl = parts[1]
+        # nocontrol pairs are always treated as individual mode (never pooled)
+        if ctrl == "nocontrol":
+            return True
         return re.search(r"_[0-9]+$", ctrl) is not None
 
     # Determine control modes to run
@@ -187,7 +202,7 @@ rule macs2_narrow:
     '''
     input:
         fragments_bed = expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
                                 control_sample=CONTROL_SAMPLES,
                                 dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
@@ -205,6 +220,7 @@ rule macs2_narrow:
         qthresholds = "{qthresholds}",
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
+        norm_method = NORM_METHOD,
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         memG = getmemG("macs2_narrow"),
     threads: getthreads("macs2_narrow")
@@ -229,21 +245,24 @@ rule macs2_narrow:
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
 
-        if [[ "$control_mode" == "pooled" ]]; then
-            # Pooled mode: control should NOT end with _N pattern
-            if [[ "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
-                echo "       Pooled pairs must be like: TREATMENT_X_vs_CONTROL (no _N on control)"
-                echo "       Found: $control with _N suffix"
-                exit 1
-            fi
-        else
-            # Individual mode: control MUST end with _N pattern
-            if [[ ! "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
-                echo "       Individual pairs must be like: TREATMENT_X_vs_CONTROL_X"
-                echo "       Found: $control without _N suffix"
-                exit 1
+        # Skip format validation for control-free runs (nocontrol sentinel value)
+        if [[ "$control" != "nocontrol" ]]; then
+            if [[ "$control_mode" == "pooled" ]]; then
+                # Pooled mode: control should NOT end with _N pattern
+                if [[ "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
+                    echo "       Pooled pairs must be like: TREATMENT_X_vs_CONTROL (no _N on control)"
+                    echo "       Found: $control with _N suffix"
+                    exit 1
+                fi
+            else
+                # Individual mode: control MUST end with _N pattern
+                if [[ ! "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
+                    echo "       Individual pairs must be like: TREATMENT_X_vs_CONTROL_X"
+                    echo "       Found: $control without _N suffix"
+                    exit 1
+                fi
             fi
         fi
 
@@ -258,7 +277,7 @@ rule macs2_narrow:
         if [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
             control_sample=`echo ${{control}} | sed 's/_[0-9]*$//'`
-            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.fragments.bed
+            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.fragments.bed
         else
             # Use per-replicate control (individual mode)
             control_sample=${{control}}
@@ -316,7 +335,7 @@ rule macs2_broad:
     '''
     input:
         fragments_bed = expand(join(RESULTSDIR,"fragments","{replicate}.{dupstatus}.fragments.bed"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}.fragments.bed"),
+        pooled_controls = expand(join(RESULTSDIR,"fragments","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".fragments.bed"),
                                 control_sample=CONTROL_SAMPLES,
                                 dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
@@ -334,6 +353,7 @@ rule macs2_broad:
         qthresholds = "{qthresholds}",
         control_flag = config["macs2_control"],
         pool_controls = config.get("pool_controls", False),
+        norm_method = NORM_METHOD,
         broadtreshold = config["macs2_broad_peak_threshold"],
         macs2_genome = config["reference"][GENOME]["macs2_g"],
         memG = getmemG("macs2_broad"),
@@ -362,10 +382,12 @@ rule macs2_broad:
         treat_bed={params.frag_bed_path}/${{treatment}}.{params.dupstatus}.fragments.bed
 
         # set control fragment file based on control_mode wildcard
-        if [[ "{params.control_mode}" == "pooled" ]]; then
+        if [[ "$control" == "nocontrol" ]]; then
+            cntrl_bed=""
+        elif [[ "{params.control_mode}" == "pooled" ]]; then
             # Use pooled control (remove replicate number from control name)
             control_sample=`echo ${{control}} | sed 's/_[0-9]*$//'`
-            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.fragments.bed
+            cntrl_bed={params.pooled_frag_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.fragments.bed
         else
             # Use per-replicate control (individual mode)
             control_sample=${{control}}
@@ -418,7 +440,7 @@ rule seacr_stringent:
     input:
         tc_list=join(RESULTSDIR,"treatment_control_list.txt"),
         bg = expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph"),
+        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph"),
                                  control_sample=CONTROL_SAMPLES, dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
@@ -458,15 +480,18 @@ rule seacr_stringent:
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
 
-        if [[ "$control_mode" == "pooled" ]]; then
-            if [[ "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
-                exit 1
-            fi
-        else
-            if [[ ! "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
-                exit 1
+        # Skip format validation for control-free runs (nocontrol sentinel value)
+        if [[ "$control" != "nocontrol" ]]; then
+            if [[ "$control_mode" == "pooled" ]]; then
+                if [[ "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
+                    exit 1
+                fi
+            else
+                if [[ ! "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
+                    exit 1
+                fi
             fi
         fi
 
@@ -474,41 +499,47 @@ rule seacr_stringent:
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # Check if using pooled controls based on control_mode wildcard
-        if [[ "{params.control_mode}" == "pooled" ]]; then
-            # Extract control sample name (remove replicate suffix)
-            control_sample=$(echo $control | sed 's/_[0-9]*$//')
-            cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.bedgraph
-        else
-            # Use per-replicate control (individual mode)
-            cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
-        fi
-
         # set treatment bedgraph file
         treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
 
-        if [[ {params.norm_method} != "SPIKEIN" ]]; then
-            # run norm
+        if [[ "$control" == "nocontrol" ]]; then
+            # Control-free mode: use the {qthresholds} wildcard value as the
+            # numeric SEACR threshold so that each output directory name
+            # reflects the threshold that was actually applied.
             SEACR.sh --bedgraph ${{treat_bed}} \\
-                --control ${{cntrl_bed}} \\
-                --normalize norm \\
-                --mode stringent \\
-                --threshold {params.qthresholds} \\
-                --output norm
-
-            # mv output and rename for consistency
-            mv $TMPDIR/norm.stringent.bed {output.peak_file}
-        else
-            # run non
-            SEACR.sh --bedgraph ${{treat_bed}} \\
-                --control ${{cntrl_bed}} \\
+                --control {params.qthresholds} \\
                 --normalize non \\
                 --mode stringent \\
-                --threshold {params.qthresholds} \\
                 --output non
-
-            # mv output and rename for consistency
             mv $TMPDIR/non.stringent.bed {output.peak_file}
+        else
+            # Set control bedgraph based on control_mode
+            if [[ "{params.control_mode}" == "pooled" ]]; then
+                control_sample=$(echo $control | sed 's/_[0-9]*$//')
+                cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.bedgraph
+            else
+                cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
+            fi
+
+            if [[ {params.norm_method} != "SPIKEIN" ]]; then
+                # run norm
+                SEACR.sh --bedgraph ${{treat_bed}} \\
+                    --control ${{cntrl_bed}} \\
+                    --normalize norm \\
+                    --mode stringent \\
+                    --threshold {params.qthresholds} \\
+                    --output norm
+                mv $TMPDIR/norm.stringent.bed {output.peak_file}
+            else
+                # run non
+                SEACR.sh --bedgraph ${{treat_bed}} \\
+                    --control ${{cntrl_bed}} \\
+                    --normalize non \\
+                    --mode stringent \\
+                    --threshold {params.qthresholds} \\
+                    --output non
+                mv $TMPDIR/non.stringent.bed {output.peak_file}
+            fi
         fi
 
         # create bigbed files
@@ -520,7 +551,7 @@ rule seacr_stringent:
 rule seacr_relaxed:
     input:
         bg = expand(join(RESULTSDIR,"bedgraph","{replicate}.{dupstatus}.bedgraph"),replicate=REPLICATES,dupstatus=DUPSTATUS),
-        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}.bedgraph"),
+        pooled_controls = expand(join(RESULTSDIR,"bedgraph","pooled_controls","{control_sample}.{dupstatus}."+NORM_METHOD+".bedgraph"),
                                  control_sample=CONTROL_SAMPLES, dupstatus=DUPSTATUS) if config.get("pool_controls", False) else [],
         genome_len = join(BOWTIE2_INDEX,"genome.len"),
         align_stats = rules.gather_alignstats.output,
@@ -560,15 +591,18 @@ rule seacr_relaxed:
             control_mode="{params.control_mode}"
             control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
 
-            if [[ "$control_mode" == "pooled" ]]; then
-                if [[ "$control" =~ _[0-9]+$ ]]; then
-                    echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
-                    exit 1
-                fi
-            else
-                if [[ ! "$control" =~ _[0-9]+$ ]]; then
-                    echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
-                    exit 1
+            # Skip format validation for control-free runs (nocontrol sentinel value)
+            if [[ "$control" != "nocontrol" ]]; then
+                if [[ "$control_mode" == "pooled" ]]; then
+                    if [[ "$control" =~ _[0-9]+$ ]]; then
+                        echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
+                        exit 1
+                    fi
+                else
+                    if [[ ! "$control" =~ _[0-9]+$ ]]; then
+                        echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
+                        exit 1
+                    fi
                 fi
             fi
 
@@ -576,40 +610,47 @@ rule seacr_relaxed:
             treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
             control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-            # Check if using pooled controls based on control_mode wildcard
-            if [[ "{params.control_mode}" == "pooled" ]]; then
-                # Extract control sample name (remove replicate suffix)
-                control_sample=$(echo $control | sed 's/_[0-9]*$//')
-                cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.bedgraph
-            else
-                # Use per-replicate control (individual mode)
-                cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
-            fi
-
             # set treatment bedgraph file
             treat_bed={params.bg_path}/${{treatment}}.{params.dupstatus}.bedgraph
 
-            if [[ {params.norm_method} != "SPIKEIN" ]]; then
-                # run norm
-                SEACR.sh --bedgraph  ${{treat_bed}} \\
-                    --control ${{cntrl_bed}} \\
-                    --normalize norm \\
-                    --mode relaxed \\
-                    --threshold {params.qthresholds} \\
-                    --output norm
-
-                # mv output and rename for consistency
-                mv $TMPDIR/norm.relaxed.bed {output.peak_file}
-            else
-                # run non
+            if [[ "$control" == "nocontrol" ]]; then
+                # Control-free mode: use the {qthresholds} wildcard value as the
+                # numeric SEACR threshold so that each output directory name
+                # reflects the threshold that was actually applied.
                 SEACR.sh --bedgraph ${{treat_bed}} \\
-                    --control ${{cntrl_bed}} \\
+                    --control {params.qthresholds} \\
                     --normalize non \\
                     --mode relaxed \\
-                    --threshold {params.qthresholds} \\
                     --output non
-
                 mv $TMPDIR/non.relaxed.bed {output.peak_file}
+            else
+                # Set control bedgraph based on control_mode
+                if [[ "{params.control_mode}" == "pooled" ]]; then
+                    control_sample=$(echo $control | sed 's/_[0-9]*$//')
+                    cntrl_bed={params.pooled_bg_path}/${{control_sample}}.{params.dupstatus}.{params.norm_method}.bedgraph
+                else
+                    cntrl_bed={params.bg_path}/${{control}}.{params.dupstatus}.bedgraph
+                fi
+
+                if [[ {params.norm_method} != "SPIKEIN" ]]; then
+                    # run norm
+                    SEACR.sh --bedgraph  ${{treat_bed}} \\
+                        --control ${{cntrl_bed}} \\
+                        --normalize norm \\
+                        --mode relaxed \\
+                        --threshold {params.qthresholds} \\
+                        --output norm
+                    mv $TMPDIR/norm.relaxed.bed {output.peak_file}
+                else
+                    # run non
+                    SEACR.sh --bedgraph ${{treat_bed}} \\
+                        --control ${{cntrl_bed}} \\
+                        --normalize non \\
+                        --mode relaxed \\
+                        --threshold {params.qthresholds} \\
+                        --output non
+                    mv $TMPDIR/non.relaxed.bed {output.peak_file}
+                fi
             fi
 
             # create bigbed files
@@ -660,15 +701,18 @@ rule gopeaks_narrow:
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
 
-        if [[ "$control_mode" == "pooled" ]]; then
-            if [[ "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
-                exit 1
-            fi
-        else
-            if [[ ! "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
-                exit 1
+        # Skip format validation for control-free runs (nocontrol sentinel value)
+        if [[ "$control" != "nocontrol" ]]; then
+            if [[ "$control_mode" == "pooled" ]]; then
+                if [[ "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
+                    exit 1
+                fi
+            else
+                if [[ ! "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
+                    exit 1
+                fi
             fi
         fi
 
@@ -676,21 +720,22 @@ rule gopeaks_narrow:
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # Check if using pooled controls based on control_mode wildcard
-        if [[ "{params.control_mode}" == "pooled" ]]; then
-            # Extract control sample name (remove replicate suffix)
-            control_sample=$(echo $control | sed 's/_[0-9]*$//')
-            cntrl_bam={params.pooled_bam_path}/${{control_sample}}.{params.dupstatus}.merged.bam
-        else
-            # Use per-replicate control (individual mode)
-            cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
-        fi
-
         # set treatment bam file
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
 
-        # run gopeaks
-        {params.gopeaks} -b ${{treat_bam}} -c ${{cntrl_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/narrow
+        # run gopeaks with or without control
+        if [[ "$control" == "nocontrol" ]]; then
+            {params.gopeaks} -b ${{treat_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/narrow
+        else
+            # set control bam based on control_mode
+            if [[ "{params.control_mode}" == "pooled" ]]; then
+                control_sample=$(echo $control | sed 's/_[0-9]*$//')
+                cntrl_bam={params.pooled_bam_path}/${{control_sample}}.{params.dupstatus}.merged.bam
+            else
+                cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
+            fi
+            {params.gopeaks} -b ${{treat_bam}} -c ${{cntrl_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/narrow
+        fi
 
         # mv output and rename for consistency
         mv $TMPDIR/narrow_peaks.bed {output.peak_file}
@@ -744,15 +789,18 @@ rule gopeaks_broad:
         control_mode="{params.control_mode}"
         control=`echo "$tc_pair" | awk -F"_vs_" '{{print $NF}}'`
 
-        if [[ "$control_mode" == "pooled" ]]; then
-            if [[ "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
-                exit 1
-            fi
-        else
-            if [[ ! "$control" =~ _[0-9]+$ ]]; then
-                echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
-                exit 1
+        # Skip format validation for control-free runs (nocontrol sentinel value)
+        if [[ "$control" != "nocontrol" ]]; then
+            if [[ "$control_mode" == "pooled" ]]; then
+                if [[ "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid pooled control pair '$tc_pair' - control has replicate number"
+                    exit 1
+                fi
+            else
+                if [[ ! "$control" =~ _[0-9]+$ ]]; then
+                    echo "ERROR: Invalid individual control pair '$tc_pair' - control missing replicate number"
+                    exit 1
+                fi
             fi
         fi
 
@@ -760,21 +808,22 @@ rule gopeaks_broad:
         treatment=`echo {params.tc_file} | awk -F"_vs_" '{{print $1}}'`
         control=`echo {params.tc_file} | awk -F"_vs_" '{{print $2}}'`
 
-        # Check if using pooled controls based on control_mode wildcard
-        if [[ "{params.control_mode}" == "pooled" ]]; then
-            # Extract control sample name (remove replicate suffix)
-            control_sample=$(echo $control | sed 's/_[0-9]*$//')
-            cntrl_bam={params.pooled_bam_path}/${{control_sample}}.{params.dupstatus}.merged.bam
-        else
-            # Use per-replicate control (individual mode)
-            cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
-        fi
-
         # set treatment bam file
         treat_bam={params.bam_path}/${{treatment}}.{params.dupstatus}.bam
 
-        # run gopeaks
-        {params.gopeaks} -b ${{treat_bam}} -c ${{cntrl_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/broad --broad
+        # run gopeaks with or without control
+        if [[ "$control" == "nocontrol" ]]; then
+            {params.gopeaks} -b ${{treat_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/broad --broad
+        else
+            # set control bam based on control_mode
+            if [[ "{params.control_mode}" == "pooled" ]]; then
+                control_sample=$(echo $control | sed 's/_[0-9]*$//')
+                cntrl_bam={params.pooled_bam_path}/${{control_sample}}.{params.dupstatus}.merged.bam
+            else
+                cntrl_bam={params.bam_path}/${{control}}.{params.dupstatus}.bam
+            fi
+            {params.gopeaks} -b ${{treat_bam}} -c ${{cntrl_bam}} -p {params.qthresholds} -o ${{TMPDIR}}/broad --broad
+        fi
 
         # mv output and rename for consistency
         mv $TMPDIR/broad_peaks.bed {output.peak_file}
@@ -790,14 +839,14 @@ rule count_peaks:
     input:
         peaks=get_all_peak_files
     output:
-        peak_count=join(RESULTSDIR,"peaks","all.peaks.txt"),
-        peak_table=join(RESULTSDIR,"peaks","Peak counts.xlsx"),
+        peak_count=join(RESULTSDIR,"peaks","all.peaks.without_control.txt") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","all.peaks.with_control.txt"),
+        peak_table=join(RESULTSDIR,"peaks","Peak_counts.without_control.xlsx") if RUN_WITHOUT_CONTROLS else join(RESULTSDIR,"peaks","Peak_counts.with_control.xlsx"),
     params:
         outdir=join(RESULTSDIR,"peaks"),
-        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R")
+        rscript=join(SCRIPTSDIR,"_plot_peak_counts.R"),
     container: config['containers']['carlisle_r']
     shell:
         """
         wc -l {input.peaks} > {output.peak_count}
-        Rscript {params.rscript} {output.peak_count} {params.outdir}
+        Rscript {params.rscript} {output.peak_count} {params.outdir} {output.peak_table:q}
         """

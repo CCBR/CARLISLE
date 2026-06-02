@@ -15,21 +15,30 @@ pp = pprint.PrettyPrinter(indent=4)
 #########################################################
 # FILE-ACTION FUNCTIONS
 #########################################################
-def check_existence(filename):
+def check_existence(filename, context=""):
   if not os.path.exists(filename):
-    exit("# File: %s does not exists!"%(filename))
+    msg = "ERROR: File does not exist: %s" % filename
+    if context:
+      msg += "\n       Context: %s" % context
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
   return True
 
-def check_readaccess(filename):
-  check_existence(filename)
+def check_readaccess(filename, context=""):
+  check_existence(filename, context=context)
   if not os.access(filename,os.R_OK):
-    exit("# File: %s exists, but cannot be read!"%(filename))
+    msg = "ERROR: File exists but cannot be read: %s" % filename
+    if context:
+      msg += "\n       Context: %s" % context
+    sys.stderr.write(msg + "\n")
+    sys.exit(1)
   return True
 
 def check_writeaccess(filename):
   check_existence(filename)
   if not os.access(filename,os.W_OK):
-    exit("# File: %s exists, but cannot be read!"%(filename))
+    sys.stderr.write("ERROR: File exists but cannot be written: %s\n"%(filename))
+    sys.exit(1)
   return True
 
 def get_file_size(filename):
@@ -101,7 +110,7 @@ for r in REPLICATES:
         if not os.path.exists(r1new):
             open(r1new, 'a').close()
     else:
-        check_readaccess(r1)
+        check_readaccess(r1, context="Sample '%s' replicate %d - R1 file not found. Check %s" % (sn, int(df[df['replicateName']==r].iloc[0].replicateNumber), config["samplemanifest"]))
         if not os.path.exists(r1new):
             os.symlink(r1,r1new)
     replicateName2R1[r]=r1new
@@ -112,7 +121,7 @@ for r in REPLICATES:
         if not os.path.exists(r2new):
             open(r2new, 'a').close()
     else:
-        check_readaccess(r2)
+        check_readaccess(r2, context="Sample '%s' replicate %d - R2 file not found. Check %s" % (sn, int(df[df['replicateName']==r].iloc[0].replicateNumber), config["samplemanifest"]))
         if not os.path.exists(r2new):
             os.symlink(r2,r2new)
     replicateName2R2[r]=r2new
@@ -126,32 +135,52 @@ print("# Sample manifest is confirmed!")
 
 print("#"*100)
 print("# Checking Contrast Manifest...:")
+RUN_WITHOUT_CONTROLS = bool(config.get("run_without_controls", False))
+if RUN_WITHOUT_CONTROLS:
+    print("# INFO: run_without_controls is TRUE — skipping control validation")
+    print("# INFO: All treatment samples will be run without a paired control")
 process_replicates = []
 TREATMENTS = []
 CONTROLS = []
 TREATMENT_CONTROL_LIST=[]
 TREATMENT_WITHOUTCONTROL_LIST=[]
 TREAT_to_CONTRL_DICT=dict()
-for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
-    crow=df[df['replicateName']==t].iloc[0]
-    c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
-    if not c in REPLICATES:
-        print("# Control NOT found for sampleName_replicateNumber:"+t)
-        print("# "+config["samplemanifest"]+" has no entry for sample:"+crow.controlName+"  replicateNumber:"+str(crow.controlReplicateNumber))
-        exit()
-    print("## "+str(i+1)+") "+t+"        "+c)
-    process_replicates.extend([t,c])
-    TREATMENTS.append(t)
-    CONTROLS.append(c)
-    TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
-    TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
-    TREAT_to_CONTRL_DICT[t]=c
+if not RUN_WITHOUT_CONTROLS:
+    for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
+        crow=df[df['replicateName']==t].iloc[0]
+        c=crow.controlName+"_"+str(int(crow.controlReplicateNumber))
+        if not c in REPLICATES:
+            sys.stderr.write("ERROR: Control sample missing!\n" +
+                 "       Treatment: %s\n" % t +
+                 "       Expected control: %s (replicateNumber: %d)\n" % (crow.controlName, int(crow.controlReplicateNumber)) +
+                 "       The control must be defined in: %s\n" % config["samplemanifest"] +
+                 "       OR set 'run_without_controls: true' in config.yaml to run without controls\n")
+            sys.exit(1)
+        print("## "+str(i+1)+") "+t+"        "+c)
+        process_replicates.extend([t,c])
+        TREATMENTS.append(t)
+        CONTROLS.append(c)
+        TREATMENT_CONTROL_LIST.append(t+"_vs_"+c)
+        TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
+        TREAT_to_CONTRL_DICT[t]=c
+else:
+    # Control-free mode: populate lists from all non-control replicates
+    for i,t in enumerate(list(df[df['isControl']=="N"]['replicateName'].unique())):
+        print("## "+str(i+1)+") "+t+"  (no control)")
+        process_replicates.append(t)
+        TREATMENTS.append(t)
+        TREATMENT_WITHOUTCONTROL_LIST.append(t+"_vs_nocontrol")
+        TREAT_to_CONTRL_DICT[t]="nocontrol"
 process_replicates=list(set(process_replicates))
-if len(process_replicates)!=len(REPLICATES):
-    not_to_process = set(REPLICATES) - set(process_replicates)
-    print("# Following replicates will not be processed as they are not part of any Treatment Control combination!")
-    for i in not_to_process:
-        print("# "+i)
+if not RUN_WITHOUT_CONTROLS:
+    if len(process_replicates)!=len(REPLICATES):
+        not_to_process = set(REPLICATES) - set(process_replicates)
+        print("# Following replicates will not be processed as they are not part of any Treatment Control combination!")
+        for i in not_to_process:
+            print("# "+i)
+        REPLICATES = process_replicates
+else:
+    # In control-free mode, REPLICATES = only the treatment replicates
     REPLICATES = process_replicates
 print("# Contrast manifest is confirmed!")
 
@@ -162,7 +191,16 @@ split_keysDF = pd.DataFrame(originalDF['key'].str.split(':').tolist())
 finalDF = split_keysDF.join(originalDF['val'])
 finalDF.to_csv(fpath, sep='\t', header=False, index=False)
 
-# validate pool_controls setting
+# Force-override incompatible settings when running without controls
+if RUN_WITHOUT_CONTROLS:
+    if config.get("macs2_control", "Y") == "Y":
+        print("# WARNING: run_without_controls is true — forcing macs2_control to 'N'")
+        config["macs2_control"] = "N"
+    if config.get("pool_controls", False):
+        print("# WARNING: run_without_controls is true — forcing pool_controls to false")
+        config["pool_controls"] = False
+
+# validate pool_controls setting (only relevant when controls are present)
 if config.get("pool_controls", False):
     if not CONTROLS or len(CONTROLS) == 0:
         print("#"*100)
@@ -175,7 +213,7 @@ if config.get("pool_controls", False):
         print("#   1. Set pool_controls: false in config.yaml, OR")
         print("#   2. Add control samples to your samples.tsv")
         print("#"*100)
-        exit(1)
+        sys.exit(1)
     # Check if controls have replicates for pooling
     control_samples = list(set([c.rsplit('_',1)[0] for c in CONTROLS]))
     if len(control_samples) == len(CONTROLS):
@@ -190,11 +228,12 @@ if config.get("pool_controls", False):
 # Get unique control sample names from samples.tsv where isControl == Y
 # This is the authoritative list of base control names (e.g., PBS_IgG, mSTAR_IgG)
 # Works with any naming convention including multiple underscores
-CONTROL_SAMPLES = list(df[df['isControl']=="Y"]['sampleName'].unique())
+# Empty when run_without_controls is true
+CONTROL_SAMPLES = [] if RUN_WITHOUT_CONTROLS else list(df[df['isControl']=="Y"]['sampleName'].unique())
 
 # Set control modes based on pool_controls setting
 # When pool_controls is true, we run analysis with both individual and pooled controls
-# When pool_controls is false, we only run with individual controls
+# When pool_controls is false (or run_without_controls is true), only individual mode
 CONTROL_MODES = ["individual", "pooled"] if config.get("pool_controls", False) else ["individual"]
 
 # Create pooled treatment control lists where control replicate numbers are removed
@@ -233,11 +272,15 @@ def is_valid_control_treatment_combo(control_mode, treatment_control_list):
 
 # set treatment lists depending on whether controls were used for all peak callers
 # macs2 allows for with or without controls; all other callers require with controls
+# when run_without_controls is true, all callers use the nocontrol list
 if (config["macs2_control"] == "Y"):
     TREATMENT_LIST_M=TREATMENT_CONTROL_LIST
 else:
     TREATMENT_LIST_M=TREATMENT_WITHOUTCONTROL_LIST
-TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
+if RUN_WITHOUT_CONTROLS:
+    TREATMENT_LIST_SG=TREATMENT_WITHOUTCONTROL_LIST
+else:
+    TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
 
 # create duplication and peaktype list
 DUPSTATUS=config["dupstatus"]
@@ -257,9 +300,9 @@ for pt in PEAKTYPE:
     elif pt == "seacr_stringent" or pt == "seacr_relaxed":
         s_set.append(pt)
     else:
-        print("A peak type combination was used that is non-compatiable")
-        print(pt)
-        exit()
+        sys.stderr.write("A peak type combination was used that is incompatible\n")
+        sys.stderr.write(str(pt) + "\n")
+        sys.exit(1)
 PEAKTYPE_M=list(set(macs_set))
 PEAKTYPE_G=list(set(g_set))
 PEAKTYPE_S=list(set(s_set))
@@ -285,13 +328,13 @@ DEEPTOOLS_BEDTYPES = list(
     filter(None, [x.strip() for x in config.get("deeptools_bedtypes", "geneinfo,protein_coding,ca_ctcf,ca_h3k4me3,ca_tf,pls,pels").split(",")])
 )
 if len(DEEPTOOLS_BEDTYPES) == 0:
-    print("# ERROR: deeptools_bedtypes is empty. Please provide at least one bedtype.")
-    exit(1)
+    sys.stderr.write("# ERROR: deeptools_bedtypes is empty. Please provide at least one bedtype.\n")
+    sys.exit(1)
 invalid_bedtypes = [x for x in DEEPTOOLS_BEDTYPES if x not in ALLOWED_DEEPTOOLS_BEDTYPES]
 if invalid_bedtypes:
-    print("# ERROR: Invalid deeptools_bedtypes in config:", ",".join(invalid_bedtypes))
-    print("# Allowed options are:", ",".join(ALLOWED_DEEPTOOLS_BEDTYPES))
-    exit(1)
+    sys.stderr.write("# ERROR: Invalid deeptools_bedtypes in config: %s\n" % ",".join(invalid_bedtypes))
+    sys.stderr.write("# Allowed options are: %s\n" % ",".join(ALLOWED_DEEPTOOLS_BEDTYPES))
+    sys.exit(1)
 DEEPTOOLS_BEDTYPE_PATTERN = "|".join([re.escape(x) for x in DEEPTOOLS_BEDTYPES])
 
 # set contrast settings
@@ -316,18 +359,18 @@ if config["run_contrasts"]:
         c1 = row['condition1']
         c2 = row['condition2']
         if not c1 in SAMPLE2REPLICATES:
-            print(" # %s condition1 in %s has no samples/replicates!"%(c1,contrasts_table))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' in %s is not defined in the sample manifest. Available samples: %s\n" % (c1, contrasts_table, ", ".join(SAMPLE2REPLICATES.keys())))
+            sys.exit(1)
         if not c2 in SAMPLE2REPLICATES:
-            print(" # %s condition2 in %s has no samples/replicates!"%(c2,contrasts_table))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' in %s is not defined in the sample manifest. Available samples: %s\n" % (c2, contrasts_table, ", ".join(SAMPLE2REPLICATES.keys())))
+            sys.exit(1)
         # Ensure both conditions have at least one replicate listed
         if len(SAMPLE2REPLICATES[c1]) == 0:
-            print(" # %s has no replicates in samples manifest!" % (c1))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' has no replicates in the sample manifest\n" % (c1))
+            sys.exit(1)
         if len(SAMPLE2REPLICATES[c2]) == 0:
-            print(" # %s has no replicates in samples manifest!" % (c2))
-            exit()
+            sys.stderr.write("ERROR: Condition '%s' has no replicates in the sample manifest\n" % (c2))
+            sys.exit(1)
         for ds in DUPSTATUS:
             for pt in PEAKTYPE:
                 for qt in QTRESHOLDS:
@@ -350,15 +393,15 @@ if config["run_contrasts"]:
                         continue
                     m = re.match(r'^(.+?)_(\d+)$', ex)
                     if not m:
-                        print(" # Invalid replicate format in exclude_replicates: %s. Expected sampleName_N" % (ex))
-                        exit()
+                        sys.stderr.write(" # Invalid replicate format in exclude_replicates: %s. Expected sampleName_N\n" % (ex))
+                        sys.exit(1)
                     base_sample = m.group(1)
                     if base_sample not in [c1, c2]:
-                        print(" # Excluded replicate %s does not belong to %s or %s" % (ex, c1, c2))
-                        exit()
+                        sys.stderr.write(" # Excluded replicate %s does not belong to %s or %s\n" % (ex, c1, c2))
+                        sys.exit(1)
                     if ex not in REPLICATES:
-                        print(" # Excluded replicate %s not found in samples manifest replicates" % (ex))
-                        exit()
+                        sys.stderr.write(" # Excluded replicate %s not found in samples manifest replicates\n" % (ex))
+                        sys.exit(1)
                 CONTRAST_EXCLUDE[c1+"_vs_"+c2] = excludes
             else:
                 CONTRAST_EXCLUDE[c1+"_vs_"+c2] = []
@@ -476,8 +519,8 @@ elif NORM_METHOD == "LIBRARY":
 elif NORM_METHOD == "NONE":
     SPIKED_GENOMEFA=""
 else:
-    print("User must select from one of the three available norm methods: spikein,library, none")
-    exit()
+    sys.stderr.write("User must select from one of the three available norm methods: spikein,library, none\n")
+    sys.exit(1)
 
 BOWTIE2_INDEX = join(WORKDIR,"bowtie2_index")
 refdata = dict()

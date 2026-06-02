@@ -180,6 +180,7 @@ function controlcheck(){
 function dryrun() {
 # Dry-run
   runcheck
+  module load $SINGULARITY_VERSION
   controlcheck
 
   if [ ! -d ${WORKDIR}/logs/dryrun/ ]; then mkdir ${WORKDIR}/logs/dryrun/; fi
@@ -188,12 +189,20 @@ function dryrun() {
     modtime=$(stat ${WORKDIR}/dryrun.log |grep Modify|awk '{print $2,$3}'|awk -F"." '{print $1}'|sed "s/ //g"|sed "s/-//g"|sed "s/://g")
     mv ${WORKDIR}/dryrun.log ${WORKDIR}/logs/dryrun/dryrun.${modtime}.log
   fi
-  run "--dry-run -r" | tee ${WORKDIR}/dryrun.log
+
+  echo "========================================" | tee ${WORKDIR}/dryrun.log
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR" | tee -a ${WORKDIR}/dryrun.log
+  echo "========================================" | tee -a ${WORKDIR}/dryrun.log
+  print_versions | tee -a ${WORKDIR}/dryrun.log
+
+  run "--dry-run -r" | tee -a ${WORKDIR}/dryrun.log
 }
 
 function unlock() {
 # Unlock the workdir if previous snakemake run ended abruptly
   runcheck
+  module load $SINGULARITY_VERSION
   run "--unlock"
 }
 
@@ -209,6 +218,12 @@ function runlocal() {
   set_singularity_binds
   if [ "$SLURM_JOB_ID" == "" ];then err "runlocal can only be done on an interactive node"; fi
   module load $SINGULARITY_VERSION
+  echo "========================================"
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+  echo "========================================"
+  print_versions
+
   run "--dry-run" && echo "Dry-run was successful .... starting local execution" && run "local"
 }
 
@@ -226,8 +241,23 @@ function runtest() {
 function runslurm() {
 # Submit the execution of the pipeline to the biowulf job scheduler (slurm)
   runcheck
+  module load $SINGULARITY_VERSION
   set_singularity_binds
+  echo "========================================"
+  echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+  echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+  echo "========================================"
+  print_versions
   run "--dry-run" && echo "Dry-run was successful .... submitting jobs to job-scheduler" && run "slurm"
+}
+
+function print_versions() {
+# Print versions of Snakemake and Singularity
+  echo "========================================"
+  echo "Tool Versions:"
+  snakemake --version 2>/dev/null && echo "Snakemake version checked" || echo "Snakemake version: unable to determine"
+  singularity --version 2>/dev/null && echo "Singularity version checked" || echo "Singularity/Apptainer version: UNAVAILABLE"
+  echo "========================================"
 }
 
 function preruncleanup() {
@@ -271,6 +301,14 @@ function run() {
   if [ "$1" == "local" ]; then
     preruncleanup
 
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+    echo "========================================"
+    print_versions
+    echo ""
+
     $EXPORT_SING_CACHE_DIR_CMD
 
     snakemake -s $SNAKEFILE \
@@ -278,6 +316,7 @@ function run() {
     --printshellcmds \
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --rerun-triggers ${RERUN_TRIGGERS} \
     --latency-wait 120 \
@@ -291,12 +330,22 @@ function run() {
       snakemake -s $SNAKEFILE \
       --report ${WORKDIR}/logs/runlocal_snakemake_report.html \
       --directory $WORKDIR \
+      --use-singularity \
+      --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
   elif [ "$1" == "slurm" ];then
 
     preruncleanup
+
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
+    echo "========================================"
+    print_versions
+    echo ""
 
     REWRITE_SUBMIT_SCRIPT="false"
     if [[ ! -f ${WORKDIR}/submit_script.sbatch ]]; then
@@ -322,12 +371,31 @@ function run() {
 
     cd \$SLURM_SUBMIT_DIR
 
+    # Diagnostic output: show which modules loaded and check tool availability
+    echo "========================================"
+    echo "Loaded modules:"
+    module list 2>&1 | head -20
+    echo ""
+    echo "Tool availability check:"
+    echo "Snakemake: \$(which snakemake)"
+    echo "Singularity: \$(which singularity)"
+    echo "========================================"
+    echo ""
+
     $EXPORT_SING_CACHE_DIR_CMD
+
+    echo ""
+    echo "========================================"
+    echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
+    echo "SINGULARITY_CACHEDIR has been set to: $SING_CACHE_DIR"
+    echo "========================================"
+    echo ""
 
     snakemake -s $SNAKEFILE \
     --directory $WORKDIR \
     --use-singularity \
     --singularity-args "$SINGULARITY_BINDS" \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --printshellcmds \
     --rerun-triggers ${RERUN_TRIGGERS} \
@@ -346,6 +414,8 @@ function run() {
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
       --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
+      --use-singularity \
+      --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
     fi
 
@@ -358,6 +428,8 @@ EOF
   else # for unlock and dryrun
     snakemake $1 -s $SNAKEFILE \
     --directory $WORKDIR \
+    --use-singularity \
+    --singularity-prefix "$SING_CACHE_DIR" \
     --use-envmodules \
     --printshellcmds \
     --rerun-triggers ${RERUN_TRIGGERS} \
@@ -424,7 +496,9 @@ function main(){
   echo "Working Dir: $WORKDIR"
 
   if [[ -z "$SING_CACHE_DIR" ]]; then
-    if [[ -d "/data/$USER" ]]; then
+    if [[ -n "$SIFCACHE" ]]; then
+      SING_CACHE_DIR="$SIFCACHE"
+    elif [[ -d "/data/$USER" ]]; then
       SING_CACHE_DIR="/data/$USER/.singularity"
     else
       SING_CACHE_DIR="${WORKDIR}/.singularity"

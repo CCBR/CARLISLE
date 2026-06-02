@@ -3,6 +3,8 @@
 !.gitignore
 !.gitattributes
 site/
+__pycache__/
+*.pyc
 **/*.swp
 **/test.*
 
