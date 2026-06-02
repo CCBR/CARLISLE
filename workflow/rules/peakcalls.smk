@@ -123,7 +123,7 @@ rule create_pooled_control_bedgraph:
         # Compute scaling factor using named columns from alignment_stats.tsv
         scale=$(python3 {params.pyscript} \
             --align_stats {input.align_stats} \
-            --sample_pattern "^{params.control_sample}_[0-9]+$" \
+            --control_sample "{params.control_sample}" \
             --norm_method {params.norm_method} \
             --dupstatus {params.dupstatus} \
             --spikein_scale {params.spikein_scale})

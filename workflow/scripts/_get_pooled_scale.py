@@ -32,9 +32,18 @@ def parse_args():
         required=True,
         help="Path to alignment_stats.tsv",
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument(
+        "--control_sample",
+        required=False,
+        help=(
+            "Literal control sample name (without replicate suffix). "
+            "Replicates are matched as '^<escaped_control_sample>_[0-9]+$'."
+        ),
+    )
+    group.add_argument(
         "--sample_pattern",
-        required=True,
+        required=False,
         help="Regex pattern to match control replicate sample_name values "
         "(e.g. '^HN6_IgG_rabbit_negative_control_[0-9]+$')",
     )
@@ -110,7 +119,11 @@ def main():
         # SPIKEIN: always use no_dedup spike-in counts (duplicates not removed)
         column = "no_dedup_nreads_spikein"
 
-    pattern = re.compile(args.sample_pattern)
+    if args.control_sample is not None:
+        pattern_text = rf"^{re.escape(args.control_sample)}_[0-9]+$"
+    else:
+        pattern_text = args.sample_pattern
+    pattern = re.compile(pattern_text)
     all_values: list = []  # all samples — used to compute lib_factor median (LIBRARY only)
     ctrl_total = 0.0
     ctrl_count = 0
@@ -138,7 +151,7 @@ def main():
 
     if ctrl_count == 0:
         sys.exit(
-            f"ERROR: no rows matched sample_pattern '{args.sample_pattern}' "
+            f"ERROR: no rows matched pattern '{pattern_text}' "
             f"in {args.align_stats}"
         )
 
