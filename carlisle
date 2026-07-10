@@ -493,6 +493,11 @@ function run() {
       cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
       log_warn "Existing submit script lacked pipeline state marker logic; backed up to ${backup_file}"
       REWRITE_SUBMIT_SCRIPT="true"
+    elif ! grep -q -- "_progress_monitor" "${WORKDIR}/submit_script.sbatch"; then
+      backup_file="${WORKDIR}/submit_script.sbatch.$(date +%Y%m%d%H%M%S).bak"
+      cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
+      log_warn "Existing submit script lacked progress monitor; backed up to ${backup_file}"
+      REWRITE_SUBMIT_SCRIPT="true"
     fi
 
     if [[ "${REWRITE_SUBMIT_SCRIPT}" == "true" ]]; then
@@ -566,6 +571,52 @@ JSON
     echo "INFO  SINGULARITY_CACHEDIR has been set to: $SING_CACHE_DIR"
     echo "------------------------------------------------------------------"
 
+    # ── Progress monitor ─────────────────────────────────────────────────
+    # Background loop: waits for snakemake.log, then periodically writes
+    # a human-readable progress summary into pipeline.running.
+    _progress_monitor() {
+      local logfile="${WORKDIR}/logs/snakemake.log"
+      local marker="${WORKDIR}/pipeline.running"
+      local waited=0
+      local max_wait=300
+      local raw done_n total_n pct remaining updated
+
+      while [[ ! -f "\$logfile" && "\$waited" -lt "\$max_wait" ]]; do
+        [[ -f "\$marker" ]] || return 0
+        sleep 10
+        waited=\$(( waited + 10 ))
+      done
+
+      if [[ ! -f "\$logfile" ]]; then
+        printf 'Status   : Waiting for snakemake.log\nUpdated  : %s\n' "\$(date '+%Y-%m-%d %H:%M:%S')" > "\$marker"
+      fi
+
+      while true; do
+        [[ -f "\$marker" ]] || break
+        if [[ -f "\$logfile" ]]; then
+          raw=\$(grep -oP '[0-9]+ of [0-9]+ steps \([0-9]+%\) done' "\$logfile" 2>/dev/null | tail -1 || true)
+          if [[ -n "\$raw" ]]; then
+            done_n=\$(printf '%s' "\$raw" | grep -oP '^\d+' || true)
+            total_n=\$(printf '%s' "\$raw" | grep -oP '(?<=of )\d+' || true)
+            pct=\$(printf '%s' "\$raw" | grep -oP '\d+(?=%)' || true)
+            if [[ -n "\$done_n" && -n "\$total_n" && -n "\$pct" ]]; then
+              remaining=\$(( total_n - done_n ))
+              (( remaining < 0 )) && remaining=0
+              updated=\$(date '+%Y-%m-%d %H:%M:%S')
+              printf 'Progress : %s / %s steps complete (%s%%)\nRemaining: %s steps\nUpdated  : %s\n' \
+                "\$done_n" "\$total_n" "\$pct" "\$remaining" "\$updated" > "\$marker"
+            fi
+          elif [[ ! -s "\$marker" ]]; then
+            printf 'Status   : Submitted, waiting for first progress update\nUpdated  : %s\n' "\$(date '+%Y-%m-%d %H:%M:%S')" > "\$marker"
+          fi
+        fi
+        sleep 60
+      done
+    }
+    _progress_monitor &
+    _monitor_pid=\$!
+    # ─────────────────────────────────────────────────────────────────────
+
     snakemake -s $SNAKEFILE \
     --directory $WORKDIR \
     --use-singularity \
@@ -586,6 +637,8 @@ JSON
     2>&1|tee ${WORKDIR}/logs/snakemake.log
 
     snakemake_rc="\$?"
+    kill "\$_monitor_pid" 2>/dev/null || true
+    wait "\$_monitor_pid" 2>/dev/null || true
     if [ "\${snakemake_rc}" -eq "0" ];then
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
