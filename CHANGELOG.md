@@ -31,6 +31,7 @@
 
 ### Bug Fixes
 
+- **Treatment-level motif Slurm resources**: Added explicit `homer_motif_treatment` and `ame_motif_enrichment_treatment` entries to the Biowulf cluster configuration so treatment-level HOMER/AME jobs use the intended 120GB, 32-thread, 2-day resource requests instead of falling back to the 40GB, 2-hour defaults. (#252)
 - **Pooled control bedgraph: reversed scaling factor columns**: `create_pooled_control_bedgraph` used `$NF` (col 11, `dedup_nreads_spikein`) for LIBRARY and `$(NF-1)` (col 10, `dedup_nreads_genome`) for SPIKEIN — exactly swapped. Fixed with named column access via `_get_pooled_scale.py`. (#230)
 - **Pooled control bedgraph: SPIKEIN used pre-filter read counts**: Corrected to `no_dedup_nreads_spikein` (fragment-length + mapq filtered, not deduplicated) to match the individual-replicate `bam2bg` rule. (#230)
 - **Pooled control bedgraph: averaged instead of summed read counts**: The merged pooled BAM contains reads from all replicates; its total depth equals the sum of individual counts, not their average. Fixed aggregation. (#230)
