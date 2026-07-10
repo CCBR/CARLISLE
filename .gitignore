@@ -21,6 +21,7 @@ tmp
 x.sh
 WIP
 dryrun.log
+reset_rose_test_outputs.sh
 POOL_CONTROLS_FEATURE.md
 .snakemake
 .vscode

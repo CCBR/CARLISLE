@@ -272,7 +272,8 @@ def expected_rose_outputs(output_dir, sample_id):
         os.path.join(output_dir, "%s_AllStitched.table.txt" % prefix),
         os.path.join(output_dir, "%s_AllEnhancers.table.txt" % prefix),
         os.path.join(output_dir, "%s_SuperEnhancers.table.txt" % prefix),
-        os.path.join(output_dir, "%s_Enhancer_to_Gene.table.txt" % prefix),
+        os.path.join(output_dir, "%s_SuperEnhancers_ENHANCER_TO_GENE.txt" % prefix),
+        os.path.join(output_dir, "%s_SuperEnhancers_GENE_TO_ENHANCER.txt" % prefix),
     ]
 
 

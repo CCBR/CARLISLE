@@ -700,6 +700,8 @@ rule rose:
     - `rose_input_Gateway_Enhancers.bed`
     - `rose_input_Gateway_SuperEnhancers.bed`
     - `rose_input_AllEnhancers.table.txt`
+    - `rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt`
+    - `rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt`
     - Cleans up large ROSE intermediates (`gff/`, `mappedGFF/`) after success.
     """
     input:
@@ -726,6 +728,8 @@ rule rose:
         gateway_enhancers=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),
         gateway_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_SuperEnhancers.bed"),
         all_enhancers_table=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_AllEnhancers.table.txt"),
+        super_enhancer_to_gene=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),
+        super_gene_to_enhancer=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),
     container: config["containers"].get("rose", "docker://nciccbr/ccbr_rose:v1")
     shell:
         """
@@ -799,6 +803,91 @@ rule rose:
                     -o {params.file_base}
             fi
 
+            # Run Younglab ROSE gene mapper on the super-enhancer table.
+            super_table={params.file_base}/rose_input_SuperEnhancers.table.txt
+            if [[ ! -f ROSE_geneMapper.py ]]; then
+                echo "ERROR: ROSE_geneMapper.py not found in {params.rose_root}."
+                exit 1
+            fi
+            if [[ ! -f "$super_table" ]]; then
+                echo "ERROR: Missing ROSE super-enhancer table required for gene mapping: $super_table"
+                exit 1
+            fi
+
+            # Normalize super-enhancer table schema for ROSE_geneMapper compatibility.
+            # Some ROSE outputs can omit enhancerRank/isSuper columns; geneMapper expects them.
+            normalized_super_table={params.file_base}/rose_input_SuperEnhancers.for_geneMapper.table.txt
+            {params.rose_python} - "$super_table" "$normalized_super_table" <<'PY'
+import sys
+
+
+def normalize_super_table(in_path: str, out_path: str) -> None:
+    with open(in_path, "r", encoding="utf-8") as fin:
+        lines = fin.readlines()
+
+    header_idx = None
+    for i, raw in enumerate(lines):
+        if not raw.startswith("#") and raw.strip():
+            header_idx = i
+            break
+
+    if header_idx is None:
+        raise ValueError("No tabular header found in super-enhancer table")
+
+    header = lines[header_idx].rstrip("\n").split("\t")
+    has_rank = "enhancerRank" in header
+    has_super = "isSuper" in header
+
+    with open(out_path, "w", encoding="utf-8") as fout:
+        for i in range(header_idx):
+            fout.write(lines[i])
+
+        out_header = list(header)
+        if not has_rank:
+            out_header.append("enhancerRank")
+        if not has_super:
+            out_header.append("isSuper")
+        fout.write("\t".join(out_header) + "\n")
+
+        rank_counter = 0
+        for raw in lines[header_idx + 1 :]:
+            stripped = raw.rstrip("\n")
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                fout.write(raw)
+                continue
+
+            rank_counter += 1
+            cols = stripped.split("\t")
+            if not has_rank:
+                cols.append(str(rank_counter))
+            if not has_super:
+                cols.append("1")
+            fout.write("\t".join(cols) + "\n")
+
+    added_cols = []
+    if not has_rank:
+        added_cols.append("enhancerRank")
+    if not has_super:
+        added_cols.append("isSuper")
+
+    if added_cols:
+        print("INFO: Added missing ROSE SuperEnhancers columns for geneMapper: " + ", ".join(added_cols))
+    else:
+        print("INFO: ROSE SuperEnhancers schema already includes enhancerRank/isSuper")
+
+
+normalize_super_table(sys.argv[1], sys.argv[2])
+PY
+
+            {params.rose_python} ROSE_geneMapper.py \
+                -g {params.genome} \
+                -i "$normalized_super_table" \
+                -o {params.file_base}
+
+            rm -f "$normalized_super_table"
+
             # Cleanup large ROSE intermediates not needed downstream.
             rm -rf {params.file_base}/gff {params.file_base}/mappedGFF
         else
@@ -807,6 +896,8 @@ rule rose:
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_enhancers}
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_super}
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all_enhancers_table}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_enhancer_to_gene}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_gene_to_enhancer}
         fi
     """
 if config["run_go_enrichment"]:
