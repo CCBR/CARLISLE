@@ -63,11 +63,14 @@ function usage() {
   1.  RUNMODE: [Type: String] Valid options:
       *) init : initialize workdir
       *) run : run with slurm
-      *) reset : DELETE workdir dir and re-init it
       *) dryrun : dry run snakemake to generate DAG
       *) unlock : unlock workdir if locked by snakemake
       *) runlocal : run without submitting to sbatch
       *) runtest: run on cluster with included hg38 test dataset
+
+      Advanced options:
+      *) reset : DELETE workdir dir and re-init it
+      *) syncscripts : sync workflow/scripts into workdir/scripts
   2.  WORKDIR: [Type: String]: Absolute or relative path to the output folder with write permissions.
 
   Optional Arguments:
@@ -152,8 +155,13 @@ function set_singularity_binds(){
 function rescript(){
 # recopy the scripts folder to WORKDIR
   check_essential_files
-  rsync -avz --no-perms --no-owner --no-group --progress ${PIPELINE_HOME}/workflow/scripts/ $WORKDIR/scripts/
+  rsync -avz --no-perms --no-owner --no-group --progress --exclude '__pycache__/' ${PIPELINE_HOME}/workflow/scripts/ $WORKDIR/scripts/
   echo "$WORKDIR/scripts folder has been updated!"
+}
+
+function syncscripts(){
+# sync workflow/scripts into WORKDIR/scripts so newly added scripts are available
+  rescript
 }
 
 function runcheck(){
@@ -659,13 +667,14 @@ function main(){
 
   case $RUNMODE in
     init) init && exit 0;;
+    syncscripts) syncscripts && exit 0;;
     dryrun) dryrun && exit 0;;
     unlock) unlock && exit 0;;
     run) runslurm && exit 0;;
     runlocal) runlocal && exit 0;;
     reset) reset && exit 0;;
     runtest) runtest && exit 0;;
-    rescript) rescript && exit 0;;               # hidden option for debugging
+    rescript) rescript && exit 0;;               # backward-compatible alias
     printbinds) printbinds && exit 0;;           # hidden option
     *) err "Unknown RUNMODE \"$RUNMODE\"";;
   esac
