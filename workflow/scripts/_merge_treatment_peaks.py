@@ -87,7 +87,7 @@ def cluster_to_record(
     min_support: int,
     max_width: int,
     strict_overlap: int,
-) -> List[Tuple[str, int, int, int, str, int, int]]:
+) -> List[Tuple[str, int, int, str, str, int, int]]:
     reps = sorted({p.replicate for p in cluster})
     if len(reps) < min_support:
         return []
@@ -102,7 +102,7 @@ def cluster_to_record(
                 cluster[0].chrom,
                 start,
                 end,
-                len(reps),
+                "",
                 ",".join(reps),
                 len(cluster),
                 0,
@@ -110,7 +110,7 @@ def cluster_to_record(
         ]
 
     # Too wide: re-cluster with stricter overlap and evaluate each subcluster.
-    refined_records: List[Tuple[str, int, int, int, str, int, int]] = []
+    refined_records: List[Tuple[str, int, int, str, str, int, int]] = []
     refined_clusters = cluster_intervals(cluster, strict_overlap)
     for sub in refined_clusters:
         sub_reps = sorted({p.replicate for p in sub})
@@ -124,7 +124,7 @@ def cluster_to_record(
                 sub[0].chrom,
                 sub_start,
                 sub_end,
-                len(sub_reps),
+                "",
                 ",".join(sub_reps),
                 len(sub),
                 1 if sub_width > max_width else 0,
@@ -134,7 +134,15 @@ def cluster_to_record(
     return refined_records
 
 
-def write_records(records: Sequence[Tuple[str, int, int, int, str, int, int]], output_path: str) -> None:
+def assign_peak_ids(records: Sequence[Tuple[str, int, int, str, str, int, int]]) -> List[Tuple[str, int, int, str, str, int, int]]:
+    assigned: List[Tuple[str, int, int, str, str, int, int]] = []
+    for index, rec in enumerate(records, start=1):
+        peak_id = f"merged_peak_{index:06d}"
+        assigned.append((rec[0], rec[1], rec[2], peak_id, rec[4], rec[5], rec[6]))
+    return assigned
+
+
+def write_records(records: Sequence[Tuple[str, int, int, str, str, int, int]], output_path: str) -> None:
     with open(output_path, "w", encoding="utf-8") as handle:
         for rec in records:
             handle.write(
@@ -164,7 +172,7 @@ def main() -> None:
     args = parser.parse_args()
 
     by_chrom = load_peaks(args.input)
-    all_records: List[Tuple[str, int, int, int, str, int, int]] = []
+    all_records: List[Tuple[str, int, int, str, str, int, int]] = []
 
     for chrom in sorted(by_chrom):
         clusters = cluster_intervals(by_chrom[chrom], args.overlap_bp_min)
@@ -179,7 +187,7 @@ def main() -> None:
             )
 
     all_records.sort(key=lambda r: (r[0], r[1], r[2]))
-    write_records(all_records, args.output)
+    write_records(assign_peak_ids(all_records), args.output)
 
 
 if __name__ == "__main__":

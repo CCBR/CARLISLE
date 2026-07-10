@@ -157,10 +157,10 @@ rule homer_motif:
                 echo "DEBUG: Using hs1 genome with custom FA and GTF"
                 echo "DEBUG: FA file: {params.fa}"
                 echo "DEBUG: GTF file: {params.gtf}"
-                annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+                annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} -preparsedDir $preparsedDir > {output.annotation}
             else
                 echo "DEBUG: Using standard genome: {params.genome}"
-                annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} -preparsedDir $preparsedDir > {output.annotation}
             fi
             echo "DEBUG: HOMER annotation completed"
             echo "DEBUG: Annotation file: {output.annotation}"
@@ -272,10 +272,10 @@ rule homer_motif_deg:
                 echo "DEBUG: Using hs1 genome with custom FA and GTF"
                 echo "DEBUG: FA file: {params.fa}"
                 echo "DEBUG: GTF file: {params.gtf}"
-                annotatePeaks.pl {input.deg_peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+                annotatePeaks.pl {input.deg_peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} -preparsedDir $preparsedDir > {output.annotation}
             else
                 echo "DEBUG: Using standard genome: {params.genome}"
-                annotatePeaks.pl {input.deg_peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+                annotatePeaks.pl {input.deg_peak_file} {params.genome} -annStats {output.annotation_summary} -preparsedDir $preparsedDir > {output.annotation}
             fi
             echo "DEBUG: HOMER annotation (DEG) completed"
 
@@ -744,6 +744,15 @@ rule homer_motif_treatment:
     shell:
         """
         set -euo pipefail
+
+        if [[ -d "/lscratch/$SLURM_JOB_ID" ]]; then
+            TMPDIR=$(mktemp -d "/lscratch/$SLURM_JOB_ID/tmp.XXXXXX")
+        else
+            TMPDIR=$(mktemp -d "/dev/shm/tmp.XXXXXX")
+        fi
+        preparsedDir="$TMPDIR/preparsedDir"
+        mkdir -p "$preparsedDir"
+
         mkdir -p {params.outDir}
 
         num_peaks=$(wc -l < {input.peak_file} || echo 0)
@@ -757,15 +766,17 @@ rule homer_motif_treatment:
         fi
 
         if [[ {params.genome} == "hs1" ]]; then
-            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} -preparsedDir "$preparsedDir" > {output.annotation}
             findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \
                 -nomotif -size given -mknown {params.hocomoco_motif} -p {threads} \
-                -dumpFasta -cpg -maxN 0.1 -len 10
+                -dumpFasta -cpg -maxN 0.1 -len 10 \
+                -preparsedDir "$preparsedDir"
         else
-            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} -preparsedDir "$preparsedDir" > {output.annotation}
             findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \
                 -nomotif -size given -mknown {params.hocomoco_motif} -p {threads} \
-                -dumpFasta -cpg -maxN 0.1 -len 10
+                -dumpFasta -cpg -maxN 0.1 -len 10 \
+                -preparsedDir "$preparsedDir"
         fi
         """
 

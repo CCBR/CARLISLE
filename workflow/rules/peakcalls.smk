@@ -273,7 +273,7 @@ def get_treatment_replicate_peak_files(wildcards):
 rule merge_treatment_peaks:
     """
     Merge replicate peak sets into treatment-level consensus peaks without re-calling.
-    Output columns: chrom, start, end, support_count, replicate_ids, source_peak_count, width_guard_flag
+    Output columns: chrom, start, end, unique_peak_id, replicate_ids, source_peak_count, width_guard_flag
     """
     input:
         peaks=get_treatment_replicate_peak_files
