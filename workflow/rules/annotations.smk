@@ -1,4 +1,5 @@
 import re
+import os
 
 def get_peak_file(wildcards):
     # MACS2 OPTIONS
@@ -19,6 +20,41 @@ def get_peak_file(wildcards):
     if wildcards.peak_caller_type =="gopeaks_broad":
         bed=join(RESULTSDIR,"peaks",wildcards.qthresholds,"gopeaks","peak_output",wildcards.control_mode,wildcards.treatment_control_list + "." + wildcards.dupstatus + ".broad.peaks.bed")
     return bed
+
+
+def get_treatment_peak_file(wildcards):
+    if wildcards.peak_caller_type.startswith("macs2_"):
+        caller = "macs2"
+    elif wildcards.peak_caller_type.startswith("gopeaks_"):
+        caller = "gopeaks"
+    elif wildcards.peak_caller_type.startswith("seacr_"):
+        caller = "seacr"
+    else:
+        raise ValueError("Unsupported peak_caller_type for treatment peak file: %s" % wildcards.peak_caller_type)
+
+    bed = join(
+        RESULTSDIR,
+        "peaks",
+        wildcards.qthresholds,
+        caller,
+        "peak_output",
+        wildcards.control_mode,
+        "treatment_merged",
+        wildcards.treatment_sample + "." + wildcards.dupstatus + "." + wildcards.peak_caller_type + ".peaks.bed",
+    )
+    return bed
+
+
+def get_treatment_control_bam(wildcards):
+    control_sample = TREATMENT_SAMPLE_TO_CONTROL_SAMPLE.get(wildcards.treatment_sample, "nocontrol")
+    if control_sample == "nocontrol":
+        return []
+    return join(
+        RESULTSDIR,
+        "bam",
+        "pooled_controls",
+        control_sample + "." + wildcards.dupstatus + ".merged.bam",
+    )
 def get_deg_bed(wildcards):
     # DEG-based peak sets produced by diffbb
     # method: AUCbased | fragmentsbased
@@ -683,6 +719,141 @@ rule combine_homer:
         Rscript {params.rscript} {input.peaks_file} {input.annotation} {output.combined_tsv} {output.combined_xlsx}
         """
 
+
+rule homer_motif_treatment:
+    """
+    Run HOMER annotation and motif discovery on treatment-level merged peak sets.
+    """
+    input:
+        peak_file=get_treatment_peak_file,
+    output:
+        annotation=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.txt"),
+        annotation_summary=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.summary"),
+        known_html=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","background.fa"),
+    threads: getthreads("homer_motif")
+    envmodules:
+        TOOLS["homer"],
+    params:
+        genome=config["genome"],
+        fa=config["reference"][config["genome"]]["fa"],
+        gtf=config["reference"][config["genome"]]["gtf"],
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs"),
+        hocomoco_motif=config["hocomoco_motifs"],
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p {params.outDir}
+
+        num_peaks=$(wc -l < {input.peak_file} || echo 0)
+        if [[ $num_peaks -lt 5 ]]; then
+            echo "# No peaks found for HOMER annotation" > {output.annotation}
+            echo -e "Annotation\tDistance to TSS\tNumber of Peaks\t% of Peaks\tTotal size (bp)\tLog10 p-value\tLog2 Ratio (vs. Genome)\tLogP enrichment (+values depleted)" > {output.annotation_summary}
+            echo "<html><body><h1>No peaks available for motif analysis</h1></body></html>" > {output.known_html}
+            : > {output.target_fasta}
+            : > {output.background_fasta}
+            exit 0
+        fi
+
+        if [[ {params.genome} == "hs1" ]]; then
+            annotatePeaks.pl {input.peak_file} {params.fa} -annStats {output.annotation_summary} -gtf {params.gtf} > {output.annotation}
+            findMotifsGenome.pl {input.peak_file} {params.fa} {params.outDir} \
+                -nomotif -size given -mknown {params.hocomoco_motif} -p {threads} \
+                -dumpFasta -cpg -maxN 0.1 -len 10
+        else
+            annotatePeaks.pl {input.peak_file} {params.genome} -annStats {output.annotation_summary} > {output.annotation}
+            findMotifsGenome.pl {input.peak_file} {params.genome} {params.outDir} \
+                -nomotif -size given -mknown {params.hocomoco_motif} -p {threads} \
+                -dumpFasta -cpg -maxN 0.1 -len 10
+        fi
+        """
+
+
+rule ame_motif_enrichment_treatment:
+    """
+    Run AME motif enrichment on treatment-level HOMER motif FASTAs.
+    """
+    input:
+        target_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","target.fa"),
+        background_fasta=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","background.fa"),
+    output:
+        ame_results=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),
+    threads: getthreads("ame_motif_enrichment")
+    envmodules:
+        TOOLS["parallel"],
+        TOOLS["meme"],
+    params:
+        outDir=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs"),
+        hocomoco_memes_tar=config["hocomoco_memes_targz"],
+        python_script=join(SCRIPTSDIR,"_parse_ame_output.py"),
+    shell:
+        """
+        set -euo pipefail
+        cd {params.outDir}
+        if [[ ! -s target.fa || ! -s background.fa ]]; then
+            echo "# No sequences for AME analysis" > {output.ame_results}
+            exit 0
+        fi
+
+        rm -rf tmpdir
+        mkdir -p tmpdir
+        cp target.fa tmpdir/target.fa
+        cp background.fa tmpdir/background.fa
+        cd tmpdir
+
+        printf '%b\n' 'rank\tmotif_DB\tmotif_ID\tmotif_ALT_ID\tconsensus\tp-value\tadjusted-p-value\tE-value\ttests\tFAMP\tn_sequences\tTP\t%TP\tFP\t%FP' > {output.ame_results}
+        cp {params.hocomoco_memes_tar} .
+        tar xzf $(basename {params.hocomoco_memes_tar})
+        ls *.meme 2>/dev/null | sort > memes || true
+        if [[ -s memes ]]; then
+            while read a; do
+                echo "ame --o ${{a}}_ame_out --noseq --control background.fa --seed 12345 --verbose 3 target.fa ${{a}}"
+            done < memes > do_memes
+            parallel -j {threads} < do_memes
+            find . -name 'ame.tsv' -exec cat {{}} \; | \
+                grep -A1 ^rank | grep -v '^--$' | grep -v ^rank | sort | uniq | sort -k7,7g | \
+                python {params.python_script} >> {output.ame_results}
+        fi
+        cd {params.outDir}
+        rm -rf tmpdir
+        """
+
+
+def get_treatment_homer_annotation_summaries(wildcards):
+    files = []
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.summary"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M))
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.summary"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G))
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.summary"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S))
+    return files
+
+
+rule aggregate_homer_treatment:
+    """
+    Create one global HOMER annotation summary across all treatment-level runs.
+    """
+    input:
+        summaries=get_treatment_homer_annotation_summaries
+    output:
+        aggregate=join(RESULTSDIR,"peaks","annotation","homer_treatment","all_treatments.annotation_summary.tsv")
+    params:
+        script=join(SCRIPTSDIR, "_aggregate_homer_treatment.py"),
+        input_args=lambda w, input: " ".join([
+            "--input " + os.path.basename(p).replace(".annotation.summary", "") + "::" + p
+            for p in input.summaries
+        ])
+    envmodules:
+        TOOLS["python3"]
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p "$(dirname "{output.aggregate}")"
+        python {params.script} {params.input_args} --output {output.aggregate}
+        """
+
 rule rose:
     """
     Run ROSE with a containerized two-step flow:
@@ -903,6 +1074,230 @@ PY
             echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_gene_to_enhancer}
         fi
     """
+
+
+rule rose_treatment:
+    """
+    Run ROSE on treatment-level merged peak sets and merged treatment BAMs.
+    """
+    input:
+        peak_file=get_treatment_peak_file,
+        treatment_bam=join(RESULTSDIR,"bam","treatment_merged","{treatment_sample}.{dupstatus}.merged.bam"),
+        control_bam=get_treatment_control_bam,
+    threads: getthreads("rose")
+    params:
+        genome=config["genome"],
+        tss_bed=config["reference"][config["genome"]]["tss_bed"],
+        stitch_distance=config["stitch_distance"],
+        tss_distance=config["tss_distance"],
+        peak_caller_type="{peak_caller_type}",
+        treatment_sample="{treatment_sample}",
+        control_sample=lambda w: TREATMENT_SAMPLE_TO_CONTROL_SAMPLE.get(w.treatment_sample, "nocontrol"),
+        dupstatus="{dupstatus}",
+        file_base=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}"),
+        control_flag=config["macs2_control"],
+        rose_root="/opt/ROSE",
+        rose_python="/opt/conda/envs/rose/bin/python",
+        prep_bed_name="rose_input.prepared.stitched.bed",
+        prep_gff_name="rose_input.prepared.stitched.gff",
+    output:
+        enh_with_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),
+        gateway_enhancers=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_Enhancers.bed"),
+        gateway_super=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Gateway_SuperEnhancers.bed"),
+        all_enhancers_table=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_AllEnhancers.table.txt"),
+        super_enhancer_to_gene=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),
+        super_gene_to_enhancer=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),
+    container: config["containers"].get("rose", "docker://nciccbr/ccbr_rose:v1")
+    shell:
+        """
+        set -euo pipefail
+        if [[ "{params.genome}" != "hg19" && "{params.genome}" != "hg38" && "{params.genome}" != "mm10" ]]; then
+            echo "ERROR: rule rose_treatment supports only hg19, hg38, and mm10. Found genome={params.genome}"
+            exit 1
+        fi
+
+        mkdir -p {params.file_base}
+
+        treat_bam={input.treatment_bam}
+        control="{params.control_sample}"
+        cntrl_bam={input.control_bam}
+
+        control_arg=""
+        if [[ "$control" == "nocontrol" ]]; then
+            echo "ROSE control BAM omitted for control-free run (nocontrol sentinel)"
+        elif [[ "{params.control_flag}" == "N" ]] && [[ "{params.peak_caller_type}" == "macs2_narrow" || "{params.peak_caller_type}" == "macs2_broad" ]]; then
+            echo "ROSE control BAM omitted for MACS2 with macs2_control=N"
+        else
+            control_arg="--control-bam ${{cntrl_bam}}"
+        fi
+
+        run-prep-rose \
+            --peak-file {input.peak_file} \
+            --peak-format auto \
+            --sample-id {params.treatment_sample} \
+            --treatment-bam ${{treat_bam}} \
+            ${{control_arg}} \
+            --genome {params.genome} \
+            --tss-bed {params.tss_bed} \
+            --stitch-distance {params.stitch_distance} \
+            --tss-distance {params.tss_distance} \
+            --output-dir {params.file_base} \
+            --prepared-bed-name {params.prep_bed_name} \
+            --prepared-gff-name {params.prep_gff_name}
+
+        prep_bed={params.file_base}/{params.prep_bed_name}
+        prep_gff={params.file_base}/{params.prep_gff_name}
+        num_of_peaks=`cat "$prep_bed" | wc -l`
+        if [[ ${{num_of_peaks}} -gt 4 ]]; then
+            cd {params.rose_root}
+            if [[ -n "$control_arg" ]]; then
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -c ${{cntrl_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            else
+                {params.rose_python} ROSE_main.py \
+                    -g {params.genome} \
+                    -i "$prep_gff" \
+                    -r ${{treat_bam}} \
+                    -s {params.stitch_distance} \
+                    -t {params.tss_distance} \
+                    -o {params.file_base}
+            fi
+
+            super_table={params.file_base}/rose_input_SuperEnhancers.table.txt
+            normalized_super_table={params.file_base}/rose_input_SuperEnhancers.for_geneMapper.table.txt
+            {params.rose_python} - "$super_table" "$normalized_super_table" <<'PY'
+import sys
+
+
+def normalize_super_table(in_path, out_path):
+    newline = chr(10)
+    tab = chr(9)
+
+    with open(in_path, "r") as fin:
+        lines = fin.readlines()
+
+    header_idx = None
+    for i, raw in enumerate(lines):
+        if not raw.startswith("#") and raw.strip():
+            header_idx = i
+            break
+
+    if header_idx is None:
+        raise ValueError("No tabular header found in super-enhancer table")
+
+    header = lines[header_idx].rstrip(newline).split(tab)
+    has_rank = "enhancerRank" in header
+    has_super = "isSuper" in header
+
+    with open(out_path, "w") as fout:
+        for i in range(header_idx):
+            fout.write(lines[i])
+        out_header = list(header)
+        if not has_rank:
+            out_header.append("enhancerRank")
+        if not has_super:
+            out_header.append("isSuper")
+        fout.write(tab.join(out_header) + newline)
+
+        rank_counter = 0
+        for raw in lines[header_idx + 1 :]:
+            stripped = raw.rstrip(newline)
+            if not stripped:
+                continue
+            if stripped.startswith("#"):
+                fout.write(raw)
+                continue
+            rank_counter += 1
+            cols = stripped.split(tab)
+            if not has_rank:
+                cols.append(str(rank_counter))
+            if not has_super:
+                cols.append("1")
+            fout.write(tab.join(cols) + newline)
+
+
+normalize_super_table(sys.argv[1], sys.argv[2])
+PY
+
+            {params.rose_python} ROSE_geneMapper.py \
+                -g {params.genome} \
+                -i "$normalized_super_table" \
+                -o {params.file_base}
+
+            rm -f "$normalized_super_table"
+            rm -rf {params.file_base}/gff {params.file_base}/mappedGFF
+        else
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.enh_with_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_enhancers}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.gateway_super}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.all_enhancers_table}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_enhancer_to_gene}
+            echo "Less than 5 usable peaks detected (N=${{num_of_peaks}})" > {output.super_gene_to_enhancer}
+        fi
+        """
+
+
+def get_treatment_rose_super_to_gene_inputs(wildcards):
+    files = []
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE))
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE))
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE))
+    return files
+
+
+def get_treatment_rose_gene_to_enh_inputs(wildcards):
+    files = []
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE))
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE))
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE))
+    return files
+
+
+rule aggregate_rose_treatment:
+    """
+    Create global treatment-level ROSE enhancer<->gene mapping files.
+    """
+    input:
+        enhancer_to_gene=get_treatment_rose_super_to_gene_inputs,
+        gene_to_enhancer=get_treatment_rose_gene_to_enh_inputs,
+    output:
+        enhancer_to_gene=join(RESULTSDIR,"peaks","annotation","rose_treatment","all_treatments.SuperEnhancers_ENHANCER_TO_GENE.txt"),
+        gene_to_enhancer=join(RESULTSDIR,"peaks","annotation","rose_treatment","all_treatments.SuperEnhancers_GENE_TO_ENHANCER.txt"),
+    params:
+        script=join(SCRIPTSDIR, "_aggregate_rose_treatment.py"),
+        enhancer_args=lambda w, input: " ".join([
+            "--enhancer-to-gene " + os.path.basename(p).replace(".txt", "") + "::" + p
+            for p in input.enhancer_to_gene
+        ]),
+        gene_args=lambda w, input: " ".join([
+            "--gene-to-enhancer " + os.path.basename(p).replace(".txt", "") + "::" + p
+            for p in input.gene_to_enhancer
+        ])
+    envmodules:
+        TOOLS["python3"]
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p "$(dirname "{output.enhancer_to_gene}")"
+        python {params.script} \
+            {params.enhancer_args} \
+            {params.gene_args} \
+            --output-enhancer-to-gene {output.enhancer_to_gene} \
+            --output-gene-to-enhancer {output.gene_to_enhancer}
+        """
+
 if config["run_go_enrichment"]:
     rule go_enrichment_peaks:
         """

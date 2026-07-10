@@ -282,6 +282,30 @@ if RUN_WITHOUT_CONTROLS:
 else:
     TREATMENT_LIST_SG=TREATMENT_CONTROL_LIST
 
+# Treatment-sample helper structures used by treatment-level merged-peak analyses.
+TREATMENT_SAMPLES = []
+for t in TREATMENTS:
+    t_sample = re.sub(r'_[0-9]+$', '', t)
+    if t_sample not in TREATMENT_SAMPLES:
+        TREATMENT_SAMPLES.append(t_sample)
+
+TREATMENT_SAMPLE_TO_REPLICATES = {}
+for t_sample in TREATMENT_SAMPLES:
+    TREATMENT_SAMPLE_TO_REPLICATES[t_sample] = [
+        r for r in TREATMENTS if re.sub(r'_[0-9]+$', '', r) == t_sample
+    ]
+
+TREATMENT_SAMPLE_TO_CONTROL_SAMPLE = {}
+for t in TREATMENTS:
+    t_sample = re.sub(r'_[0-9]+$', '', t)
+    c_rep = TREAT_to_CONTRL_DICT.get(t, "nocontrol")
+    if c_rep == "nocontrol":
+        c_sample = "nocontrol"
+    else:
+        c_sample = re.sub(r'_[0-9]+$', '', c_rep)
+    if t_sample not in TREATMENT_SAMPLE_TO_CONTROL_SAMPLE:
+        TREATMENT_SAMPLE_TO_CONTROL_SAMPLE[t_sample] = c_sample
+
 # create duplication and peaktype list
 DUPSTATUS=config["dupstatus"]
 PEAKTYPE=config["peaktype"]

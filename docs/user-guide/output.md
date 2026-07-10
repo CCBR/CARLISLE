@@ -37,10 +37,17 @@ Upon successful completion, CARLISLE generates a comprehensive directory structu
       - **`peak_output/`** – Raw peak calls organized by control mode:
         - **`individual/`** – Peaks called using individual replicate controls (present for all analyses)
         - **`pooled/`** – Peaks called using merged high-depth controls (present when `pool_controls: true`)
+        - **`treatment_merged/`** – Consensus peak sets merged across replicates for each treatment sample (no re-calling), requiring support from at least 2 replicates.
       - **`annotation/`** – Contains enriched feature and pathway analyses, organized by control mode:
         - **`go_enrichment/`** – Results from **[ChIP-Enrich](https://chipenrich.med.umich.edu/)** gene set enrichment, generated when `run_go_enrichment: true` is enabled.
         - **`homer/`** – Output from **[HOMER](http://homer.ucsd.edu/homer/)** motif discovery and annotation.
         - **`rose/`** – Output from **[ROSE](https://github.com/younglab/ROSE)** super-enhancer analysis, generated when `run_rose: true` is specified.
+        - **`homer_treatment/`** – HOMER/AME outputs run on treatment-level merged peak sets.
+        - **`rose_treatment/`** – ROSE outputs run on treatment-level merged peak sets and merged treatment BAMs.
+
+  - **`annotation/homer_treatment/all_treatments.annotation_summary.tsv`** – Global HOMER annotation summary aggregated across all treatment-level runs.
+  - **`annotation/rose_treatment/all_treatments.SuperEnhancers_ENHANCER_TO_GENE.txt`** – Global ROSE enhancer-to-gene mapping aggregated across all treatment-level runs.
+  - **`annotation/rose_treatment/all_treatments.SuperEnhancers_GENE_TO_ENHANCER.txt`** – Global ROSE gene-to-enhancer mapping aggregated across all treatment-level runs.
 
 - **`deeptools/`** – Genome-wide sample correlation and PCA outputs, generated from 10 kb bin read counts across all samples. Two sets of files are produced:
 
@@ -99,44 +106,59 @@ results/
 │   │   ├── gopeaks/
 │   │   │   ├── peak_output/
 │   │   │   │   ├── individual/    # Peaks with individual controls
-│   │   │   │   └── pooled/        # Peaks with pooled controls
+│   │   │   │   ├── pooled/        # Peaks with pooled controls
+│   │   │   │   └── treatment_merged/  # Consensus peaks merged across treatment replicates
 │   │   │   └── annotation/
 │   │   │       ├── individual/
 │   │   │       │   ├── go_enrichment/
 │   │   │       │   ├── homer/
 │   │   │       │   └── rose/
-│   │   │       └── pooled/
-│   │   │           ├── go_enrichment/
-│   │   │           ├── homer/
-│   │   │           └── rose/
+│   │   │       ├── pooled/
+│   │   │       │   ├── go_enrichment/
+│   │   │       │   ├── homer/
+│   │   │       │   └── rose/
+│   │   │       ├── homer_treatment/
+│   │   │       └── rose_treatment/
 │   │   ├── macs2/
 │   │   │   ├── peak_output/
 │   │   │   │   ├── individual/
-│   │   │   │   └── pooled/
+│   │   │   │   ├── pooled/
+│   │   │   │   └── treatment_merged/
 │   │   │   └── annotation/
 │   │   │       ├── individual/
 │   │   │       │   ├── go_enrichment/
 │   │   │       │   ├── homer/
 │   │   │       │   └── rose/
-│   │   │       └── pooled/
-│   │   │           ├── go_enrichment/
-│   │   │           ├── homer/
-│   │   │           └── rose/
+│   │   │       ├── pooled/
+│   │   │       │   ├── go_enrichment/
+│   │   │       │   ├── homer/
+│   │   │       │   └── rose/
+│   │   │       ├── homer_treatment/
+│   │   │       └── rose_treatment/
 │   │   └── seacr/
 │   │       ├── peak_output/
 │   │       │   ├── individual/
-│   │       │   └── pooled/
+│   │       │   ├── pooled/
+│   │       │   └── treatment_merged/
 │   │       └── annotation/
 │   │           ├── individual/
 │   │           │   ├── go_enrichment/
 │   │           │   ├── homer/
 │   │           │   └── rose/
-│   │           └── pooled/
-│   │               ├── go_enrichment/
-│   │               ├── homer/
-│   │               └── rose/
+│   │           ├── pooled/
+│   │           │   ├── go_enrichment/
+│   │           │   ├── homer/
+│   │           │   └── rose/
+│   │           ├── homer_treatment/
+│   │           └── rose_treatment/
 │   └── 0.01/
 │       └── ...
+│   └── annotation/
+│       ├── homer_treatment/
+│       │   └── all_treatments.annotation_summary.tsv
+│       └── rose_treatment/
+│           ├── all_treatments.SuperEnhancers_ENHANCER_TO_GENE.txt
+│           └── all_treatments.SuperEnhancers_GENE_TO_ENHANCER.txt
 └── qc/
     ├── fastqc_raw/
     ├── fqscreen_raw/
@@ -247,3 +269,18 @@ Key columns to interpret:
 - **`*_SuperEnhancers.bed`**: the final super-enhancer calls. Overlap with known oncogenes or lineage TFs to nominate driver regulatory elements.
 - **`*_Enhancers_withSuper.bed`**: all stitched enhancers ranked by signal; use this to inspect the inflection point and evaluate whether the cutoff is biologically reasonable.
 - ROSE is only meaningful for **active chromatin marks** (H3K27ac, H3K4me1). Running it on H3K27me3 or TF datasets is not informative.
+
+### Treatment-Level Merged Analysis
+
+CARLISLE now supports treatment-level analysis in parallel with replicate-level outputs:
+
+- **Consensus merged peak sets** (`peak_output/*/treatment_merged/`): generated from replicate peak calls without re-calling. A merged interval is kept when supported by at least 2 replicates.
+- **Coordinate policy**: merged consensus intervals span the leftest-left and rightest-right coordinates of overlapping replicate peaks.
+- **HOMER treatment outputs** (`annotation/homer_treatment/`): motif and annotation analyses run on merged treatment peak sets.
+- **ROSE treatment outputs** (`annotation/rose_treatment/`): super-enhancer analyses run on merged treatment peak sets and merged treatment BAMs.
+
+Global treatment-level aggregates are written to:
+
+- `peaks/annotation/homer_treatment/all_treatments.annotation_summary.tsv`
+- `peaks/annotation/rose_treatment/all_treatments.SuperEnhancers_ENHANCER_TO_GENE.txt`
+- `peaks/annotation/rose_treatment/all_treatments.SuperEnhancers_GENE_TO_ENHANCER.txt`

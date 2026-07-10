@@ -11,6 +11,7 @@
 localrules: count_peaks
 
 import re
+import os
 
 rule merge_control_bams:
     """
@@ -40,6 +41,37 @@ rule merge_control_bams:
         fi
 
         # Index merged BAM
+        samtools index {output.merged_bam}
+        """
+
+
+rule merge_treatment_bams:
+    """
+    Merge all replicates for a treatment sample into one BAM for treatment-level ROSE.
+    """
+    input:
+        bams=lambda w: expand(
+            join(RESULTSDIR, "bam", "{replicate}.{dupstatus}.bam"),
+            replicate=TREATMENT_SAMPLE_TO_REPLICATES.get(w.treatment_sample, []),
+            dupstatus=w.dupstatus,
+        )
+    output:
+        merged_bam=join(RESULTSDIR, "bam", "treatment_merged", "{treatment_sample}.{dupstatus}.merged.bam"),
+        merged_bai=join(RESULTSDIR, "bam", "treatment_merged", "{treatment_sample}.{dupstatus}.merged.bam.bai"),
+    params:
+        bam_list=lambda w, input: " ".join(input.bams)
+    threads: getthreads("merge_control_bams")
+    envmodules:
+        TOOLS["samtools"]
+    shell:
+        """
+        set -exo pipefail
+        mkdir -p "$(dirname "{output.merged_bam}")"
+        if [[ {threads} -gt 1 ]]; then
+            samtools merge -@ {threads} {output.merged_bam} {params.bam_list}
+        else
+            samtools merge {output.merged_bam} {params.bam_list}
+        fi
         samtools index {output.merged_bam}
         """
 
@@ -191,6 +223,95 @@ def get_all_peak_files(wildcards):
             files.extend(b)
 
     return files
+
+
+def _caller_from_peak_type(peak_type):
+    if peak_type.startswith("macs2_"):
+        return "macs2"
+    if peak_type.startswith("gopeaks_"):
+        return "gopeaks"
+    if peak_type.startswith("seacr_"):
+        return "seacr"
+    raise ValueError(f"Unsupported peak_type: {peak_type}")
+
+
+def _suffix_from_peak_type(peak_type):
+    return peak_type.split("_", 1)[1]
+
+
+def get_treatment_replicate_peak_files(wildcards):
+    caller = _caller_from_peak_type(wildcards.peak_type)
+    suffix = _suffix_from_peak_type(wildcards.peak_type)
+
+    if caller == "macs2":
+        base_list = TREATMENT_CONTROL_LIST_POOLED if wildcards.control_mode == "pooled" else TREATMENT_LIST_M
+    else:
+        base_list = TREATMENT_CONTROL_LIST_POOLED if wildcards.control_mode == "pooled" else TREATMENT_LIST_SG
+
+    tc_list = _filter_tc_list(base_list, wildcards.control_mode)
+    treatment_reps = set(TREATMENT_SAMPLE_TO_REPLICATES.get(wildcards.treatment_sample, []))
+
+    peaks = []
+    for tc_pair in tc_list:
+        treatment_rep = tc_pair.split("_vs_", 1)[0]
+        if treatment_rep not in treatment_reps:
+            continue
+        peaks.append(
+            join(
+                RESULTSDIR,
+                "peaks",
+                wildcards.qthresholds,
+                caller,
+                "peak_output",
+                wildcards.control_mode,
+                f"{tc_pair}.{wildcards.dupstatus}.{suffix}.peaks.bed",
+            )
+        )
+    return sorted(set(peaks))
+
+
+rule merge_treatment_peaks:
+    """
+    Merge replicate peak sets into treatment-level consensus peaks without re-calling.
+    Output columns: chrom, start, end, support_count, replicate_ids, source_peak_count, width_guard_flag
+    """
+    input:
+        peaks=get_treatment_replicate_peak_files
+    output:
+        merged=join(RESULTSDIR,"peaks","{qthresholds}","{peak_caller}","peak_output","{control_mode}","treatment_merged","{treatment_sample}.{dupstatus}.{peak_type}.peaks.bed")
+    params:
+        merge_script=join(SCRIPTSDIR, "_merge_treatment_peaks.py"),
+        input_args=lambda w, input: " ".join(
+            [
+                "--input "
+                + os.path.basename(p).split("_vs_", 1)[0]
+                + "::"
+                + p
+                for p in input.peaks
+            ]
+        ),
+        overlap_bp_min=1,
+        min_replicate_support=2,
+        max_merged_width_bp=10000,
+        strict_overlap_bp=50,
+    envmodules:
+        TOOLS["python3"]
+    shell:
+        """
+        set -euo pipefail
+        mkdir -p "$(dirname "{output.merged}")"
+        if [[ -z "{params.input_args}" ]]; then
+            : > {output.merged}
+            exit 0
+        fi
+        python {params.merge_script} \
+            {params.input_args} \
+            --output {output.merged} \
+            --overlap-bp-min {params.overlap_bp_min} \
+            --min-replicate-support {params.min_replicate_support} \
+            --max-merged-width-bp {params.max_merged_width_bp} \
+            --strict-overlap-bp {params.strict_overlap_bp}
+        """
 
 rule macs2_narrow:
     '''

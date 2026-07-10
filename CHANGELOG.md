@@ -2,6 +2,7 @@
 
 ### New Features
 
+- **Treatment-level merged peak workflow + cross-treatment HOMER/ROSE aggregation**: Added consensus peak merging across treatment replicates (no peak re-calling) and parallel treatment-level annotation workflows. New outputs include `treatment_merged` peak sets for each caller/mode, treatment-level HOMER/AME outputs (`annotation/homer_treatment`), treatment-level ROSE outputs (`annotation/rose_treatment`), and global aggregate files across all treatments for HOMER annotation summaries and ROSE enhancer-gene/gene-enhancer mappings. Existing replicate-level outputs remain unchanged.
 - **ROSE gene mapping outputs for super-enhancers**: Integrated Younglab `ROSE_geneMapper.py` into the ROSE rule so super-enhancer runs now emit `rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt` and `rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt` in each ROSE output folder. Added output-contract coverage for low-peak fallback by writing placeholders when ROSE is skipped. (#248)
 - **Treatment-only PCA and correlation plots**: When control samples (IgG) are present, CARLISLE now generates a second set of genome-wide Pearson correlation heatmap and PCA plots (`treatments_only.{dupstatus}.*`) that exclude all control replicates. The existing all-sample plots are unchanged. This prevents the large IgG background signal from dominating PC2 and makes treatment-to-treatment differences visible. (#241)
 - **New helper script `_get_pooled_scale.py`**: Computes pooled control scaling factors using named column access from `alignment_stats.tsv`, replacing fragile positional awk column references in `create_pooled_control_bedgraph`. (#230)
@@ -12,6 +13,7 @@
 
 ### Documentation Improvements
 
+- **User guide: treatment-level merged outputs documented**: Added `treatment_merged` peak outputs and new treatment-level annotation directories (`homer_treatment`, `rose_treatment`) to `output.md`, including global aggregate output paths under `peaks/annotation/`.
 - **User guide: complete `peaktype` reference**: Added a table of all six valid `peaktype` values (`macs2_narrow`, `macs2_broad`, `seacr_stringent`, `seacr_relaxed`, `gopeaks_narrow`, `gopeaks_broad`) with descriptions and caller-selection guidance. Clarified that any combination may be listed comma-separated in a single run.
 - **User guide: `run_contrasts` parameter documented**: Added a dedicated subsection explaining what `run_contrasts: true/false` controls and when differential analysis can be skipped.
 - **User guide: `norm_method: library` as a valid starting point**: Added explicit guidance that spike-in normalization is optional. Users without spike-in DNA can set `norm_method: "library"` from the start without any spike-in config blocks.

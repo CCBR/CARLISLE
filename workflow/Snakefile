@@ -415,6 +415,81 @@ def get_rose(wildcards):
                 files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose","{control_mode}","{treatment_control_list}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,treatment_control_list=tc_list_sg,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE,control_mode=[control_mode]))
     return files
 
+
+def get_treatment_merged_peak_sets(wildcards):
+    files = []
+    for peak_type in PEAKTYPE:
+        caller = peak_type.split("_", 1)[0]
+        files.extend(
+            expand(
+                join(
+                    RESULTSDIR,
+                    "peaks",
+                    "{qthresholds}",
+                    caller,
+                    "peak_output",
+                    "{control_mode}",
+                    "treatment_merged",
+                    "{treatment_sample}.{dupstatus}.{peak_type}.peaks.bed",
+                ),
+                qthresholds=QTRESHOLDS,
+                control_mode=CONTROL_MODES,
+                treatment_sample=TREATMENT_SAMPLES,
+                dupstatus=DUPSTATUS,
+                peak_type=[peak_type],
+            )
+        )
+    return files
+
+
+def get_treatment_motif_enrichment(wildcards):
+    files = []
+    if not config.get("run_motif_enrichment_called_peaks", False):
+        return files
+
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M))
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G))
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.annotation.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","knownResults.html"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","homer_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.motifs","ame_results.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S))
+
+    files.append(join(RESULTSDIR, "peaks", "annotation", "homer_treatment", "all_treatments.annotation_summary.tsv"))
+    return files
+
+
+def get_treatment_rose(wildcards):
+    files = []
+    if not config.get("run_rose", False):
+        return files
+    if GENOME not in ["hg19", "hg38", "mm10"]:
+        return files
+
+    if ("macs2_narrow" in PEAKTYPE) or ("macs2_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","macs2","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_M,s_dist=S_DISTANCE))
+    if ("gopeaks_narrow" in PEAKTYPE) or ("gopeaks_broad" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","gopeaks","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_G,s_dist=S_DISTANCE))
+    if ("seacr_stringent" in PEAKTYPE) or ("seacr_relaxed" in PEAKTYPE):
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_Enhancers_withSuper.bed"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_ENHANCER_TO_GENE.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE))
+        files.extend(expand(join(RESULTSDIR,"peaks","{qthresholds}","seacr","annotation","rose_treatment","{control_mode}","{treatment_sample}.{dupstatus}.{peak_caller_type}.{s_dist}","rose_input_SuperEnhancers_GENE_TO_ENHANCER.txt"),qthresholds=QTRESHOLDS,control_mode=CONTROL_MODES,treatment_sample=TREATMENT_SAMPLES,dupstatus=DUPSTATUS,peak_caller_type=PEAKTYPE_S,s_dist=S_DISTANCE))
+
+    files.extend([
+        join(RESULTSDIR, "peaks", "annotation", "rose_treatment", "all_treatments.SuperEnhancers_ENHANCER_TO_GENE.txt"),
+        join(RESULTSDIR, "peaks", "annotation", "rose_treatment", "all_treatments.SuperEnhancers_GENE_TO_ENHANCER.txt"),
+    ])
+    return files
+
 def get_go_enrichment(wildcards):
     files=[]
     if config["run_go_enrichment"]:
@@ -519,6 +594,9 @@ rule all:
         unpack(get_combined) if config.get("run_motif_enrichment_called_peaks", False) else [],
         unpack(get_deg_motif_enrichment) if config.get("run_motif_enrichment_deg_peaks", False) else [],
         unpack(get_rose),
+        unpack(get_treatment_merged_peak_sets),
+        unpack(get_treatment_motif_enrichment),
+        unpack(get_treatment_rose),
         unpack(get_go_enrichment)
 
 onsuccess:
