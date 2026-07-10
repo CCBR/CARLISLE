@@ -181,7 +181,22 @@ watch -n 30 squeue -u $USER
 
 # View the Snakemake master job log (replace JOBID with the number from squeue)
 cat /path/to/output/dir/logs/snakemake.log
+
+# Check CARLISLE run-state marker (exactly one should exist)
+ls -1 /path/to/output/dir/pipeline.*
+
+# Inspect state metadata (timestamp, state, slurm job id, reason)
+cat /path/to/output/dir/pipeline.status.json
 ```
+
+For `runmode=run`, CARLISLE writes exactly one state marker file in the workdir:
+
+- `pipeline.running` — run submitted and in progress
+- `pipeline.completed` — run finished successfully
+- `pipeline.failed` — submission or runtime failure
+- `pipeline.canceled` — run interrupted (for example `scancel`/signal)
+
+When you start `runmode=run` again in the same workdir, CARLISLE removes any existing `pipeline.*` marker and replaces it with `pipeline.running` for the new run.
 
 Email notifications are automatically sent to your NIH HPC account email (`$USER@nih.gov`) for:
 

@@ -821,8 +821,11 @@ rule rose:
 import sys
 
 
-def normalize_super_table(in_path: str, out_path: str) -> None:
-    with open(in_path, "r", encoding="utf-8") as fin:
+def normalize_super_table(in_path, out_path):
+    newline = chr(10)
+    tab = chr(9)
+
+    with open(in_path, "r") as fin:
         lines = fin.readlines()
 
     header_idx = None
@@ -834,11 +837,11 @@ def normalize_super_table(in_path: str, out_path: str) -> None:
     if header_idx is None:
         raise ValueError("No tabular header found in super-enhancer table")
 
-    header = lines[header_idx].rstrip("\n").split("\t")
+    header = lines[header_idx].rstrip(newline).split(tab)
     has_rank = "enhancerRank" in header
     has_super = "isSuper" in header
 
-    with open(out_path, "w", encoding="utf-8") as fout:
+    with open(out_path, "w") as fout:
         for i in range(header_idx):
             fout.write(lines[i])
 
@@ -847,11 +850,11 @@ def normalize_super_table(in_path: str, out_path: str) -> None:
             out_header.append("enhancerRank")
         if not has_super:
             out_header.append("isSuper")
-        fout.write("\t".join(out_header) + "\n")
+        fout.write(tab.join(out_header) + newline)
 
         rank_counter = 0
         for raw in lines[header_idx + 1 :]:
-            stripped = raw.rstrip("\n")
+            stripped = raw.rstrip(newline)
             if not stripped:
                 continue
             if stripped.startswith("#"):
@@ -859,12 +862,12 @@ def normalize_super_table(in_path: str, out_path: str) -> None:
                 continue
 
             rank_counter += 1
-            cols = stripped.split("\t")
+            cols = stripped.split(tab)
             if not has_rank:
                 cols.append(str(rank_counter))
             if not has_super:
                 cols.append("1")
-            fout.write("\t".join(cols) + "\n")
+            fout.write(tab.join(cols) + newline)
 
     added_cols = []
     if not has_rank:

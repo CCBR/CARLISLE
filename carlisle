@@ -243,6 +243,15 @@ function runslurm() {
   runcheck
   module load $SINGULARITY_VERSION
   set_singularity_binds
+  echo ""
+  echo "CARLISLE Run Summary"
+  echo "  Mode:       SLURM"
+  echo "  Workdir:    $WORKDIR"
+  echo "  Partition:  $PARTITIONS"
+  echo "  Max jobs:   ${MAX_JOBS}"
+  echo "  Scheduler:  --max-jobs-per-second ${MAX_JOBS_PER_SECOND}, --max-status-checks-per-second ${MAX_STATUS_CHECKS_PER_SECOND}"
+  echo "  Log file:   ${WORKDIR}/logs/snakemake.log"
+  echo ""
   echo "========================================"
   echo "Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
   echo "SINGULARITY_CACHEDIR will be set to: $SING_CACHE_DIR"
@@ -258,6 +267,46 @@ function print_versions() {
   snakemake --version 2>/dev/null && echo "Snakemake version checked" || echo "Snakemake version: unable to determine"
   singularity --version 2>/dev/null && echo "Singularity version checked" || echo "Singularity/Apptainer version: UNAVAILABLE"
   echo "========================================"
+}
+
+function json_escape() {
+# Escape a string for safe embedding in JSON values.
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+function write_pipeline_state_marker() {
+# Write a single state marker file and status sidecar in WORKDIR.
+# Args: state reason [job_id]
+  local state="$1"
+  local reason="${2:-}"
+  local job_id="${3:-NA}"
+  local now_utc
+  local host
+  local sidecar
+  local sidecar_tmp
+
+  now_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+  host=$(hostname 2>/dev/null || echo "unknown")
+  sidecar="${WORKDIR}/pipeline.status.json"
+  sidecar_tmp="${sidecar}.tmp.$$"
+
+  rm -f "${WORKDIR}/pipeline.running" "${WORKDIR}/pipeline.completed" "${WORKDIR}/pipeline.failed" "${WORKDIR}/pipeline.canceled"
+  : > "${WORKDIR}/pipeline.${state}"
+
+  cat > "$sidecar_tmp" << EOF
+{
+  "pipeline": "CARLISLE",
+  "version": "${PIPELINE_VERSION}",
+  "state": "$(json_escape "$state")",
+  "reason": "$(json_escape "$reason")",
+  "runmode": "$(json_escape "${RUNMODE:-unknown}")",
+  "workdir": "$(json_escape "${WORKDIR}")",
+  "slurm_job_id": "$(json_escape "$job_id")",
+  "host": "$(json_escape "$host")",
+  "timestamp_utc": "${now_utc}"
+}
+EOF
+  mv "$sidecar_tmp" "$sidecar"
 }
 
 function preruncleanup() {
@@ -286,6 +335,24 @@ function preruncleanup() {
     for f in $(ls ${WORKDIR}/slurm-*.out);do mv ${f} ${WORKDIR}/logs/;done
   fi
 
+}
+
+function run_jobby_best_effort() {
+# Best-effort jobby generation outside Snakemake callbacks.
+# Ensures a deterministic artifact in logs/ even if submission fails before Snakemake starts.
+  mkdir -p "${WORKDIR}/logs"
+
+  if ! command -v jobby >/dev/null 2>&1; then
+    module load ccbrpipeliner >/dev/null 2>&1 || true
+  fi
+
+  if [[ -f "${WORKDIR}/logs/snakemake.log" ]] && command -v jobby >/dev/null 2>&1; then
+    if ! jobby --tsv "${WORKDIR}/logs/snakemake.log" | tee "${WORKDIR}/logs/snakemake.log.jobby" >/dev/null; then
+      printf '%s\n' "jobby failed while parsing ${WORKDIR}/logs/snakemake.log" > "${WORKDIR}/logs/snakemake.log.jobby"
+    fi
+  else
+    printf '%s\n' "jobby unavailable or snakemake.log missing; submission failed before Snakemake callbacks" > "${WORKDIR}/logs/snakemake.log.jobby"
+  fi
 }
 
 function run() {
@@ -355,6 +422,11 @@ function run() {
       cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
       echo "Existing submit script lacked scheduler throttling flags; backed up to ${backup_file}"
       REWRITE_SUBMIT_SCRIPT="true"
+    elif ! grep -q -- "_write_pipeline_state_marker" "${WORKDIR}/submit_script.sbatch"; then
+      backup_file="${WORKDIR}/submit_script.sbatch.$(date +%Y%m%d%H%M%S).bak"
+      cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
+      echo "Existing submit script lacked pipeline state marker logic; backed up to ${backup_file}"
+      REWRITE_SUBMIT_SCRIPT="true"
     fi
 
     if [[ "${REWRITE_SUBMIT_SCRIPT}" == "true" ]]; then
@@ -365,6 +437,46 @@ function run() {
 #SBATCH --partition="$PARTITIONS"
 #SBATCH --time=96:00:00
 #SBATCH --cpus-per-task=2
+
+    set -euo pipefail
+
+    function _json_escape() {
+      printf '%s' "\$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+    }
+
+    function _write_pipeline_state_marker() {
+      local state="\$1"
+      local reason="\${2:-}"
+      local job_id="\${3:-\${SLURM_JOB_ID:-NA}}"
+      local now_utc
+      local host
+      local sidecar="${WORKDIR}/pipeline.status.json"
+      local sidecar_tmp="\${sidecar}.tmp.\$$"
+
+      now_utc=\$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+      host=\$(hostname 2>/dev/null || echo "unknown")
+
+      rm -f "${WORKDIR}/pipeline.running" "${WORKDIR}/pipeline.completed" "${WORKDIR}/pipeline.failed" "${WORKDIR}/pipeline.canceled"
+      : > "${WORKDIR}/pipeline.\${state}"
+
+      cat > "\${sidecar_tmp}" << JSON
+{
+  "pipeline": "CARLISLE",
+  "version": "${PIPELINE_VERSION}",
+  "state": "\$(_json_escape "\${state}")",
+  "reason": "\$(_json_escape "\${reason}")",
+  "runmode": "run",
+  "workdir": "\$(_json_escape "${WORKDIR}")",
+  "slurm_job_id": "\$(_json_escape "\${job_id}")",
+  "host": "\$(_json_escape "\${host}")",
+  "timestamp_utc": "\${now_utc}"
+}
+JSON
+      mv "\${sidecar_tmp}" "\${sidecar}"
+    }
+
+    trap '_write_pipeline_state_marker canceled "signal_SIGTERM"; exit 130' SIGTERM
+    trap '_write_pipeline_state_marker canceled "signal_SIGINT"; exit 130' SIGINT
 
     module load $SNAKEMAKE_VERSION
     module load $SINGULARITY_VERSION
@@ -410,20 +522,56 @@ function run() {
     --stats ${WORKDIR}/logs/snakemake.stats \
     2>&1|tee ${WORKDIR}/logs/snakemake.log
 
-    if [ "\$?" -eq "0" ];then
+    snakemake_rc="\$?"
+    if [ "\${snakemake_rc}" -eq "0" ];then
       snakemake -s $SNAKEFILE \
       --directory $WORKDIR \
       --report ${WORKDIR}/logs/runslurm_snakemake_report.html \
       --use-singularity \
       --singularity-prefix "$SING_CACHE_DIR" \
       --configfile ${WORKDIR}/config/config.yaml
+      report_rc="\$?"
+      if [ "\${report_rc}" -eq "0" ]; then
+        _write_pipeline_state_marker completed "snakemake_and_report_succeeded"
+      else
+        _write_pipeline_state_marker failed "report_generation_failed" "\${SLURM_JOB_ID:-NA}"
+        exit "\${report_rc}"
+      fi
+    else
+      _write_pipeline_state_marker failed "snakemake_failed" "\${SLURM_JOB_ID:-NA}"
+      exit "\${snakemake_rc}"
     fi
 
 EOF
       echo "Created ${WORKDIR}/submit_script.sbatch"
     fi
 
-    sbatch ${WORKDIR}/submit_script.sbatch
+    # Fresh slurm run in this workdir: rotate prior marker to running.
+    write_pipeline_state_marker running "submission_started"
+
+    if ! sbatch_output=$(sbatch ${WORKDIR}/submit_script.sbatch 2>&1); then
+      write_pipeline_state_marker failed "sbatch_submission_failed"
+      run_jobby_best_effort
+      echo "ERROR: Failed to submit ${WORKDIR}/submit_script.sbatch"
+      echo "ERROR: sbatch output: ${sbatch_output}"
+      exit 1
+    fi
+
+    sbatch_job_id=$(echo "${sbatch_output}" | awk '/Submitted batch job/ {print $NF}' | tail -1)
+    if [[ -z "${sbatch_job_id}" ]]; then
+      sbatch_job_id="NA"
+    fi
+    write_pipeline_state_marker running "sbatch_submitted" "${sbatch_job_id}"
+
+    echo ""
+    echo "------------------------------------------------------------------"
+    echo "Job submitted successfully"
+    echo "  Submission: ${sbatch_output}"
+    echo "  Monitor:    squeue -u \$USER"
+    echo "  Progress:   tail -f ${WORKDIR}/logs/snakemake.log"
+    echo "  Status:     ls -1 ${WORKDIR}/pipeline.*"
+    echo "  Sidecar:    ${WORKDIR}/pipeline.status.json"
+    echo "------------------------------------------------------------------"
 
   else # for unlock and dryrun
     snakemake $1 -s $SNAKEFILE \
@@ -498,10 +646,10 @@ function main(){
   if [[ -z "$SING_CACHE_DIR" ]]; then
     if [[ -n "$SIFCACHE" ]]; then
       SING_CACHE_DIR="$SIFCACHE"
-    elif [[ -d "/data/$USER" ]]; then
-      SING_CACHE_DIR="/data/$USER/.singularity"
+    elif [[ -d "/data/CCBR_Pipeliner/SIFs" ]] && [[ -w "/data/CCBR_Pipeliner/SIFs" ]]; then
+      SING_CACHE_DIR="/data/CCBR_Pipeliner/SIFs"
     else
-      SING_CACHE_DIR="${WORKDIR}/.singularity"
+      SING_CACHE_DIR="/data/$USER/.singularity"
     fi
     echo "singularity cache dir (--singcache) is not set, using ${SING_CACHE_DIR}"
   fi

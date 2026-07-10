@@ -559,6 +559,12 @@ if [ -f logs/spooker.log ]; then
 else
     echo "❌ logs/spooker.log NOT created."
 fi
+
+# Fallback state reconciliation if launcher-level transition did not run.
+if [ ! -f pipeline.canceled ]; then
+    rm -f pipeline.running pipeline.failed
+    : > pipeline.completed
+fi
 """)
 
 onerror:
@@ -598,6 +604,12 @@ if [ -f logs/spooker.log ]; then
     echo "✅ logs/spooker.log created."
 else
     echo "❌ logs/spooker.log NOT created."
+fi
+
+# Fallback state reconciliation if launcher-level transition did not run.
+if [ ! -f pipeline.canceled ]; then
+    rm -f pipeline.running pipeline.completed
+    : > pipeline.failed
 fi
 """)
 
