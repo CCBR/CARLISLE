@@ -1289,11 +1289,17 @@ rule aggregate_rose_treatment:
     params:
         script=join(SCRIPTSDIR, "_aggregate_rose_treatment.py"),
         enhancer_args=lambda w, input: " ".join([
-            "--enhancer-to-gene " + os.path.basename(p).replace(".txt", "") + "::" + p
+            "--enhancer-to-gene "
+            + f"{p.split(os.sep)[-6]}|{p.split(os.sep)[-3]}|{p.split(os.sep)[-2].split('.', 1)[0]}|{p.split(os.sep)[-2].split('.', 1)[1].split('.', 1)[0]}|{p.split(os.sep)[-2].rsplit('.', 1)[-1]}"
+            + "::"
+            + p
             for p in input.enhancer_to_gene
         ]),
         gene_args=lambda w, input: " ".join([
-            "--gene-to-enhancer " + os.path.basename(p).replace(".txt", "") + "::" + p
+            "--gene-to-enhancer "
+            + f"{p.split(os.sep)[-6]}|{p.split(os.sep)[-3]}|{p.split(os.sep)[-2].split('.', 1)[0]}|{p.split(os.sep)[-2].split('.', 1)[1].split('.', 1)[0]}|{p.split(os.sep)[-2].rsplit('.', 1)[-1]}"
+            + "::"
+            + p
             for p in input.gene_to_enhancer
         ])
     envmodules:

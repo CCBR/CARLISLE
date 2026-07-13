@@ -14,12 +14,22 @@ def parse_input_spec(spec: str):
     return label, path
 
 
+def parse_label(label: str):
+    parts = label.split("|")
+    if len(parts) != 5:
+        raise ValueError(
+            f"Invalid aggregate label '{label}', expected peak_caller|control_mode|treatment_sample|dup_status|stitch_distance"
+        )
+    return parts
+
+
 def aggregate(input_specs, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as out:
-        out.write("source\trow\n")
+        out.write("peak_caller\ttreatment_sample\tcontrol_mode\tdup_status\tstitch_distance\trow\n")
         for spec in input_specs:
             source, path = parse_input_spec(spec)
+            peak_caller, control_mode, treatment_sample, dup_status, stitch_distance = parse_label(source)
             if not os.path.exists(path):
                 continue
             with open(path, "r", encoding="utf-8") as handle:
@@ -29,7 +39,9 @@ def aggregate(input_specs, output_path):
                         continue
                     if line.startswith("Less than 5 usable peaks detected"):
                         continue
-                    out.write(f"{source}\t{line}\n")
+                    out.write(
+                        f"{peak_caller}\t{treatment_sample}\t{control_mode}\t{dup_status}\t{stitch_distance}\t{line}\n"
+                    )
 
 
 def main() -> None:
