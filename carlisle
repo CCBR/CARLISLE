@@ -351,11 +351,24 @@ function write_pipeline_state_marker() {
   local host
   local sidecar
   local sidecar_tmp
+  local submission_ts=""
 
   now_utc=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
   host=$(hostname 2>/dev/null || echo "unknown")
   sidecar="${WORKDIR}/pipeline.status.json"
   sidecar_tmp="${sidecar}.tmp.$$"
+
+  # Persist submission timestamp on first running write; read back on subsequent writes.
+  if [[ "${state}" == "running" && "${reason}" == "submission_started" ]]; then
+    submission_ts="${now_utc}"
+    date +%s > "${WORKDIR}/pipeline.submit_epoch"
+  elif [[ -f "${WORKDIR}/pipeline.submit_epoch" ]]; then
+    local submit_epoch
+    submit_epoch=$(cat "${WORKDIR}/pipeline.submit_epoch" 2>/dev/null || true)
+    if [[ -n "${submit_epoch}" ]]; then
+      submission_ts=$(date -u -d "@${submit_epoch}" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)
+    fi
+  fi
 
   rm -f "${WORKDIR}/pipeline.running" "${WORKDIR}/pipeline.completed" "${WORKDIR}/pipeline.failed" "${WORKDIR}/pipeline.canceled"
   : > "${WORKDIR}/pipeline.${state}"
@@ -368,8 +381,16 @@ function write_pipeline_state_marker() {
   "reason": "$(json_escape "$reason")",
   "runmode": "$(json_escape "${RUNMODE:-unknown}")",
   "workdir": "$(json_escape "${WORKDIR}")",
+  "user": "$(json_escape "${USER:-unknown}")",
   "slurm_job_id": "$(json_escape "$job_id")",
   "host": "$(json_escape "$host")",
+  "submission_timestamp_utc": "$(json_escape "${submission_ts}")",
+  "start_timestamp_utc": null,
+  "duration_seconds": null,
+  "exit_code": null,
+  "tasks_done": null,
+  "tasks_total": null,
+  "snakemake_log": "$(json_escape "${WORKDIR}/logs/snakemake.log")",
   "timestamp_utc": "${now_utc}"
 }
 EOF
@@ -498,6 +519,11 @@ function run() {
       cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
       log_warn "Existing submit script lacked progress monitor; backed up to ${backup_file}"
       REWRITE_SUBMIT_SCRIPT="true"
+    elif ! grep -q -- "submission_timestamp_utc" "${WORKDIR}/submit_script.sbatch"; then
+      backup_file="${WORKDIR}/submit_script.sbatch.$(date +%Y%m%d%H%M%S).bak"
+      cp "${WORKDIR}/submit_script.sbatch" "${backup_file}"
+      log_warn "Existing submit script lacked enriched status fields; backed up to ${backup_file}"
+      REWRITE_SUBMIT_SCRIPT="true"
     fi
 
     if [[ "${REWRITE_SUBMIT_SCRIPT}" == "true" ]]; then
@@ -519,13 +545,40 @@ function run() {
       local state="\$1"
       local reason="\${2:-}"
       local job_id="\${3:-\${SLURM_JOB_ID:-NA}}"
+      local exit_code="\${4:-null}"
       local now_utc
       local host
       local sidecar="${WORKDIR}/pipeline.status.json"
       local sidecar_tmp="\${sidecar}.tmp.\$$"
+      local submission_ts=""
+      local duration_seconds=null
+      local tasks_done=null
+      local tasks_total=null
+      local _raw_tasks=""
+      local _submit_epoch=""
 
       now_utc=\$(date -u +"%Y-%m-%dT%H:%M:%SZ")
       host=\$(hostname 2>/dev/null || echo "unknown")
+
+      # Read submission timestamp from helper file written at sbatch submission time.
+      if [[ -f "${WORKDIR}/pipeline.submit_epoch" ]]; then
+        _submit_epoch=\$(cat "${WORKDIR}/pipeline.submit_epoch" 2>/dev/null || true)
+        if [[ -n "\${_submit_epoch}" ]]; then
+          submission_ts=\$(date -u -d "@\${_submit_epoch}" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || true)
+        fi
+      fi
+
+      # Compute wall-clock duration from job start.
+      if [[ -n "\${_START_EPOCH:-}" ]]; then
+        duration_seconds=\$(( \$(date +%s) - _START_EPOCH ))
+      fi
+
+      # Parse final task counts from snakemake.log.
+      _raw_tasks=\$(grep -oP '[0-9]+ of [0-9]+ steps \([0-9]+%\) done' "${WORKDIR}/logs/snakemake.log" 2>/dev/null | tail -1 || true)
+      if [[ -n "\${_raw_tasks}" ]]; then
+        tasks_done=\$(printf '%s' "\${_raw_tasks}" | grep -oP '^\d+' || echo null)
+        tasks_total=\$(printf '%s' "\${_raw_tasks}" | grep -oP '(?<=of )\d+' || echo null)
+      fi
 
       rm -f "${WORKDIR}/pipeline.running" "${WORKDIR}/pipeline.completed" "${WORKDIR}/pipeline.failed" "${WORKDIR}/pipeline.canceled"
       : > "${WORKDIR}/pipeline.\${state}"
@@ -538,16 +591,24 @@ function run() {
   "reason": "\$(_json_escape "\${reason}")",
   "runmode": "run",
   "workdir": "\$(_json_escape "${WORKDIR}")",
+  "user": "\$(_json_escape "\${USER:-unknown}")",
   "slurm_job_id": "\$(_json_escape "\${job_id}")",
   "host": "\$(_json_escape "\${host}")",
+  "submission_timestamp_utc": "\$(_json_escape "\${submission_ts}")",
+  "start_timestamp_utc": "\$(_json_escape "\${_START_TS:-}")",
+  "duration_seconds": \${duration_seconds},
+  "exit_code": \${exit_code},
+  "tasks_done": \${tasks_done},
+  "tasks_total": \${tasks_total},
+  "snakemake_log": "\$(_json_escape "${WORKDIR}/logs/snakemake.log")",
   "timestamp_utc": "\${now_utc}"
 }
 JSON
       mv "\${sidecar_tmp}" "\${sidecar}"
     }
 
-    trap '_write_pipeline_state_marker canceled "signal_SIGTERM"; exit 130' SIGTERM
-    trap '_write_pipeline_state_marker canceled "signal_SIGINT"; exit 130' SIGINT
+    trap '_write_pipeline_state_marker canceled "signal_SIGTERM" "\${SLURM_JOB_ID:-NA}" 130; exit 130' SIGTERM
+    trap '_write_pipeline_state_marker canceled "signal_SIGINT" "\${SLURM_JOB_ID:-NA}" 130; exit 130' SIGINT
 
     module load $SNAKEMAKE_VERSION
     module load $SINGULARITY_VERSION
@@ -570,6 +631,10 @@ JSON
     echo "INFO  Singularity/Apptainer Cache Directory: $SING_CACHE_DIR"
     echo "INFO  SINGULARITY_CACHEDIR has been set to: $SING_CACHE_DIR"
     echo "------------------------------------------------------------------"
+
+    # Record job start time for duration tracking in pipeline.status.json.
+    _START_EPOCH=\$(date +%s)
+    _START_TS=\$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # ── Progress monitor ─────────────────────────────────────────────────
     # Background loop: waits for snakemake.log, then periodically writes
@@ -648,13 +713,13 @@ JSON
       --configfile ${WORKDIR}/config/config.yaml
       report_rc="\$?"
       if [ "\${report_rc}" -eq "0" ]; then
-        _write_pipeline_state_marker completed "snakemake_and_report_succeeded"
+        _write_pipeline_state_marker completed "snakemake_and_report_succeeded" "\${SLURM_JOB_ID:-NA}" 0
       else
-        _write_pipeline_state_marker failed "report_generation_failed" "\${SLURM_JOB_ID:-NA}"
+        _write_pipeline_state_marker failed "report_generation_failed" "\${SLURM_JOB_ID:-NA}" "\${report_rc}"
         exit "\${report_rc}"
       fi
     else
-      _write_pipeline_state_marker failed "snakemake_failed" "\${SLURM_JOB_ID:-NA}"
+      _write_pipeline_state_marker failed "snakemake_failed" "\${SLURM_JOB_ID:-NA}" "\${snakemake_rc}"
       exit "\${snakemake_rc}"
     fi
 

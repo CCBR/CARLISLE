@@ -185,9 +185,31 @@ cat /path/to/output/dir/logs/snakemake.log
 # Check CARLISLE run-state marker (exactly one should exist)
 ls -1 /path/to/output/dir/pipeline.*
 
-# Inspect state metadata (timestamp, state, slurm job id, reason)
+# Inspect state metadata
 cat /path/to/output/dir/pipeline.status.json
 ```
+
+`pipeline.status.json` contains the following fields:
+
+| Field | Description |
+|---|---|
+| `pipeline` | Pipeline name (`CARLISLE`) |
+| `version` | CARLISLE version at the time of submission |
+| `state` | Current state: `running`, `completed`, `failed`, or `canceled` |
+| `reason` | Machine-readable reason for the state (e.g. `snakemake_and_report_succeeded`, `snakemake_failed`) |
+| `runmode` | Run mode used (e.g. `run`) |
+| `workdir` | Absolute path to the working directory |
+| `user` | Username that submitted the pipeline |
+| `slurm_job_id` | SLURM job ID of the pipeline coordinator job |
+| `host` | Hostname where the state was last written |
+| `submission_timestamp_utc` | UTC timestamp when `carlisle --runmode=run` was invoked |
+| `start_timestamp_utc` | UTC timestamp when the SLURM job began executing |
+| `duration_seconds` | Wall-clock seconds from job start to final state (null while running or on headnode-only writes) |
+| `exit_code` | Exit code of Snakemake (0 = success; null for headnode-only writes) |
+| `tasks_done` | Number of Snakemake steps completed at final state (null if log is unavailable) |
+| `tasks_total` | Total number of Snakemake steps at final state (null if log is unavailable) |
+| `snakemake_log` | Absolute path to the Snakemake master log file |
+| `timestamp_utc` | UTC timestamp of the most recent state write |
 
 For `runmode=run`, CARLISLE writes exactly one state marker file in the workdir:
 
