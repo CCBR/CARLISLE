@@ -168,6 +168,71 @@ carlisle --runmode=run --workdir=/path/to/output/dir
 
 ---
 
+## Understanding Log Output
+
+CARLISLE prints structured log lines to the terminal during `init`, `dryrun`, `run`, `runlocal`, and other modes. Each line is prefixed with a fixed-width tag that indicates its severity or purpose:
+
+| Prefix | Meaning | When you see it |
+|--------|---------|-----------------|
+| `STEP` | A major pipeline phase is starting | Beginning of `init`, `dryrun`, `run`, Snakemake submission, etc. |
+| `INFO` | Informational detail about the current step | Paths, settings, versions, tool availability |
+| `OK` | A step completed successfully | Files copied, modules loaded, job submitted without error |
+| `WARN` | A non-fatal issue that may need attention | Outdated submit script backed up, optional tool unavailable |
+| `ERROR` | A fatal problem — execution will stop | Missing files, failed module load, bad arguments |
+| `NEXT` | Suggested next action for the user | What to edit or run after the current step completes |
+
+### Example terminal output
+
+A typical `carlisle --runmode=run` invocation looks like this:
+
+```
+------------------------------------------------------------------
+STEP  [run] Preparing SLURM submission
+INFO  CARLISLE Run Summary
+INFO  Mode:       SLURM
+INFO  Workdir:    /data/$USER/project
+INFO  Partition:  norm
+INFO  Max jobs:   100
+INFO  Scheduler:  --max-jobs-per-second 1, --max-status-checks-per-second 0.1
+INFO  Log file:   /data/$USER/project/logs/snakemake.log
+------------------------------------------------------------------
+INFO  Tool Versions:
+7.32.4
+OK    Snakemake version checked
+apptainer version 1.3.6-1.bionic
+OK    Singularity version checked
+------------------------------------------------------------------
+OK    Dry-run was successful. Submitting jobs to scheduler.
+------------------------------------------------------------------
+OK    Job submitted successfully (SLURM job ID: 12345678)
+INFO  Submission output: 12345678
+NEXT  Monitor:    squeue -u $USER
+NEXT  Progress:   tail -f /data/$USER/project/logs/snakemake.log
+NEXT  Status:     ls -1 /data/$USER/project/pipeline.*
+NEXT  Sidecar:    /data/$USER/project/pipeline.status.json
+------------------------------------------------------------------
+```
+
+`NEXT` lines tell you exactly what to run after each stage — copy them directly into your terminal.
+
+### Live progress in `pipeline.running`
+
+While a `run` job is active, CARLISLE updates the `pipeline.running` marker file every 60 seconds with a human-readable progress summary parsed from `snakemake.log`:
+
+```
+Progress : 47 / 312 steps complete (15%)
+Remaining: 265 steps
+Updated  : 2026-07-17 14:32:10
+```
+
+Read it at any time with:
+
+```bash
+cat /path/to/output/dir/pipeline.running
+```
+
+---
+
 ## Monitoring a Running Job
 
 After submitting with `run`, CARLISLE itself exits immediately — the pipeline runs as a background SLURM job. To monitor progress:
