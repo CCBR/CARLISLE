@@ -57,7 +57,7 @@ For cluster execution (`run`, `runtest`), CARLISLE uses scheduler-safe Snakemake
 
 - **`runlocal`** – Executes the workflow on a local interactive node. This mode is suitable for quick testing or smaller datasets but should only be used within a Biowulf interactive session (`sinteractive`). A Snakemake HTML report (`report.html`) is generated in the working directory after a successful run.
 
-- **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling, dependencies, and notifications. Email alerts are automatically sent for job start, errors, and completion. The Singularity module is loaded automatically before submission — no manual `module load singularity` is required. A Snakemake HTML report (`report.html`) is generated in the working directory after a successful run.
+- **`run`** – Submits the workflow to the **[Biowulf HPC cluster](https://hpc.nih.gov/)** via SLURM. CARLISLE manages job scheduling and dependencies. The Singularity module is loaded automatically before submission — no manual `module load singularity` is required. A Snakemake HTML report (`report.html`) is generated in the working directory after a successful run.
 
 ### Maintenance Commands
 
@@ -283,12 +283,27 @@ For `runmode=run`, CARLISLE writes exactly one state marker file in the workdir:
 - `pipeline.failed` — submission or runtime failure
 - `pipeline.canceled` — run interrupted (for example `scancel`/signal)
 
+While the pipeline is running, `pipeline.running` is updated **every 60 seconds** with a live progress summary derived from `logs/snakemake.log`. You can check it at any time:
+
+```bash
+cat <workdir>/pipeline.running
+```
+
+Example output:
+
+```
+Progress : 42 / 120 steps complete (35%)
+Remaining: 78 steps
+Updated  : 2026-07-17 14:23:01
+```
+
+If the job has just been submitted and Snakemake has not yet produced output, it will show:
+
+```
+Status   : Submitted, waiting for first progress update
+Updated  : 2026-07-17 14:05:00
+```
+
 When you start `runmode=run` again in the same workdir, CARLISLE removes any existing `pipeline.*` marker and replaces it with `pipeline.running` for the new run.
-
-Email notifications are automatically sent to your NIH HPC account email (`$USER@nih.gov`) for:
-
-- **Job start** — confirms the pipeline was accepted by SLURM
-- **Job error** — sent if any rule fails; check the log file above for details
-- **Job completion** — confirms all rules finished successfully
 
 After a successful run, a `report.html` file is generated in your working directory — open it in a browser for an interactive summary of all pipeline steps and outputs.
