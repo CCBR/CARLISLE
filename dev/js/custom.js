@@ -1,9 +1,17 @@
 document.addEventListener("DOMContentLoaded", function () {
     const updatedNode = document.getElementById("docs-last-updated-date");
     if (updatedNode) {
-        const stamp = new Date(document.lastModified);
-        if (!Number.isNaN(stamp.getTime())) {
-            updatedNode.textContent = stamp.toISOString().slice(0, 10);
+        const rawLastModified = (document.lastModified || "").trim();
+        const parsedEpoch = Date.parse(rawLastModified);
+
+        if (!Number.isNaN(parsedEpoch)) {
+            updatedNode.textContent = new Date(parsedEpoch).toISOString().slice(0, 10);
+        } else if (rawLastModified) {
+            // Keep the browser-provided timestamp when parsing fails.
+            updatedNode.textContent = rawLastModified;
+        } else {
+            // Final fallback so the field is never left as "date unavailable".
+            updatedNode.textContent = new Date().toISOString().slice(0, 10);
         }
     }
 
