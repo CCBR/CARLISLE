@@ -1,20 +1,4 @@
 document.addEventListener("DOMContentLoaded", function () {
-    const updatedNode = document.getElementById("docs-last-updated-date");
-    if (updatedNode) {
-        const rawLastModified = (document.lastModified || "").trim();
-        const parsedEpoch = Date.parse(rawLastModified);
-
-        if (!Number.isNaN(parsedEpoch)) {
-            updatedNode.textContent = new Date(parsedEpoch).toISOString().slice(0, 10);
-        } else if (rawLastModified) {
-            // Keep the browser-provided timestamp when parsing fails.
-            updatedNode.textContent = rawLastModified;
-        } else {
-            // Final fallback so the field is never left as "date unavailable".
-            updatedNode.textContent = new Date().toISOString().slice(0, 10);
-        }
-    }
-
     document.querySelectorAll("pre").forEach(function (pre) {
         let button = document.createElement("button");
         button.className = "copy-button";

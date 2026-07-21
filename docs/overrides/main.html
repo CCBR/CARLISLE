@@ -5,7 +5,7 @@
 	{{ super() }}
 	{% if page.title == "Home" %}
 		<p class="docs-last-updated">
-			Last updated: <span id="docs-last-updated-date">date unavailable</span>
+			Last updated: {{ build_date_utc.strftime("%Y-%m-%d") }}
 		</p>
 	{% endif %}
 {% endblock %}
