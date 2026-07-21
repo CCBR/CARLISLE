@@ -44,3 +44,9 @@ div.admonition.warning {
     margin: 10px 0;
     border-radius: 5px;
 }
+
+.docs-last-updated {
+    margin-top: 18px;
+    font-size: 0.92rem;
+    color: #5f6f7a;
+}

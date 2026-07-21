@@ -1,4 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
+    const updatedNode = document.getElementById("docs-last-updated-date");
+    if (updatedNode) {
+        const stamp = new Date(document.lastModified);
+        if (!Number.isNaN(stamp.getTime())) {
+            updatedNode.textContent = stamp.toISOString().slice(0, 10);
+        }
+    }
+
     document.querySelectorAll("pre").forEach(function (pre) {
         let button = document.createElement("button");
         button.className = "copy-button";

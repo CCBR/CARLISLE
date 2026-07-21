@@ -1,2 +1,11 @@
 {% extends "base.html" %}
 {% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+	{{ super() }}
+	{% if page.title == "Home" %}
+		<p class="docs-last-updated">
+			Last updated: <span id="docs-last-updated-date">date unavailable</span>
+		</p>
+	{% endif %}
+{% endblock %}
