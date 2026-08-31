@@ -50,6 +50,7 @@ python dedup_bam.py --bam_in in.bam --bam_out out.bam --metrics_path stats.txt -
 """
 
 import argparse
+
 import pysam
 
 Description = (

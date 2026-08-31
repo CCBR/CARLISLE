@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-import pandas
-import sys
 import subprocess
+import sys
+
+import pandas
 import yaml
 
 # arguments

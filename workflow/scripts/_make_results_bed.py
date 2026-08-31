@@ -51,11 +51,12 @@ Note:
 """
 
 import argparse
-import pandas
 import os
-import yaml
 import subprocess
 import uuid
+
+import pandas
+import yaml
 
 randbed = str(uuid.uuid4()) + ".bed"
 

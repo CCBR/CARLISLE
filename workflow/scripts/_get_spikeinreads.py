@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import pandas
 import sys
+
+import pandas
 
 # arguments
 # @Inputs

@@ -6,12 +6,13 @@
 # sums to countsmatrix.tsv
 # sampleinfo.tsv is also created to be used as colData for downstream DESeq2 analysis
 
-import subprocess
 import argparse
-import pandas
-import os
 import functools
+import os
+import subprocess
 import uuid
+
+import pandas
 
 parser = argparse.ArgumentParser(description="create counts matrix")
 parser.add_argument(

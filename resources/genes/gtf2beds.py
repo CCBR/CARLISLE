@@ -264,10 +264,8 @@ with open(args.gtf, "r") as gtf:
             }
         else:
             g = genes[gene_id]
-            if start < g["min_start"]:
-                g["min_start"] = start
-            if end > g["max_end"]:
-                g["max_end"] = end
+            g["min_start"] = min(g["min_start"], start)
+            g["max_end"] = max(g["max_end"], end)
 
 # ---- Second pass: write TSS, promoter, gene body, and collect intervals per chrom ----
 w = args.promoter_window
@@ -318,8 +316,7 @@ with (
         genebody_start = min_start - 1
         genebody_end = max_end  # BED end is exclusive
 
-        if genebody_start < 0:
-            genebody_start = 0
+        genebody_start = max(genebody_start, 0)
 
         genebody_out.write(
             "\t".join(
