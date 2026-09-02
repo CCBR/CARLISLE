@@ -25,20 +25,20 @@ repos:
       - id: check-json
   # spell check
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.2
+    rev: v2.4.3
     hooks:
       - id: codespell
         args: ["-I", ".github/WORDLIST.txt"]
   # Python formatting
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.20
+    rev: v0.16.5
     hooks:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
   # R formatting
   - repo: https://github.com/posit-dev/air-pre-commit
-    rev: 0.10.0
+    rev: 0.11.0
     hooks:
       - id: air-format
   # general linting

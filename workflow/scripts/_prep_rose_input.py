@@ -1,5 +1,4 @@
 #!/usr/bin/env python2.7
-# -*- coding: utf-8 -*-
 """
 Prepare and validate ROSE inputs from peak calls (Python 2.7 compatible).
 
@@ -13,8 +12,6 @@ This script covers ROSE preflight items:
 7) Resource estimate summary
 8) Expected-output manifest (and optional ROSE execution)
 """
-
-from __future__ import print_function
 
 import argparse
 import gzip
@@ -56,16 +53,16 @@ def run_cmd(cmd, fail_msg, capture=True, cwd=None):
 
 def ensure_file(path, label):
     if not os.path.exists(path):
-        raise IOError("%s does not exist: %s" % (label, path))
+        raise OSError("%s does not exist: %s" % (label, path))
     if os.path.isdir(path):
-        raise IOError("%s points to a directory, expected file: %s" % (label, path))
+        raise OSError("%s points to a directory, expected file: %s" % (label, path))
 
 
 def ensure_executable(name_or_path, label):
     if os.path.sep in name_or_path:
         if os.path.exists(name_or_path):
             return name_or_path
-        raise IOError("%s not found: %s" % (label, name_or_path))
+        raise OSError("%s not found: %s" % (label, name_or_path))
     resolved = shutil.which(name_or_path) if hasattr(shutil, "which") else None
     if not resolved:
         # py2 fallback
@@ -75,7 +72,7 @@ def ensure_executable(name_or_path, label):
                 resolved = candidate
                 break
     if not resolved:
-        raise IOError("%s not found in PATH: %s" % (label, name_or_path))
+        raise OSError("%s not found in PATH: %s" % (label, name_or_path))
     return resolved
 
 
@@ -159,10 +156,10 @@ def write_bed6(rows, out_bed):
     if out_dir and not os.path.exists(out_dir):
         os.makedirs(out_dir)
     with open(out_bed, "w") as handle:
-        for r in rows_sorted:
-            handle.write(
-                "%s\t%d\t%d\t%s\t%.6f\t%s\n" % (r[0], r[1], r[2], r[3], r[4], r[5])
-            )
+        handle.writelines(
+            "%s\t%d\t%d\t%s\t%.6f\t%s\n" % (r[0], r[1], r[2], r[3], r[4], r[5])
+            for r in rows_sorted
+        )
 
 
 def maybe_decompress_gz(in_path, workdir):
@@ -308,12 +305,10 @@ def write_reports(output_dir, report):
             )
         )
         outt.write("Expected outputs:\n")
-        for item in report["expected_outputs"]:
-            outt.write("  - %s\n" % item)
+        outt.writelines("  - %s\n" % item for item in report["expected_outputs"])
         if report.get("notes"):
             outt.write("Notes:\n")
-            for n in report["notes"]:
-                outt.write("  - %s\n" % n)
+            outt.writelines("  - %s\n" % n for n in report["notes"])
     return report_json, report_txt
 
 
@@ -322,7 +317,7 @@ def validate_bam_and_index(bam_path, label):
     bai1 = bam_path + ".bai"
     bai2 = re.sub(r"\.bam$", ".bai", bam_path)
     if not (os.path.exists(bai1) or os.path.exists(bai2)):
-        raise IOError("%s BAM index missing (.bai): %s" % (label, bam_path))
+        raise OSError("%s BAM index missing (.bai): %s" % (label, bam_path))
 
 
 def main():
@@ -479,7 +474,7 @@ def main():
             rose_main_path = os.path.abspath(args.rose_main)
         ensure_file(rose_main_path, "ROSE_main.py")
         if not os.path.isdir(rose_root):
-            raise IOError(
+            raise OSError(
                 "rose-root does not exist or is not a directory: %s" % rose_root
             )
 
