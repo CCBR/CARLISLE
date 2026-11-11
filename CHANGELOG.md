@@ -1,5 +1,7 @@
 ## CARLISLE development version
 
+- Pin `ccbr_tools` to v0.7. (#272, @kelly-sovacool)
+
 ## CARLISLE 2.8.0
 
 ### New Features
