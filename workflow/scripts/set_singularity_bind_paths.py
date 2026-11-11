@@ -105,7 +105,7 @@ def resolve_additional_bind_paths(search_paths):
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(__doc__)
-        raise Exception("Please provide two arguments")
+        raise ValueError("Please provide two arguments")
     config_filename = sys.argv[1]
     samples_filename = sys.argv[2]
     print_bind_paths(config_filename, samples_filename)
