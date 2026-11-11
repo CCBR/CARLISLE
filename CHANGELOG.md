@@ -1,5 +1,6 @@
 ## CARLISLE development version
 
+- Pin `ccbr_tools` to v0.7. (#272, @kelly-sovacool)
 - Fix numeric score parsing in the Python 2.7 ROSE preflight helper and warn when invalid scores use a default. (#263, @pre-commit-ci[bot], @kelly-sovacool)
 
 ## CARLISLE 2.8.0

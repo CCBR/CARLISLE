@@ -215,7 +215,7 @@ spikein_reference:
 
 adapters: "$PIPELINE_HOME/resources/other/adapters.fa"
 
-ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.4/bin/"
+ccbr_tools_path: "/data/CCBR_Pipeliner/Tools/ccbr_tools/v0.7/bin/"
 
 hocomoco_motifs: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_homer_format_0.001.motif"
 hocomoco_memes_targz: "$PIPELINE_HOME/resources/HOCOMOCO/H14CORE_memes.tar.gz"
