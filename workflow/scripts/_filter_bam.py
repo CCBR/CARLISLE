@@ -167,9 +167,9 @@ def dedup_mode():
                 ):
                     single_best[key] = (r.query_name, r.mapping_quality)
 
-    kept_qnames = set(q for q, _ in paired_best.values()) | set(
+    kept_qnames = {q for q, _ in paired_best.values()} | {
         q for q, _ in single_best.values()
-    )
+    }
     unique_sites = len(kept_qnames)  # count of unique start-site winners (QNAMEs)
 
     # Second pass: write all primary reads for the kept QNAMEs

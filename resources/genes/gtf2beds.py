@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import sys
 
 
 def parse_attributes(attr_str):
@@ -52,7 +53,7 @@ def load_bed_intervals(bed_file, genome_sizes):
     Load BED intervals into dict: chrom -> list of (start, end).
     Only keeps chromosomes present in genome_sizes.
     """
-    intervals = {chrom: [] for chrom in genome_sizes.keys()}
+    intervals = {chrom: [] for chrom in genome_sizes}
     if bed_file is None:
         return intervals
 
@@ -72,8 +73,8 @@ def load_bed_intervals(bed_file, genome_sizes):
                 continue
             intervals[chrom].append((start, end))
     # Merge per chrom for efficiency
-    for chrom in intervals:
-        intervals[chrom] = merge_intervals(intervals[chrom])
+    for chrom, chrom_intervals in intervals.items():
+        intervals[chrom] = merge_intervals(chrom_intervals)
     return intervals
 
 
@@ -204,19 +205,19 @@ args = parser.parse_args()
 # ---- Sanity check inputs ----
 if not os.path.exists(args.gtf):
     print(f"{args.gtf} : GTF file is missing!")
-    exit(1)
+    sys.exit(1)
 
 if not os.path.exists(args.genome_sizes):
     print(f"{args.genome_sizes} : Genome sizes file is missing!")
-    exit(1)
+    sys.exit(1)
 
 if args.blacklist_bed and not os.path.exists(args.blacklist_bed):
     print(f"{args.blacklist_bed} : Blacklist BED file is missing!")
-    exit(1)
+    sys.exit(1)
 
 if args.ambiguous_bed and not os.path.exists(args.ambiguous_bed):
     print(f"{args.ambiguous_bed} : Ambiguous BED file is missing!")
-    exit(1)
+    sys.exit(1)
 
 # ---- Load genome sizes ----
 genome_sizes = load_genome_sizes(args.genome_sizes)
@@ -271,7 +272,7 @@ with open(args.gtf, "r") as gtf:
 w = args.promoter_window
 
 # For building intergenic: chrom -> list of (start, end) for genebody
-genebody_intervals = {chrom: [] for chrom in genome_sizes.keys()}
+genebody_intervals = {chrom: [] for chrom in genome_sizes}
 
 with (
     open(args.promoter_bed, "w") as promoter_out,
@@ -328,8 +329,8 @@ with (
         genebody_intervals[chrom].append((genebody_start, genebody_end))
 
 # Merge gene body intervals per chromosome
-for chrom in genebody_intervals:
-    genebody_intervals[chrom] = merge_intervals(genebody_intervals[chrom])
+for chrom, chrom_intervals in genebody_intervals.items():
+    genebody_intervals[chrom] = merge_intervals(chrom_intervals)
 
 # ---- Third pass: compute intergenic regions as complement of genebody, then subtract blacklist & ambiguous ----
 with open(args.intergenic_bed, "w") as intergenic_out:

@@ -15,7 +15,7 @@ import yaml
 # @param6 = filtered idx stats file - dedup
 # @param7 = out yaml file
 
-stats = dict()
+stats = {}
 
 r1fastqgz = sys.argv[1]
 

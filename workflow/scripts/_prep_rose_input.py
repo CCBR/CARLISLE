@@ -1,4 +1,6 @@
 #!/usr/bin/env python2.7
+# Keep the future import, IOError, and formatting compatible with Python 2.7.
+# ruff: noqa: UP010, UP024, UP031
 """
 Prepare and validate ROSE inputs from peak calls (Python 2.7 compatible).
 
@@ -12,6 +14,8 @@ This script covers ROSE preflight items:
 7) Resource estimate summary
 8) Expected-output manifest (and optional ROSE execution)
 """
+
+from __future__ import print_function
 
 import argparse
 import gzip
@@ -77,13 +81,21 @@ def ensure_executable(name_or_path, label):
 
 
 def parse_number(value, default=0.0):
+    result = default
     try:
         val = float(value)
-        if math.isfinite(val):
-            return val
-    except Exception:
-        pass
-    return default
+    except (TypeError, ValueError, OverflowError) as exc:
+        sys.stderr.write(
+            "Warning: invalid peak score %r (%s); using %r\n" % (value, exc, default)
+        )
+    else:
+        if math.isnan(val) or math.isinf(val):
+            sys.stderr.write(
+                "Warning: non-finite peak score %r; using %r\n" % (value, default)
+            )
+        else:
+            result = val
+    return result
 
 
 def sanitize_sample_id(sample_id):
@@ -673,6 +685,6 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception as exc:
+    except (IOError, OSError, ValueError, RuntimeError) as exc:
         print("[ERROR] %s" % str(exc), file=sys.stderr)
         sys.exit(1)

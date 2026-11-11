@@ -76,48 +76,47 @@ mergedfile = os.path.join(args.tmpdir, randstr + ".merged.bed")
 cmd = "bedtools merge -i " + concatfile + " > " + mergedfile
 merge = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
 
-sampleinfofile = open(args.sampleinfo, "w")
-sampleinfofile.write("samplename\tgroup\n")
-counts = dict()  # bedgraph AUC based counts
-fcounts = dict()  # fragment based counts
-for i, row in bedbedgraph.iterrows():
-    group = row["group"]
-    bg = row["bedgraph"]
-    samplename = row["sampleName"]
-    sf = row["scalingFactor"]
-    fbed = row["fragmentsBed"]
-    filepath, filename = os.path.split(bg)
-    basename, ext = os.path.splitext(filename)
-    sampleinfofile.write("%s\t%s\n" % (samplename, group))
-    cmd = "bedtools intersect -wa -wb -a " + bg + " -b " + mergedfile
-    print("Now running: %s" % (cmd))
-    bt = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
-    peakCounts = dict()
-    for line in bt.stdout.split("\n"):
-        fields = line.strip().split("\t")
-        if len(fields) != 7:
-            continue
-        peakID = fields[4] + ":" + fields[5] + "-" + fields[6]
-        score = (int(fields[2]) - int(fields[1])) * float(fields[3])
-        if peakID not in peakCounts:
-            peakCounts[peakID] = 0.0
-        peakCounts[peakID] += score
-    counts[samplename] = pandas.DataFrame.from_dict(
-        peakCounts, orient="index", columns=[samplename]
-    )
-    cmd = "bedmap --echo-ref-name --count " + mergedfile + " " + fbed
-    print("Now running %s" % (cmd))
-    bo = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
-    fPeakCounts = dict()
-    for line in bo.stdout.split("\n"):
-        fields = line.strip().split("|")
-        if len(fields) != 2:
-            continue
-        fPeakCounts[fields[0]] = fields[1]
-    fcounts[samplename] = pandas.DataFrame.from_dict(
-        fPeakCounts, orient="index", columns=[samplename]
-    )
-sampleinfofile.close()
+counts = {}  # bedgraph AUC based counts
+fcounts = {}  # fragment based counts
+with open(args.sampleinfo, "w") as sampleinfofile:
+    sampleinfofile.write("samplename\tgroup\n")
+    for i, row in bedbedgraph.iterrows():
+        group = row["group"]
+        bg = row["bedgraph"]
+        samplename = row["sampleName"]
+        sf = row["scalingFactor"]
+        fbed = row["fragmentsBed"]
+        filepath, filename = os.path.split(bg)
+        basename, ext = os.path.splitext(filename)
+        sampleinfofile.write(f"{samplename}\t{group}\n")
+        cmd = "bedtools intersect -wa -wb -a " + bg + " -b " + mergedfile
+        print(f"Now running: {cmd}")
+        bt = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+        peakCounts = {}
+        for line in bt.stdout.split("\n"):
+            fields = line.strip().split("\t")
+            if len(fields) != 7:
+                continue
+            peakID = fields[4] + ":" + fields[5] + "-" + fields[6]
+            score = (int(fields[2]) - int(fields[1])) * float(fields[3])
+            if peakID not in peakCounts:
+                peakCounts[peakID] = 0.0
+            peakCounts[peakID] += score
+        counts[samplename] = pandas.DataFrame.from_dict(
+            peakCounts, orient="index", columns=[samplename]
+        )
+        cmd = "bedmap --echo-ref-name --count " + mergedfile + " " + fbed
+        print(f"Now running {cmd}")
+        bo = subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True)
+        fPeakCounts = {}
+        for line in bo.stdout.split("\n"):
+            fields = line.strip().split("|")
+            if len(fields) != 2:
+                continue
+            fPeakCounts[fields[0]] = fields[1]
+        fcounts[samplename] = pandas.DataFrame.from_dict(
+            fPeakCounts, orient="index", columns=[samplename]
+        )
 counts_matrix_df = functools.reduce(
     lambda x, y: x.merge(y, left_index=True, right_index=True), counts.values()
 )
